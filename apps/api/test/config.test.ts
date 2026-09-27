@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ConfigError, LOCAL_CHECKER_TOKENS, LOCAL_SESSION_SECRET, loadConfig } from '../src/config/env.ts';
+import { ConfigError, LOCAL_CHECKER_TOKENS, LOCAL_DEMO_UK_CODE, LOCAL_SESSION_SECRET, loadConfig } from '../src/config/env.ts';
 
 const base = { DATABASE_URL: 'postgres://localhost/test', SESSION_SECRET: LOCAL_SESSION_SECRET };
 
@@ -83,6 +83,11 @@ describe('loadConfig', () => {
     expect(
       problems({ ...base, NODE_ENV: 'production', SESSION_SECRET: 'x'.repeat(40), CHECKER_TOKEN_UK: LOCAL_CHECKER_TOKENS[2]! }).join('\n'),
     ).toMatch(/CHECKER_TOKEN/);
+    expect(
+      problems({ ...base, NODE_ENV: 'production', SESSION_SECRET: 'x'.repeat(40), DEMO_MODE: 'true', DEMO_UK_CODE: LOCAL_DEMO_UK_CODE }).join('\n'),
+    ).toMatch(/DEMO_UK_CODE/);
+    expect(problems({ ...base, NODE_ENV: 'production', SESSION_SECRET: 'x'.repeat(40), DEMO_MODE: 'false', DEMO_UK_CODE: LOCAL_DEMO_UK_CODE })).toEqual([]);
+    expect(problems({ ...base, DEMO_UK_CODE: LOCAL_DEMO_UK_CODE })).toEqual([]);
   });
 
   it('checker-токены не короче 24 символов', () => {

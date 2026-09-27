@@ -1,5 +1,6 @@
 # Стенд (VPS): docker compose -f compose.yaml -f infra/compose.prod.yaml up -d --build
-# Секреты и режим — только в .env на сервере (права 600): MAX_MODE=webhook, DEV_AUTH=false, NODE_ENV=production.
+# Секреты и режим — только в .env на сервере (права 600): MAX_MODE=webhook, DEV_AUTH=false, NODE_ENV=production,
+# свои SESSION_SECRET, CHECKER_TOKEN_* и DEMO_UK_CODE (значения из .env.example в production не принимаются).
 services:
   web:
     ports: !override

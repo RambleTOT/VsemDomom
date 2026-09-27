@@ -10,6 +10,9 @@ import { readBuildInfo } from './build-info.ts';
 /** Тестовый секрет сессий из .env.example: допустим только локально. */
 export const LOCAL_SESSION_SECRET = 'local-only-session-secret-change-me-0123456789';
 
+/** Демо-код УК из .env.example: известен всем, кто видел репозиторий, — на стенде нужен свой. */
+export const LOCAL_DEMO_UK_CODE = 'DEMO-UK-LOCAL';
+
 /** Тестовые checker-токены из .env.example: допустимы только локально. */
 export const LOCAL_CHECKER_TOKENS = [
   'local-only-checker-resident-token-01',
@@ -215,6 +218,9 @@ export function loadConfig(source: Record<string, string | undefined> = process.
   const checkerTokens = [env.CHECKER_TOKEN_RESIDENT, env.CHECKER_TOKEN_RESIDENT_2, env.CHECKER_TOKEN_UK];
   if (env.NODE_ENV === 'production' && checkerTokens.some((tok) => tok !== undefined && LOCAL_CHECKER_TOKENS.includes(tok))) {
     problems.push('CHECKER_TOKEN_* из .env.example допустимы только локально — задайте свои (openssl rand -hex 24)');
+  }
+  if (env.NODE_ENV === 'production' && env.DEMO_MODE && env.DEMO_UK_CODE === LOCAL_DEMO_UK_CODE) {
+    problems.push('DEMO_UK_CODE из .env.example допустим только локально — задайте свой (он же на служебном слайде)');
   }
   if (checkerTokens.some((tok) => tok !== undefined && tok.length < 24)) {
     problems.push('CHECKER_TOKEN_* должны быть не короче 24 символов');
