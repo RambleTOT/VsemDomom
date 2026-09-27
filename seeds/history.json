@@ -1,0 +1,62 @@
+{
+  "note": "История модельных домов. Даты считаются от начала текущего месяца в часовом поясе дома при каждом запуске сидов; если места в месяце не хватает, интервал сдвигается к началу месяца. Подъезд и этаж участников вычисляются по номеру квартиры и параметрам дома.",
+  "incidents": [
+    {
+      "publicId": "hist1gvs06",
+      "housePublicId": "dom1model1",
+      "serviceType": "hot_water",
+      "scope": "house",
+      "monthDay": 2,
+      "startTime": "08:00",
+      "steps": {
+        "acceptedMin": 20,
+        "localizedMin": 50,
+        "resolvedMin": 360
+      },
+      "note": "Перерыв ГВС 6 ч в доме 1 в текущем месяце: вместе с аварией сценария даёт превышение месячного лимита",
+      "participantFlats": [
+        21,
+        38,
+        60
+      ]
+    },
+    {
+      "publicId": "hist2hvs01",
+      "housePublicId": "dom2model2",
+      "serviceType": "cold_water",
+      "scope": "entrance",
+      "entrance": 1,
+      "monthDay": 5,
+      "startTime": "10:30",
+      "steps": {
+        "acceptedMin": 15,
+        "localizedMin": 25,
+        "resolvedMin": 90
+      },
+      "note": "Авария в доме 2, устранённая в норматив",
+      "participantFlats": [
+        3,
+        11
+      ]
+    },
+    {
+      "publicId": "hist3gvs11",
+      "housePublicId": "dom3model3",
+      "serviceType": "hot_water",
+      "scope": "house",
+      "monthDay": 3,
+      "startTime": "17:40",
+      "steps": {
+        "acceptedMin": 55,
+        "localizedMin": 150,
+        "resolvedMin": 700
+      },
+      "note": "Авария в доме 3 сверх норматива: 11 ч 40 мин, ответ УК позже 30 минут",
+      "participantFlats": [
+        15,
+        140,
+        190
+      ]
+    }
+  ]
+}

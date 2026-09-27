@@ -1,0 +1,32 @@
+{
+  "name": "@vsemdomom/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Доменная логика «Всем домом» без ввода-вывода: статусы, сроки, расчёты, рендер сообщений",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./enums": {
+      "source": "./src/domain/enums.ts",
+      "types": "./dist/domain/enums.d.ts",
+      "default": "./dist/domain/enums.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@date-fns/tz": "1.5.0",
+    "date-fns": "4.4.0",
+    "zod": "4.6.5"
+  }
+}

@@ -1,0 +1,149 @@
+# Локальный запуск одной командой: docker compose up --build
+# db → migrate (миграции + сиды) → api, worker → web (Caddy на http://localhost:8080).
+# .env не обязателен: значения по умолчанию ниже — для локального режима simulator.
+name: vsemdomom
+
+x-app-build: &app-build
+  context: .
+  target: runtime-api
+  args:
+    GIT_COMMIT: ${GIT_COMMIT:-dev}
+
+x-app-env: &app-env
+  NODE_ENV: ${NODE_ENV:-development}
+  DOMAIN: ${DOMAIN:-}
+  APP_NAME: ${APP_NAME:-Всем домом}
+  PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8080}
+  MAX_MODE: ${MAX_MODE:-simulator}
+  MAX_API_BASE: ${MAX_API_BASE:-https://platform-api2.max.ru}
+  MAX_BOT_TOKEN: ${MAX_BOT_TOKEN:-}
+  MAX_BOT_USERNAME: ${MAX_BOT_USERNAME:-}
+  MAX_WEBHOOK_SECRET: ${MAX_WEBHOOK_SECRET:-}
+  SESSION_SECRET: ${SESSION_SECRET:-local-only-session-secret-change-me-0123456789}
+  INITDATA_MAX_AGE_SEC: ${INITDATA_MAX_AGE_SEC:-3600}
+  DATABASE_URL: postgres://app:${POSTGRES_PASSWORD:-app}@db:5432/app
+  DEMO_MODE: ${DEMO_MODE:-true}
+  DEMO_UK_CODE: ${DEMO_UK_CODE:-DEMO-UK-LOCAL}
+  DEV_AUTH: ${DEV_AUTH:-true}
+  CHECKER_API_ENABLED: ${CHECKER_API_ENABLED:-true}
+  CHECKER_TOKEN_RESIDENT: ${CHECKER_TOKEN_RESIDENT:-local-only-checker-resident-token-01}
+  CHECKER_TOKEN_RESIDENT_2: ${CHECKER_TOKEN_RESIDENT_2:-local-only-checker-resident-token-02}
+  CHECKER_TOKEN_UK: ${CHECKER_TOKEN_UK:-local-only-checker-uk-token-000000001}
+  SEED_UK_STAFF_MAX_IDS: ${SEED_UK_STAFF_MAX_IDS:-}
+  ALERT_USER_ID: ${ALERT_USER_ID:-}
+  QUIET_HOURS: ${QUIET_HOURS:-22:00-08:00}
+  CHECK_WINDOW_MIN: ${CHECK_WINDOW_MIN:-360}
+  DEMO_CHECK_WINDOW_MIN: ${DEMO_CHECK_WINDOW_MIN:-5}
+  DISCREPANCY_MAX_HOURS: ${DISCREPANCY_MAX_HOURS:-72}
+  DEMO_NEIGHBOUR_ANSWER_DELAY_SEC: ${DEMO_NEIGHBOUR_ANSWER_DELAY_SEC:-60}
+  WATER_QUALITY_POLL_DELAY_HOURS: ${WATER_QUALITY_POLL_DELAY_HOURS:-3}
+  FEATURE_KEYWORD_REPLY: ${FEATURE_KEYWORD_REPLY:-false}
+  FEATURE_BRIGADE_CONFIRM: ${FEATURE_BRIGADE_CONFIRM:-true}
+  FEATURE_TRUST_LEVELS: ${FEATURE_TRUST_LEVELS:-true}
+  FEATURE_JOIN_CHAT: ${FEATURE_JOIN_CHAT:-true}
+  FEATURE_POLLS: ${FEATURE_POLLS:-true}
+  FEATURE_MONTHLY_SUMMARY: ${FEATURE_MONTHLY_SUMMARY:-true}
+  FEATURE_ACT_TEMPLATE: ${FEATURE_ACT_TEMPLATE:-true}
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  HTTP_PORT: ${HTTP_PORT:-3000}
+
+services:
+  db:
+    image: postgres:16.15-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_DB: app
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U app -d app']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  migrate:
+    build: *app-build
+    image: vsemdomom-app:${GIT_COMMIT:-dev}
+    command: ['node', 'dist/migrate.js']
+    env_file:
+      - path: .env
+        required: false
+    environment: *app-env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: 'no'
+
+  api:
+    build: *app-build
+    image: vsemdomom-app:${GIT_COMMIT:-dev}
+    command: ['node', 'dist/main.js']
+    env_file:
+      - path: .env
+        required: false
+    environment: *app-env
+    expose:
+      - '3000'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      # в slim-образе нет curl и wget
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  worker:
+    build: *app-build
+    image: vsemdomom-app:${GIT_COMMIT:-dev}
+    command: ['node', 'dist/worker.js']
+    env_file:
+      - path: .env
+        required: false
+    environment: *app-env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      # файл-пульс обновляется каждые 10 секунд
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "const s=require('fs').statSync('/tmp/vsemdomom-worker.alive');process.exit(Date.now()-s.mtimeMs<30000?0:1)",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      target: web
+    image: vsemdomom-web:${GIT_COMMIT:-dev}
+    ports:
+      - '${WEB_PORT:-8080}:8080'
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:8080/health']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  pgdata:

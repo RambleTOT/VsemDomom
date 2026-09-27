@@ -1,0 +1,34 @@
+{
+  "name": "@vsemdomom/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Общий контракт «Всем домом»: zod-схемы API, перечисления, словарь ru.json",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./i18n/ru.json": "./i18n/ru.json"
+  },
+  "files": [
+    "dist",
+    "i18n"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "openapi:gen": "node --conditions=source scripts/openapi.ts",
+    "openapi:check": "node --conditions=source scripts/openapi.ts --check"
+  },
+  "dependencies": {
+    "@vsemdomom/core": "workspace:*",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@asteasolutions/zod-to-openapi": "9.1.0",
+    "yaml": "2.9.1"
+  }
+}

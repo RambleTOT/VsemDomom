@@ -1,0 +1,9 @@
+# gitleaks: стандартные правила + исключения для заведомо тестовых значений локального запуска.
+title = "vsemdomom"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Тестовые значения только для локального запуска (.env.example, compose.yaml); в production сервис их отвергает"
+regexes = ['''local-only-[a-z0-9-]+''', '''DEMO-UK-LOCAL''']

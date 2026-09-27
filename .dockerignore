@@ -1,0 +1,18 @@
+# Контекст сборки: только то, что нужно образам
+.git
+.github
+.claude
+CLAUDE.local.md
+**/node_modules
+**/dist
+**/coverage
+docs
+design
+apps/miniapp/e2e
+playwright-report
+test-results
+.env
+.env.*
+*.log
+**/*.test.ts
+**/test

@@ -1,0 +1,21 @@
+# Стенд (VPS): docker compose -f compose.yaml -f infra/compose.prod.yaml up -d --build
+# Секреты и режим — только в .env на сервере (права 600): MAX_MODE=webhook, DEV_AUTH=false, NODE_ENV=production.
+services:
+  web:
+    ports: !override
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    environment:
+      DOMAIN: ${DOMAIN:?задайте DOMAIN в .env}
+    command: ['caddy', 'run', '--config', '/etc/caddy/Caddyfile.prod', '--adapter', 'caddyfile']
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    # локальная проверка по :8080 на стенде неприменима; доступность — внешний мониторинг /health
+    healthcheck:
+      disable: true
+
+volumes:
+  caddy_data:
+  caddy_config:

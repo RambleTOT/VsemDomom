@@ -1,0 +1,35 @@
+# Стенд: https://{$DOMAIN} — Caddy выпускает сертификат Let's Encrypt и отдаёт полную цепочку
+# (требование webhook MAX: HTTPS, порт 443, доверенный сертификат).
+{
+	admin off
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy api:3000
+	}
+	handle /webhook/* {
+		reverse_proxy api:3000
+	}
+	handle /health {
+		reverse_proxy api:3000
+	}
+	handle /ready {
+		reverse_proxy api:3000
+	}
+
+	handle {
+		root * /srv/app
+		try_files {path} /index.html
+		file_server
+		header {
+			Content-Security-Policy "default-src 'self'; script-src 'self' https://st.max.ru; connect-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'"
+			X-Content-Type-Options nosniff
+			Referrer-Policy no-referrer
+			Strict-Transport-Security "max-age=31536000"
+			-Server
+		}
+	}
+}

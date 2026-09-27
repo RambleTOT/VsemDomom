@@ -1,0 +1,12 @@
+packages:
+  - apps/*
+  - packages/*
+
+# esbuild ставит платформенный бинарник в postinstall (нужен drizzle-kit и vitest)
+onlyBuiltDependencies:
+  - esbuild
+
+# openapi-typescript 7.13.0 объявляет typescript ^5, но работает с 6.0 (проверено на gen:max-types)
+peerDependencyRules:
+  allowedVersions:
+    openapi-typescript>typescript: '6'

@@ -1,0 +1,82 @@
+{
+  "note": "Модельные дома: вымышленные адреса, параметры — типичные серии массовой застройки (допущение). Город и часовой пояс — параметры сидов.",
+  "city": "Модельск",
+  "timezone": "Europe/Moscow",
+  "houses": [
+    {
+      "publicId": "dom1model1",
+      "ukPublicId": "ukmodel001",
+      "label": "1",
+      "address": "ул. Модельная, 1",
+      "entrances": 4,
+      "floors": 9,
+      "flatsPerFloor": 4,
+      "flatFrom": 1,
+      "flatTo": 144,
+      "powerSources": 2,
+      "hotWaterDeadEnd": false,
+      "isSandbox": false,
+      "note": "Демо-дом: панельный, 9 этажей, 4 подъезда, 144 квартиры; привязан демо-чат"
+    },
+    {
+      "publicId": "dom2model2",
+      "ukPublicId": "ukmodel001",
+      "label": "2",
+      "address": "ул. Модельная, 2",
+      "entrances": 3,
+      "floors": 5,
+      "flatsPerFloor": 4,
+      "flatFrom": 1,
+      "flatTo": 60,
+      "powerSources": 2,
+      "hotWaterDeadEnd": false,
+      "isSandbox": false,
+      "note": "Кирпичный, 5 этажей, 3 подъезда, 60 квартир; в истории авария, устранённая в норматив"
+    },
+    {
+      "publicId": "dom3model3",
+      "ukPublicId": "ukmodel001",
+      "label": "3",
+      "address": "ул. Модельная, 3",
+      "entrances": 2,
+      "floors": 17,
+      "flatsPerFloor": 6,
+      "flatFrom": 1,
+      "flatTo": 204,
+      "powerSources": 2,
+      "hotWaterDeadEnd": false,
+      "isSandbox": false,
+      "note": "Монолитный, 17 этажей, 2 подъезда, 204 квартиры; в истории авария сверх норматива"
+    },
+    {
+      "publicId": "dom4model4",
+      "ukPublicId": "ukmodel001",
+      "label": "4",
+      "address": "ул. Модельная, 4",
+      "entrances": 4,
+      "floors": 9,
+      "flatsPerFloor": 4,
+      "flatFrom": 1,
+      "flatTo": 144,
+      "powerSources": 2,
+      "hotWaterDeadEnd": false,
+      "isSandbox": false,
+      "note": "Копия дома 1 со своим демо-чатом — если сценарий проверяют одновременно несколько человек"
+    },
+    {
+      "publicId": "dom5sandbx",
+      "ukPublicId": "ukmodel001",
+      "label": "5",
+      "address": "ул. Модельная, 5 (песочница API)",
+      "entrances": 4,
+      "floors": 9,
+      "flatsPerFloor": 4,
+      "flatFrom": 1,
+      "flatTo": 144,
+      "powerSources": 2,
+      "hotWaterDeadEnd": false,
+      "isSandbox": true,
+      "note": "Дом-песочница для автоматических проверок DATA-API: без чата, скрыт из экрана УК"
+    }
+  ]
+}

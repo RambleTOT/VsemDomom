@@ -1,0 +1,194 @@
+openapi: 3.1.0
+info:
+  title: Всем домом API
+  version: 0.1.0
+  description: |-
+    REST API мини-приложения «Всем домом» и webhook бота MAX.
+
+    - Префикс `/api/v1`, JSON, даты — ISO 8601 с часовым поясом (ответы — в UTC).
+    - Авторизация: `Authorization: Bearer <session JWT>` или `Bearer <CHECKER_TOKEN_*>`.
+    - Ошибки — `application/problem+json` (RFC 9457): `type`, `title`, `status`, `detail`, `code`, `traceId`.
+    - Каждый ответ содержит заголовок `X-Request-Id`.
+    - `Idempotency-Key` на создании аварии и расчёте — необязательный; повтор возвращает первый ответ.
+    - `If-Match: <version>` на смене статуса УК — необязательный; устаревшая версия → 409 `version_conflict`.
+    - Дома, УК и телефоны АДС — модельные данные.
+servers:
+  - url: /
+    description: Тот же хост, что и мини-приложение
+tags:
+  - name: system
+    description: Проверки и версия
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Сессия мини-приложения (JWT, POST /api/v1/auth/max) или тестовый токен роли CHECKER_TOKEN_* (при CHECKER_API_ENABLED=true).
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+      required:
+        - status
+    ReadyResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+            - fail
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Результат по каждой зависимости: ok или причина"
+      required:
+        - status
+        - checks
+    VersionResponse:
+      type: object
+      properties:
+        commit:
+          type: string
+          example: a1b2c3d
+        builtAt:
+          type:
+            - string
+            - "null"
+        maxMode:
+          type: string
+          enum:
+            - simulator
+            - polling
+            - webhook
+        demoMode:
+          type: boolean
+        features:
+          $ref: "#/components/schemas/FeatureFlags"
+      required:
+        - commit
+        - builtAt
+        - maxMode
+        - demoMode
+        - features
+    FeatureFlags:
+      type: object
+      properties:
+        keywordReply:
+          type: boolean
+        brigadeConfirm:
+          type: boolean
+        trustLevels:
+          type: boolean
+        joinChat:
+          type: boolean
+        polls:
+          type: boolean
+        monthlySummary:
+          type: boolean
+        actTemplate:
+          type: boolean
+      required:
+        - keywordReply
+        - brigadeConfirm
+        - trustLevels
+        - joinChat
+        - polls
+        - monthlySummary
+        - actTemplate
+      description: "Флаги функций волн 2–3: что включено в этой версии"
+  parameters: {}
+paths:
+  /health:
+    get:
+      operationId: health
+      summary: Процесс жив
+      tags:
+        - system
+      security: []
+      responses:
+        "200":
+          description: Процесс жив
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /api/v1/health:
+    get:
+      operationId: healthV1
+      summary: Процесс жив (путь с базой /api/v1)
+      tags:
+        - system
+      security: []
+      responses:
+        "200":
+          description: Процесс жив
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /ready:
+    get:
+      operationId: ready
+      summary: "Готовность: БД, миграции, MAX"
+      tags:
+        - system
+      security: []
+      responses:
+        "200":
+          description: Все зависимости готовы
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadyResponse"
+        "503":
+          description: Какая-то зависимость не готова
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadyResponse"
+  /api/v1/version:
+    get:
+      operationId: version
+      summary: Версия сборки и включённые функции
+      tags:
+        - system
+      security: []
+      responses:
+        "200":
+          description: Версия
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionResponse"
+webhooks: {}

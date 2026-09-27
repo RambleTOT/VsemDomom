@@ -1,0 +1,10 @@
+{
+  "note": "Пользователи проверяющих для checker-токенов (сами токены — секреты в окружении). Отрицательные ID не пересекаются с настоящими пользователями MAX. Работают только с домом-песочницей.",
+  "sandboxHousePublicId": "dom5sandbx",
+  "ukPublicId": "ukmodel001",
+  "users": [
+    { "name": "resident", "tokenEnv": "CHECKER_TOKEN_RESIDENT", "maxUserId": -1001, "kind": "resident", "flatNo": 1, "role": "owner" },
+    { "name": "resident2", "tokenEnv": "CHECKER_TOKEN_RESIDENT_2", "maxUserId": -1002, "kind": "resident", "flatNo": 5, "role": "renter" },
+    { "name": "uk", "tokenEnv": "CHECKER_TOKEN_UK", "maxUserId": -1003, "kind": "uk", "staffRole": "dispatcher" }
+  ]
+}
