@@ -1,0 +1,30 @@
+/* «Всем домом» — токены приложения (ТЗ 09, раздел 3.1).
+   Подключать ПОСЛЕ @maxhub/max-ui/dist/styles.css. Только --app-*; штатные токены MAX UI не переопределяем.
+   Светлая тема — :root / .max-light, тёмная — .max-dark (класс ставит <MaxUI colorScheme>).
+   Контраст рассчитан по формуле WCAG 2.2 (раздел 11.2). */
+:root, .max-light {
+  --app-text-link: #0068DB;           /* 5,25:1 на #FFF · 4,52:1 на --background-surface */
+  --app-text-negative: #CE2630;       /* 5,32:1 на #FFF · 4,59:1 на surface */
+  --app-icon-positive: #159A36;       /* 3,68:1 на #FFF · 3,29:1 на --app-positive-bg */
+  --app-warning-icon: #D9661A;        /* 3,58:1 на #FFF · 3,17:1 на --app-warning-bg; только иконка и полоса */
+  --app-warning-bg: rgba(255,131,42,.14);
+  --app-negative-bg: rgba(255,48,60,.10);
+  --app-positive-bg: rgba(26,190,67,.12);
+  --app-model-data-bg: var(--background-tertiary);
+  --app-motion-fast: 150ms;
+  --app-motion-base: 200ms;
+  --app-motion-easing: cubic-bezier(.2,0,0,1);
+}
+.max-dark {
+  --app-text-link: #268DFF;           /* 4,55:1 на #25262D · 5,77:1 на #0F0F12 */
+  --app-text-negative: #D86B7B;       /* 4,53:1 на #25262D */
+  --app-icon-positive: #2BC644;       /* = --icon-positive, 6,65:1 на #25262D */
+  --app-warning-icon: #FF832A;        /* 6,12:1 на #25262D */
+  --app-warning-bg: rgba(255,131,42,.22);
+  --app-negative-bg: rgba(206,66,87,.20);
+  --app-positive-bg: rgba(43,198,68,.20);
+  --app-model-data-bg: var(--background-tertiary);
+}
+@media (prefers-reduced-motion: reduce) {
+  :root, .max-light, .max-dark { --app-motion-fast: 0ms; --app-motion-base: 0ms; }
+}

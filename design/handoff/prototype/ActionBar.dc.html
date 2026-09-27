@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/sizes.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/components/max-ui.css">
+  <link rel="stylesheet" href="design/handoff/tokens/app-tokens.css">
+  <script src="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/_ds_bundle.js"></script>
+</helmet>
+<div style="{{ bar }}">
+  <sc-if value="{{ showReason }}"><div class="mx-t-description" style="color:var(--text-secondary);text-align:center">{{ reason }}</div></sc-if>
+  <div style="{{ row }}">
+    <sc-if value="{{ secondary }}">
+      <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="secondary" size="large" stretched="{{ true }}" style="flex:1 1 0;min-width:0" onClick="{{ sec }}" disabled="{{ secDisabled }}" hint-size="100%,48px">{{ secondary }}</x-import>
+    </sc-if>
+    <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="{{ variant }}" size="large" stretched="{{ true }}" style="flex:1 1 0;min-width:0" loading="{{ loading }}" disabled="{{ disabled }}" onClick="{{ pri }}" hint-size="100%,48px">{{ primary }}</x-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:110},&quot;primary&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Продолжить&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;secondary&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;variant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;primary&quot;,&quot;destructive&quot;],&quot;default&quot;:&quot;primary&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;loading&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;disabled&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;reason&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Выберите, что случилось&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;pinned&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;stack&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;onPrimary&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;()=&gt;void&quot;},&quot;onSecondary&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;()=&gt;void&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props, pinned = p.pinned !== false;
+    return {
+      primary: p.primary || 'Продолжить', secondary: p.secondary || '', variant: p.variant || 'primary',
+      loading: !!p.loading, disabled: !!p.disabled || !!p.loading, secDisabled: !!p.loading,
+      showReason: !!p.disabled && !!p.reason, reason: p.reason || '',
+      pri: () => p.onPrimary && p.onPrimary(), sec: () => p.onSecondary && p.onSecondary(),
+      bar: { display: 'flex', flexDirection: 'column', gap: 8, padding: '12px var(--size-padding-base-padding-horizontal, 16px) calc(12px + env(safe-area-inset-bottom))', background: pinned ? 'var(--background-primary)' : 'transparent', borderTop: pinned ? '0.5px solid var(--divider-secondary)' : '0', boxSizing: 'border-box' },
+      row: { display: 'flex', flexDirection: p.stack ? 'column-reverse' : 'row', gap: 8 }
+    };
+  }
+}
+</script>
+</body>
+</html>

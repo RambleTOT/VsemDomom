@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/sizes.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/components/max-ui.css">
+  <link rel="stylesheet" href="design/handoff/tokens/app-tokens.css">
+  <script src="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/_ds_bundle.js"></script>
+</helmet>
+<div style="position:absolute;inset:0;z-index:30;display:flex;flex-direction:column">
+  <div onClick="{{ close }}" style="position:absolute;inset:0;background:var(--background-overlay)"></div>
+  <div role="dialog" aria-modal="true" aria-labelledby="norm-title" style="{{ panel }}">
+    <sc-if value="{{ bottom }}" hint-placeholder-val="{{ true }}"><div aria-hidden="true" style="width:36px;height:4px;border-radius:2px;background:var(--icon-mute);align-self:center"></div></sc-if>
+    <div class="mx-t-description" style="color:var(--text-secondary)">Основание</div>
+    <div id="norm-title" tabIndex="-1" ref="{{ titleRef }}" class="mx-t-subheader" style="color:var(--text-primary);outline:none">{{ n.head }}</div>
+    <div class="mx-t-body" style="color:var(--text-primary);text-wrap:pretty">{{ n.text }}</div>
+    <div style="display:flex;flex-direction:column;border-radius:16px;background:var(--background-secondary);padding:4px 12px">
+      <div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--divider-primary)"><span class="mx-t-detail" style="color:var(--text-secondary)">Документ</span><span class="mx-t-detail" style="color:var(--text-primary);text-align:right">{{ n.docFull }}</span></div>
+      <div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--divider-primary)"><span class="mx-t-detail" style="color:var(--text-secondary)">Редакция</span><span class="mx-t-detail" style="color:var(--text-primary);text-align:right">{{ n.edition }}</span></div>
+      <div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0"><span class="mx-t-detail" style="color:var(--text-secondary)">Проверено</span><span class="mx-t-detail" style="color:var(--text-primary)">{{ n.checked }}</span></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;padding-top:4px">
+      <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="secondary" size="large" stretched="{{ true }}" onClick="{{ openSrc }}" hint-size="100%,48px">Открыть первоисточник</x-import>
+      <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="ghost" size="large" stretched="{{ true }}" onClick="{{ close }}" hint-size="100%,48px">Закрыть</x-import>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844},&quot;side&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;bottom&quot;,&quot;right&quot;],&quot;default&quot;:&quot;bottom&quot;,&quot;tsType&quot;:&quot;'bottom'|'right'&quot;},&quot;norm&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{head,text,docFull,edition,checked,url}&quot;},&quot;autoFocus&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;onClose&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;()=&gt;void&quot;}}">
+class Component extends DCLogic {
+  titleRef = React.createRef();
+  componentDidMount() {
+    this.onKey = (e) => { if (e.key === 'Escape') this.props.onClose && this.props.onClose(); };
+    window.addEventListener('keydown', this.onKey);
+    if (this.props.autoFocus !== false) setTimeout(() => this.titleRef.current && this.titleRef.current.focus({ preventScroll: true }), 30);
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); }
+  renderVals() {
+    const p = this.props, side = p.side === 'right';
+    const n = Object.assign({ head: 'ПП № 416, п. 13', text: 'Аварийно-диспетчерская служба должна локализовать аварию во внутридомовых системах водоснабжения, водоотведения, отопления и электроснабжения не более чем за 30 минут с момента регистрации заявки.', docFull: 'Постановление Правительства РФ № 416 от 15.05.2013', edition: 'от 20.06.2026, действует с 01.09.2026', checked: '23.09.2026', url: 'https://www.kontur-extern.ru/info/normativ/document/1/506725-postanovlenie-pravitelstva-rf-ot-15-05-2013-n-416' }, p.norm || {});
+    return {
+      n, bottom: !side, titleRef: this.titleRef,
+      close: () => p.onClose && p.onClose(),
+      openSrc: () => { if (window.WebApp && window.WebApp.openLink) window.WebApp.openLink(n.url); else window.open(n.url, '_blank', 'noopener'); },
+      panel: side
+        ? { position: 'absolute', top: 0, right: 0, bottom: 0, width: 400, maxWidth: '100%', background: 'var(--background-primary)', padding: 24, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }
+        : { position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '100%', background: 'var(--background-primary)', borderRadius: '16px 16px 0 0', padding: '8px 16px calc(16px + env(safe-area-inset-bottom))', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }
+    };
+  }
+}
+</script>
+</body>
+</html>

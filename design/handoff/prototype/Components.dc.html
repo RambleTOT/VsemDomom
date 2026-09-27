@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/sizes.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/components/max-ui.css">
+  <link rel="stylesheet" href="design/handoff/tokens/app-tokens.css">
+  <style>body{margin:0;background:#D9DBE1}a{color:#0068DB}a:hover{color:#004FA8}</style>
+</helmet>
+<div style="display:flex;flex-direction:column;gap:48px;padding:64px;font-family:-apple-system,system-ui,'Helvetica Neue',Roboto,sans-serif;color:#060708">
+  <header style="display:flex;flex-direction:column;gap:8px;max-width:980px">
+    <div style="font-size:15px;color:rgba(6,7,8,.68)">«Всем домом» · очередь 1 · токены и составные компоненты</div>
+    <h1 style="margin:0;font-size:40px;line-height:44px;font-weight:600">Компоненты приложения на MAX UI 0.5.0</h1>
+    <div style="font-size:17px;line-height:24px;color:rgba(6,7,8,.68);text-wrap:pretty">Собраны из компонентов MAX UI (Button, CellSimple, Input, Switch, Radio, Spinner, Counter, Typography) и токенов. Цвет — только для состояния, основной текст на баннерах — --text-primary. Спецификации — design/handoff/components.md.</div>
+  </header>
+
+  <section id="tokens" data-screen-label="Tokens" style="display:flex;flex-direction:column;gap:16px">
+    <h2 style="margin:0;font-size:28px;font-weight:600">Токены --app-* · контраст по WCAG 2.2</h2>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,560px));gap:24px">
+      <sc-for list="{{ themes }}" as="t" hint-placeholder-count="2">
+        <div class="{{ t.cls }}" style="display:flex;flex-direction:column;gap:8px;padding:20px;border-radius:20px;background:var(--background-surface);color:var(--text-primary);font-family:var(--family-base)">
+          <div class="mx-t-title">{{ t.name }}</div>
+          <sc-for list="{{ t.tokens }}" as="k" hint-placeholder-count="8">
+            <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:12px;background:var(--background-card)">
+              <span style="{{ k.sw }}"></span>
+              <span style="display:flex;flex-direction:column;min-width:0;flex:1"><span class="mx-t-detail-strong" style="font-family:ui-monospace,Menlo,monospace">{{ k.name }}</span><span class="mx-t-description" style="color:var(--text-secondary)">{{ k.note }}</span></span>
+              <span class="mx-t-description-strong" style="white-space:nowrap">{{ k.ratio }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <sc-for list="{{ themes }}" as="t" hint-placeholder-count="2">
+    <section id="{{ t.id }}" data-screen-label="{{ t.name }}" class="{{ t.cls }}" style="display:flex;flex-direction:column;gap:32px;padding:32px;border-radius:24px;background:var(--background-surface);color:var(--text-primary);font-family:var(--family-base)">
+      <h2 class="mx-t-header" style="margin:0">{{ t.name }}</h2>
+      <div style="display:grid;grid-template-columns:repeat(3,390px);gap:32px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="mx-t-description-strong" style="color:var(--text-secondary)">IncidentHeadline · regular</div>
+          <div style="display:flex;flex-direction:column;gap:16px;padding:16px;border-radius:16px;background:var(--background-card)">
+            <dc-import name="IncidentHeadline" status="open" dl-state="soon" dl-due="18:10" dl-left="12 мин" dl-prefix="срок ответа" hint-size="100%,72px"></dc-import>
+            <dc-import name="IncidentHeadline" status="open" dl-state="expired" dl-at="18:10" dl-prefix="срок ответа" hint-size="100%,72px"></dc-import>
+            <dc-import name="IncidentHeadline" status="accepted" eta="19:00" dl-state="soon" dl-due="18:10" dl-left="12 мин" dl-prefix="локализовать" hint-size="100%,72px"></dc-import>
+            <dc-import name="IncidentHeadline" status="brigade" eta="19:00" dl-state="soon" dl-due="18:10" dl-left="4 мин" dl-prefix="локализовать" hint-size="100%,72px"></dc-import>
+            <dc-import name="IncidentHeadline" status="localized" eta="19:00" dl-state="normal" dl-due="30.09 17:40" dl-left="2 сут 23 ч" dl-prefix="устранить" hint-size="100%,72px"></dc-import>
+            <dc-import name="IncidentHeadline" status="checking" dl-state="none" hint-size="100%,72px"></dc-import>
+            <dc-import name="IncidentHeadline" status="discrepancy" count="{{ 3 }}" dl-state="none" hint-size="100%,120px"></dc-import>
+            <dc-import name="IncidentHeadline" status="closed" dl-state="none" hint-size="100%,72px"></dc-import>
+            <dc-import name="IncidentHeadline" status="closed_disc" count="{{ 2 }}" dl-state="none" hint-size="100%,72px"></dc-import>
+            <dc-import name="IncidentHeadline" status="merged" dl-state="none" hint-size="100%,120px"></dc-import>
+            <dc-import name="IncidentHeadline" loading="{{ true }}" hint-size="100%,24px"></dc-import>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="mx-t-description-strong" style="color:var(--text-secondary)">IncidentHeadline · compact (S03, U01)</div>
+          <div style="display:flex;flex-direction:column;gap:16px;padding:16px;border-radius:16px;background:var(--background-card)">
+            <dc-import name="IncidentHeadline" status="open" density="compact" dl-state="soon" dl-due="18:10" dl-left="12 мин" dl-prefix="срок ответа" hint-size="100%,64px"></dc-import>
+            <dc-import name="IncidentHeadline" status="accepted" eta="19:00" density="compact" dl-state="normal" dl-due="30.09 17:05" dl-left="2 сут 23 ч" dl-prefix="устранить" hint-size="100%,64px"></dc-import>
+          </div>
+          <div class="mx-t-description-strong" style="color:var(--text-secondary);padding-top:8px">StatusBadge · 9 статусов</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;padding:16px;border-radius:16px;background:var(--background-card)">
+            <dc-import name="StatusBadge" status="open" hint-size="auto,24px"></dc-import>
+            <dc-import name="StatusBadge" status="accepted" hint-size="auto,24px"></dc-import>
+            <dc-import name="StatusBadge" status="brigade" hint-size="auto,24px"></dc-import>
+            <dc-import name="StatusBadge" status="localized" hint-size="auto,24px"></dc-import>
+            <dc-import name="StatusBadge" status="checking" hint-size="auto,24px"></dc-import>
+            <dc-import name="StatusBadge" status="discrepancy" hint-size="auto,24px"></dc-import>
+            <dc-import name="StatusBadge" status="closed" hint-size="auto,24px"></dc-import>
+            <dc-import name="StatusBadge" status="closed_disc" hint-size="auto,24px"></dc-import>
+            <dc-import name="StatusBadge" status="merged" hint-size="auto,24px"></dc-import>
+          </div>
+          <div class="mx-t-description-strong" style="color:var(--text-secondary);padding-top:8px">DeadlineChip · 5 состояний</div>
+          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:16px;border-radius:16px;background:var(--background-card)">
+            <dc-import name="DeadlineChip" state="normal" due="18:30" left="42 мин" hint-size="auto,28px"></dc-import>
+            <dc-import name="DeadlineChip" state="soon" due="18:30" left="12 мин" hint-size="auto,28px"></dc-import>
+            <dc-import name="DeadlineChip" state="expired" at="18:10" hint-size="auto,28px"></dc-import>
+            <dc-import name="DeadlineChip" state="done" at="17:52" hint-size="auto,28px"></dc-import>
+            <dc-import name="DeadlineChip" state="no_norm" hint-size="auto,28px"></dc-import>
+          </div>
+          <div class="mx-t-description-strong" style="color:var(--text-secondary);padding-top:8px">NormBasisLink · ModelDataBadge</div>
+          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:16px;border-radius:16px;background:var(--background-card)">
+            <dc-import name="NormBasisLink" doc="ПП № 416" point="п. 13" hint-size="auto,44px"></dc-import>
+            <dc-import name="NormBasisLink" doc="Правила № 354" point="прил. 1, п. 4" hint-size="auto,44px"></dc-import>
+            <div style="display:flex;gap:8px;align-items:center"><dc-import name="ModelDataBadge" hint-size="auto,28px"></dc-import><dc-import name="ModelDataBadge" compact="{{ true }}" hint-size="auto,28px"></dc-import></div>
+          </div>
+          <div class="mx-t-description-strong" style="color:var(--text-secondary);padding-top:8px">EntranceCounter</div>
+          <div style="display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:var(--background-card)">
+            <dc-import name="EntranceCounter" counts="{{ t.c4 }}" hint-size="100%,32px"></dc-import>
+            <dc-import name="EntranceCounter" counts="{{ t.c4 }}" unknown="{{ 2 }}" hint-size="100%,32px"></dc-import>
+            <dc-import name="EntranceCounter" counts="{{ t.c8 }}" scroll="{{ true }}" hint-size="100%,32px"></dc-import>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="mx-t-description-strong" style="color:var(--text-secondary)">Timeline · отметки УК, жителей, сервиса, расхождение</div>
+          <div style="padding:8px 16px;border-radius:16px;background:var(--background-card)"><dc-import name="Timeline" items="{{ t.tl }}" hint-size="100%,300px"></dc-import></div>
+          <div class="mx-t-description-strong" style="color:var(--text-secondary);padding-top:8px">Toast · успех, ошибка, информация</div>
+          <dc-import name="Toast" kind="success" text="Статус обновлён. Жители видят его в чате" hint-size="100%,48px"></dc-import>
+          <dc-import name="Toast" kind="error" text="Не получилось сохранить. Данные на экране не потеряны" hint-size="100%,48px"></dc-import>
+          <dc-import name="Toast" kind="info" text="Статус сохранён. Карточку в чате обновим автоматически" hint-size="100%,48px"></dc-import>
+          <div class="mx-t-description-strong" style="color:var(--text-secondary);padding-top:8px">InlineError · всегда с действием</div>
+          <dc-import name="InlineError" kind="network" hint-size="100%,140px"></dc-import>
+          <dc-import name="InlineError" kind="server" hint-size="100%,160px"></dc-import>
+          <dc-import name="InlineError" kind="forbidden" hint-size="100%,160px"></dc-import>
+          <div class="mx-t-description-strong" style="color:var(--text-secondary);padding-top:8px">EmptyState · Skeleton</div>
+          <dc-import name="EmptyState" hint-size="100%,220px"></dc-import>
+          <dc-import name="Skeleton" kind="card" count="{{ 1 }}" hint-size="100%,110px"></dc-import>
+          <dc-import name="Skeleton" kind="timeline" count="{{ 2 }}" hint-size="100%,90px"></dc-import>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,390px);gap:32px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="mx-t-description-strong" style="color:var(--text-secondary)">ActionBar · disabled с причиной · loading · две кнопки</div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <dc-import name="ActionBar" primary="Продолжить" disabled="{{ true }}" reason="Выберите, что случилось" hint-size="100%,100px"></dc-import>
+            <dc-import name="ActionBar" primary="Отметить аварию" loading="{{ true }}" hint-size="100%,76px"></dc-import>
+            <dc-import name="ActionBar" primary="Оформить перерасчёт" secondary="Скопировать" hint-size="100%,76px"></dc-import>
+            <dc-import name="ActionBar" primary="Присоединиться" secondary="Это другая авария" stack="{{ true }}" hint-size="100%,130px"></dc-import>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="mx-t-description-strong" style="color:var(--text-secondary)">NormSheet · шторка на S и M</div>
+          <div style="position:relative;height:640px;border-radius:24px;overflow:hidden;background:var(--background-surface);outline:1px solid var(--divider-primary)">
+            <dc-import name="NormSheet" auto-focus="{{ false }}" hint-size="100%,100%" style="position:absolute;inset:0"></dc-import>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="mx-t-description-strong" style="color:var(--text-secondary)">Фокус · hover · pressed (L)</div>
+          <div style="display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:var(--background-card)">
+            <div class="mx-t-detail" style="display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:12px;outline:2px solid var(--controls-active);outline-offset:2px">Фокус: обводка 2 px --controls-active, смещение 2 px</div>
+            <div class="mx-t-detail" style="display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:12px;background:var(--states-background-hovered-transparent)">Hover: --states-background-hovered-transparent</div>
+            <div class="mx-t-detail" style="display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:12px;background:var(--states-background-pressed-transparent)">Pressed: --states-background-pressed-transparent</div>
+            <div class="mx-t-detail" style="display:flex;gap:6px;align-items:center;color:var(--app-text-negative)">Ошибка поля: --app-text-negative + иконка</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    if (this._m) return this._m;
+    const tl = [
+      { time: '19:24', text: 'Воды нет у 3 квартир', src: 'disc', who: 'Отметили жители: 3 квартиры' },
+      { time: '19:10', text: 'Устранено', src: 'uk' },
+      { time: '17:45', text: 'Присоединились соседи из подъездов 2 и 3', src: 'res', who: 'Отметили жители: 11' },
+      { time: '17:40', text: 'Нет горячей воды — авария открыта', src: 'sys' }
+    ];
+    const sw = (c, bg) => ({ width: 32, height: 32, borderRadius: 8, flexShrink: 0, background: bg || c, boxShadow: 'inset 0 0 0 0.5px var(--divider-primary)' });
+    const tok = (dark) => [
+      ['--app-text-link', 'Ссылки, «Основание»', dark ? '4,55:1 на карточке' : '5,25:1 · 4,52:1 surface', sw('var(--app-text-link)')],
+      ['--app-text-negative', 'Ошибки полей', dark ? '4,53:1 на карточке' : '5,32:1 · 4,59:1 surface', sw('var(--app-text-negative)')],
+      ['--app-icon-positive', 'Галочки «в норматив»', dark ? '6,65:1' : '3,68:1 (иконка ≥ 3:1)', sw('var(--app-icon-positive)')],
+      ['--app-warning-icon', 'Иконка «срок подходит»', dark ? '6,12:1' : '3,58:1 · 3,17:1 на своём фоне', sw('var(--app-warning-icon)')],
+      ['--app-warning-bg', 'Фон «срок подходит», текст — primary', dark ? 'текст ≥ 4,5:1' : 'текст 17,83:1', sw('var(--app-warning-bg)')],
+      ['--app-negative-bg', 'Фон «истёк», «расхождение»', dark ? 'текст ≥ 4,5:1' : 'текст 17,50:1', sw('var(--app-negative-bg)')],
+      ['--app-positive-bg', 'Фон итога «в пределах нормы»', 'иконка 3,29:1', sw('var(--app-positive-bg)')],
+      ['--app-model-data-bg', '= --background-tertiary', 'текст secondary ≥ 6,8:1', sw('var(--app-model-data-bg)')],
+      ['--app-motion-fast / base', '150 / 200 мс, cubic-bezier(.2,0,0,1)', 'reduced-motion → 0', sw('var(--background-tertiary)')]
+    ].map((k) => ({ name: k[0], note: k[1], ratio: k[2], sw: k[3] }));
+    this._m = { themes: [
+      { id: 'light', name: 'Светлая тема', cls: 'max-light', tokens: tok(false), tl, c4: [0, 6, 5, 0], c8: [0, 6, 5, 0, 2, 1, 0, 3] },
+      { id: 'dark', name: 'Тёмная тема', cls: 'max-dark', tokens: tok(true), tl, c4: [0, 6, 5, 0], c8: [0, 6, 5, 0, 2, 1, 0, 3] }
+    ] };
+    return this._m;
+  }
+}
+</script>
+</body>
+</html>

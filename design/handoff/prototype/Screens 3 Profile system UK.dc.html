@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/components/max-ui.css">
+  <link rel="stylesheet" href="design/handoff/tokens/app-tokens.css">
+  <style>body{margin:0;background:#D9DBE1}a{color:#0068DB}a:hover{color:#004FA8}</style>
+</helmet>
+<div style="display:flex;flex-direction:column;gap:96px;padding:64px;font-family:-apple-system,system-ui,'Helvetica Neue',Roboto,sans-serif;color:#060708">
+  <header style="display:flex;flex-direction:column;gap:8px;max-width:960px">
+    <div style="font-size:15px;color:rgba(6,7,8,.68)">«Всем домом» · мини-приложение · волна 1</div>
+    <h1 style="margin:0;font-size:40px;line-height:44px;font-weight:600">Экраны в четырёх рамках</h1>
+    <div style="font-size:17px;line-height:24px;color:rgba(6,7,8,.68)">390×844 светлая и тёмная · 844×390 · 320×640 · 1280×800 светлая и тёмная. Состояния каждого экрана — в файле <a href="Screens States 1.dc.html">Screens States 1–2</a>, клик-прототип — <a href="Prototype.dc.html">Prototype</a></div>
+    <nav style="display:flex;flex-wrap:wrap;gap:8px;padding-top:8px">
+      <sc-for list="{{ screens }}" as="s" hint-placeholder-count="14"><a href="{{ s.href }}" style="padding:6px 10px;border-radius:8px;background:#fff;font-size:14px;text-decoration:none">{{ s.id }}</a></sc-for>
+    </nav>
+  </header>
+  <sc-for list="{{ screens }}" as="s" hint-placeholder-count="3">
+    <section id="{{ s.id }}" data-screen-label="{{ s.id }}" style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <span style="padding:4px 10px;border-radius:8px;background:#060708;color:#fff;font-size:17px;font-weight:600">{{ s.id }}</span>
+        <h2 style="margin:0;font-size:28px;font-weight:600">{{ s.title }}</h2>
+        <span style="font-size:15px;color:rgba(6,7,8,.68)">{{ s.note }}</span>
+      </div>
+      <div style="display:flex;gap:40px;align-items:flex-start">
+        <sc-for list="{{ s.frames }}" as="fr" hint-placeholder-count="6">
+          <figure style="margin:0;display:flex;flex-direction:column;gap:8px;flex-shrink:0">
+            <figcaption style="font-size:14px;color:rgba(6,7,8,.68)">{{ fr.label }}</figcaption>
+            <div style="{{ fr.box }}">
+              <dc-import name="MiniApp" screen="{{ fr.screen }}" variant="{{ fr.variant }}" theme="{{ fr.theme }}" platform="{{ fr.platform }}" fw="{{ fr.w }}" fh="{{ fr.h }}" frame="{{ true }}" style="width:100%;height:100%" hint-size="100%,100%"></dc-import>
+            </div>
+          </figure>
+        </sc-for>
+      </div>
+    </section>
+  </sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;only&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    if (this._memo) return this._memo;
+    const S = [
+      ['S00', 'Запуск', '', 'loading'], ['S01', 'Согласие', '', 'default'], ['S02', 'Дом, квартира, роль', '', 'default'], ['S03', 'Мой дом', 'главная жителя', 'default'],
+      ['S04', 'Сообщить об аварии', 'шаг 1; на L — шаги 1–3 на одном экране', 'step1'], ['S05', 'Авария (житель)', 'статус «Принята»', 'accepted'], ['S06', 'Основание нормы', 'шторка, на L — боковая панель', 'accepted'],
+      ['S07', 'Итог', 'сверх месячной нормы', 'over'], ['S08', 'Перерасчёт и заявление', 'шаг 2 — расчёт', 'step2'], ['S11', 'Профиль', '', 'default'], ['S12', 'Системные экраны', '«Ссылка устарела»', 'expired'],
+      ['U01', 'Аварии (УК)', 'на L — список + деталь', 'default'], ['U02', 'Авария (УК)', 'статус «Открыта»', 'open'], ['U03', 'Привязка чата и демо-инструменты', '', 'bind']
+    ];
+    const F = [['390 × 844 · светлая', 390, 844, 'light', 'ios'], ['390 × 844 · тёмная', 390, 844, 'dark', 'ios'], ['844 × 390 · светлая', 844, 390, 'light', 'ios'], ['320 × 640 · светлая', 320, 640, 'light', 'android'], ['1280 × 800 · светлая · android', 1280, 800, 'light', 'android'], ['1280 × 800 · тёмная · android', 1280, 800, 'dark', 'android']];
+    const only = this.props.only || 'S11,S12,U01,U02,U03';
+    return this._memo = {
+      screens: S.filter((s) => !only || only.split(',').includes(s[0])).map((s) => ({ id: s[0], title: s[1], note: s[2], href: '#' + s[0],
+        frames: F.map((f) => ({ label: f[0], screen: s[0], variant: s[3], theme: f[3], platform: f[4], w: f[1], h: f[2], box: { width: f[1], height: f[2], borderRadius: f[1] > 900 ? 12 : 28, overflow: 'hidden', background: '#fff', outline: '1px solid rgba(12,13,14,.16)', position: 'relative' } })) }))
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/components/max-ui.css">
+  <link rel="stylesheet" href="design/handoff/tokens/app-tokens.css">
+  <script src="vd-icons.js"></script>
+</helmet>
+<ol aria-label="Хронология" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column">
+  <sc-for list="{{ rows }}" as="r" hint-placeholder-count="4">
+    <li style="display:flex;gap:12px;padding:10px 0;align-items:flex-start">
+      <span style="{{ r.dot }}">{{ r.ic }}</span>
+      <div style="display:flex;flex-direction:column;gap:2px;min-width:0;flex:1">
+        <div class="mx-t-detail" style="color:var(--text-primary);text-wrap:pretty"><span class="mx-t-detail-strong">{{ r.time }}</span>  {{ r.text }}</div>
+        <div class="mx-t-description" style="color:var(--text-secondary)">{{ r.who }}</div>
+      </div>
+    </li>
+  </sc-for>
+</ol>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:300},&quot;items&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{time:string,text:string,src:'uk'|'res'|'sys'|'disc',who?:string}[]&quot;}}">
+class Component extends DCLogic {
+  componentDidMount() { if (!window.VD_ICONS) { const t = setInterval(() => { if (window.VD_ICONS) { clearInterval(t); this.forceUpdate(); } }, 50); } }
+  renderVals() {
+    const S = { uk: ['building-2', 'var(--icon-themed)', 'УК отметила'], res: ['users', 'var(--icon-primary)', 'Отметили жители'], sys: ['circle-dot', 'var(--icon-tertiary)', 'Событие сервиса'], disc: ['triangle-alert', 'var(--icon-negative)', 'Расхождение'] };
+    const items = this.props.items || [
+      { time: '17:58', text: 'Принято, ориентир 18:00', src: 'uk' },
+      { time: '17:52', text: 'Сообщили в АДС, заявка № 4127', src: 'res', who: 'Отметили жители: 1 квартира' },
+      { time: '17:45', text: 'Присоединились соседи из подъездов 2 и 3', src: 'res', who: 'Отметили жители: 11 квартир' },
+      { time: '17:40', text: 'Нет горячей воды — авария открыта', src: 'sys' }
+    ];
+    return {
+      rows: items.map((it, i) => {
+        const s = S[it.src] || S.sys;
+        return { time: it.time, text: it.text, who: it.who || s[2], ic: window.vdIcon ? window.vdIcon(React, s[0], 16, s[1], 'i' + i) : null,
+          dot: { width: 32, height: 32, borderRadius: 16, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: it.src === 'disc' ? 'var(--app-negative-bg)' : 'var(--background-tertiary)' } };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

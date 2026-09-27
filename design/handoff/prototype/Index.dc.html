@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>body{margin:0;background:#EDEEF2}a{color:#0068DB}a:hover{color:#004FA8}</style>
+</helmet>
+<div style="max-width:880px;margin:0 auto;padding:48px 20px;display:flex;flex-direction:column;gap:24px;font-family:-apple-system,system-ui,'Helvetica Neue',Roboto,sans-serif;color:#060708">
+  <header style="display:flex;flex-direction:column;gap:8px">
+    <svg width="48" height="48" viewBox="0 0 48 48" role="img" aria-label="Знак «Всем домом»" style="color:rgba(6,7,8,.84)"><rect x="4" y="18" width="7" height="26" rx="2" fill="currentColor" opacity="0.32"></rect><rect x="15" y="8" width="7" height="36" rx="2" fill="currentColor" opacity="0.32"></rect><rect x="26" y="8" width="7" height="36" rx="2" fill="currentColor"></rect><rect x="37" y="18" width="7" height="26" rx="2" fill="currentColor" opacity="0.32"></rect></svg>
+    <h1 style="margin:0;font-size:32px;line-height:36px;font-weight:600">Всем домом</h1>
+    <div style="font-size:17px;line-height:24px;color:rgba(6,7,8,.68)">Одна авария — одна карточка. Мини-приложение и сообщения бота для MAX · MAX UI 0.5.0 · волны 1–3</div>
+  </header>
+  <nav style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">
+    <a href="Prototype.dc.html" style="display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:16px;background:#fff;text-decoration:none;color:#060708"><span style="font-size:17px;font-weight:600">Прототип</span><span style="font-size:15px;color:rgba(6,7,8,.68)">C02 → S04 → S05 и U02, коридорный тест</span></a>
+    <a href="Components.dc.html" style="display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:16px;background:#fff;text-decoration:none;color:#060708"><span style="font-size:17px;font-weight:600">Токены и компоненты</span><span style="font-size:15px;color:rgba(6,7,8,.68)">--app-*, IncidentHeadline и ещё 12 компонентов</span></a>
+    <a href="Chat Messages.dc.html" style="display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:16px;background:#fff;text-decoration:none;color:#060708"><span style="font-size:17px;font-weight:600">Сообщения бота</span><span style="font-size:15px;color:rgba(6,7,8,.68)">C01–C05, C09, телефон и веб</span></a>
+    <a href="Screens 1 Resident entry.dc.html" style="display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:16px;background:#fff;text-decoration:none;color:#060708"><span style="font-size:17px;font-weight:600">Экраны 1 · вход</span><span style="font-size:15px;color:rgba(6,7,8,.68)">S00–S04 в четырёх рамках</span></a>
+    <a href="Screens 2 Resident incident.dc.html" style="display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:16px;background:#fff;text-decoration:none;color:#060708"><span style="font-size:17px;font-weight:600">Экраны 2 · авария</span><span style="font-size:15px;color:rgba(6,7,8,.68)">S05–S08 в четырёх рамках</span></a>
+    <a href="Screens 3 Profile system UK.dc.html" style="display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:16px;background:#fff;text-decoration:none;color:#060708"><span style="font-size:17px;font-weight:600">Экраны 3 · профиль и УК</span><span style="font-size:15px;color:rgba(6,7,8,.68)">S11, S12, U01–U03</span></a>
+    <a href="Screens 4 Waves 2-3.dc.html" style="display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:16px;background:#fff;text-decoration:none;color:#060708"><span style="font-size:17px;font-weight:600">Экраны 4 · волны 2–3</span><span style="font-size:15px;color:rgba(6,7,8,.68)">S09, S10, U03 (дома), U04, U05, U06</span></a>
+    <a href="Screens States 1.dc.html" style="display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:16px;background:#fff;text-decoration:none;color:#060708"><span style="font-size:17px;font-weight:600">Состояния 1</span><span style="font-size:15px;color:rgba(6,7,8,.68)">S00–S05: загрузка, пусто, ошибки, шаги</span></a>
+    <a href="Screens States 2.dc.html" style="display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:16px;background:#fff;text-decoration:none;color:#060708"><span style="font-size:17px;font-weight:600">Состояния 2</span><span style="font-size:15px;color:rgba(6,7,8,.68)">S06–U03</span></a>
+    <a href="MiniApp.dc.html" style="display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:16px;background:#fff;text-decoration:none;color:#060708"><span style="font-size:17px;font-weight:600">Мини-приложение целиком</span><span style="font-size:15px;color:rgba(6,7,8,.68)">Один компонент, экран и состояние — в Tweaks</span></a>
+  </nav>
+  <div style="font-size:15px;line-height:20px;color:rgba(6,7,8,.68)">Пакет передачи в Claude Code — папка design/handoff/: README, components.md, specs/, tokens/app-tokens.css, copy/ru.json, chat-templates.md, flows.md, icons/.</div>
+</div>
+</x-dc>
+</body>
+</html>

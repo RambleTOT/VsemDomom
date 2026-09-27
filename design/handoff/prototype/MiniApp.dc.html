@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/sizes.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/components/max-ui.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/styles.css">
+  <link rel="stylesheet" href="design/handoff/tokens/app-tokens.css">
+  <script src="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/_ds_bundle.js"></script>
+  <script src="vd-icons.js"></script>
+  <style>html,body{margin:0;height:100%}</style>
+</helmet>
+<x-import component-from-global-scope="MAXUIDesignSystem_b9d019.MaxUI" platform="{{ platform }}" color-scheme="{{ theme }}" style="{{ rootSt }}" dc-props="{{ maxProps }}" hint-size="100%,100%">
+<div ref="{{ rootRef }}" data-screen-label="{{ screenLabel }}" style="position:relative;width:100%;height:100%;overflow:hidden;background:var(--background-surface);color:var(--text-primary);display:flex">
+
+  <sc-if value="{{ showList }}">
+    <div style="{{ listPaneSt }}">
+      <div style="{{ listColSt }}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <div style="min-width:0;display:flex;flex-direction:column;gap:4px">
+            <h1 class="{{ lay.h1 }}" style="margin:0">Аварии</h1>
+            <div class="mx-t-detail" style="color:var(--text-secondary)">УК Модельная · 4 дома</div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end">
+            <dc-import name="ModelDataBadge" hint-size="auto,28px"></dc-import>
+            <span class="mx-t-description" style="display:inline-flex;align-items:center;min-height:28px;padding:4px 8px;border-radius:8px;background:var(--background-tertiary);color:var(--text-secondary)">Демо-роль</span>
+          </div>
+        </div>
+        <div role="tablist" aria-label="Фильтр аварий" style="display:flex;gap:4px;padding:2px;border-radius:12px;background:var(--background-tertiary)">
+          <sc-for list="{{ uk.filters }}" as="f" hint-placeholder-count="3">
+            <button type="button" role="tab" aria-selected="{{ f.sel }}" onClick="{{ f.pick }}" class="mx-t-detail" style="{{ f.st }}" style-focus="outline:2px solid var(--controls-active);outline-offset:2px"><span style="white-space:nowrap">{{ f.label }}</span>{{ f.counter }}</button>
+          </sc-for>
+        </div>
+        <button type="button" onClick="{{ act.noop }}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;padding:0 12px;border:0;border-radius:12px;background:var(--background-card);color:var(--text-primary);font-family:inherit;cursor:pointer" style-focus="outline:2px solid var(--controls-active);outline-offset:2px"><span class="mx-t-body">Все дома · 4</span>{{ ic.chevDown }}</button>
+        <sc-if value="{{ uk.empty }}">
+          <dc-import name="EmptyState" icon="circle-check" title="Открытых аварий нет" text="Новые появятся здесь сразу после сообщения жителя" action="" hint-size="100%,200px"></dc-import>
+        </sc-if>
+        <sc-if value="{{ uk.loading }}"><dc-import name="Skeleton" kind="card" count="{{ 3 }}" hint-size="100%,300px"></dc-import></sc-if>
+        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ uk.rows }}" as="r" hint-placeholder-count="4">
+            <li>
+              <button type="button" onClick="{{ r.open }}" aria-current="{{ r.sel }}" style="{{ r.st }}" style-hover="box-shadow:inset 0 0 0 999px var(--states-background-hovered-transparent)" style-focus="outline:2px solid var(--controls-active);outline-offset:2px">
+                <dc-import name="IncidentHeadline" status="{{ r.status }}" eta="{{ r.eta }}" brigade-at="{{ r.brigadeAt }}" density="compact" dl-state="{{ r.dlState }}" dl-due="{{ r.dlDue }}" dl-left="{{ r.dlLeft }}" dl-at="{{ r.dlAt }}" dl-prefix="{{ r.dlPrefix }}" hint-size="100%,64px"></dc-import>
+                <div style="display:flex;align-items:center;gap:8px;color:var(--text-primary)">{{ r.ic }}<span class="mx-t-body-strong">{{ r.svc }}</span><span class="mx-t-detail" style="color:var(--text-secondary)">{{ r.since }}</span></div>
+                <div class="mx-t-detail" style="color:var(--text-secondary)">{{ r.house }} · {{ r.meta }}</div>
+              </button>
+            </li>
+          </sc-for>
+        </ul>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showMain }}" hint-placeholder-val="{{ true }}">
+    <div style="position:relative;flex:1;min-width:0;height:100%">
+      <div ref="{{ scrollRef }}" style="{{ scrollSt }}">
+        <div style="{{ colSt }}">
+          <sc-if value="{{ webBack }}">
+            <button type="button" onClick="{{ goRoot }}" class="mx-t-body" style="align-self:flex-start;display:inline-flex;align-items:center;gap:4px;min-height:44px;margin:-8px 0 -8px -8px;padding:0 8px;border:0;border-radius:10px;background:none;color:var(--app-text-link);font-family:inherit;cursor:pointer" style-hover="background:var(--states-background-hovered-transparent)" style-focus="outline:2px solid var(--controls-active);outline-offset:2px"><span aria-hidden="true">←</span>Назад</button>
+          </sc-if>
+
+          <sc-if value="{{ is.S00 }}">
+            <div style="{{ centerSt }}">
+              <svg width="48" height="48" viewBox="0 0 48 48" role="img" aria-label="Знак «Всем домом»" style="color:var(--icon-primary)">
+                <rect x="4" y="18" width="7" height="26" rx="2" fill="currentColor" opacity="0.32"></rect>
+                <rect x="15" y="8" width="7" height="36" rx="2" fill="currentColor" opacity="0.32"></rect>
+                <rect x="26" y="8" width="7" height="36" rx="2" fill="currentColor"></rect>
+                <rect x="37" y="18" width="7" height="26" rx="2" fill="currentColor" opacity="0.32"></rect>
+              </svg>
+              <div class="mx-t-subheader">Всем домом</div>
+              <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Spinner" size="{{ 24 }}" appearance="primary" aria-label="Загрузка" hint-size="auto,24px"></x-import>
+              <sc-if value="{{ v.slow }}"><div class="mx-t-detail" style="color:var(--text-secondary)">Проверяем вход…</div></sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.S01 }}">
+            <div style="display:flex;flex-direction:column;gap:8px;padding-top:8px">
+              <h1 class="{{ lay.h1 }}" style="margin:0;text-wrap:pretty">Сообщать об авариях в доме</h1>
+              <div class="mx-t-body" style="color:var(--text-secondary);text-wrap:pretty">«Всем домом» собирает аварию в одну карточку в чате дома</div>
+            </div>
+            <div style="border-radius:16px;overflow:hidden;background:var(--background-card)">
+              <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="Одна карточка вместо десятков сообщений" subtitle="Соседи отмечаются кнопкой, УК отвечает всем сразу" before="{{ ic.cellUsers }}" hint-size="100%,72px"></x-import>
+              <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="Сроки по нормативам" subtitle="У каждого срока — пункт нормы" before="{{ ic.cellClock }}" separator="{{ true }}" hint-size="100%,72px"></x-import>
+              <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="Итог и расчёт перерасчёта" subtitle="Хронология и текст заявления" before="{{ ic.cellFile }}" separator="{{ true }}" hint-size="100%,72px"></x-import>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:16px;background:var(--background-card)">
+              <div class="mx-t-body-strong">Что мы храним</div>
+              <div class="mx-t-detail" style="color:var(--text-secondary);text-wrap:pretty">Дом, квартиру и вашу роль. Имена и номера квартир в чате не показываем</div>
+              <a href="#policy" class="mx-t-description" style="display:inline-flex;align-items:center;min-height:44px;margin:-8px 0;align-self:flex-start;color:var(--app-text-link);text-underline-offset:2px">Политика обработки данных</a>
+            </div>
+            <div style="border-radius:16px;overflow:hidden;background:var(--background-card)">
+              <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" as="label" title="Согласен на обработку персональных данных" subtitle="По 152-ФЗ. Отозвать можно в профиле" after="{{ el.consentSwitch }}" hint-size="100%,72px"></x-import>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.S02 }}">
+            <h1 class="{{ lay.h1 }}" style="margin:0;padding-top:8px">Ваш дом и квартира</h1>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <h2 class="mx-t-description-strong" style="margin:0;padding:0 4px;color:var(--text-secondary)">Дом</h2>
+              <div style="border-radius:16px;overflow:hidden;background:var(--background-card)">
+                <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="Дом 1 · ул. Модельная, 1" subtitle="Выбран по ссылке из чата дома" before="{{ ic.cellHouse }}" after="{{ el.changeHouse }}" hint-size="100%,72px"></x-import>
+              </div>
+              <dc-import name="ModelDataBadge" hint-size="auto,28px"></dc-import>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <label for="flat" class="mx-t-description-strong" style="padding:0 4px;color:var(--text-secondary)">Номер квартиры</label>
+              <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Input" id="flat" size="large" mode="contrast" inputMode="numeric" placeholder="Например, 57" value="{{ f.flat }}" onChange="{{ f.onFlat }}" aria-invalid="{{ f.flatErr }}" aria-describedby="flat-hint" hint-size="100%,52px"></x-import>
+              <sc-if value="{{ f.flatErr }}"><div id="flat-hint" class="mx-t-description" style="display:flex;gap:6px;align-items:center;padding:0 4px;color:var(--app-text-negative)">{{ ic.err16 }}Квартиры в этом доме: 1–144. Проверьте номер</div></sc-if>
+              <sc-if value="{{ f.flatOk }}"><div id="flat-hint" class="mx-t-description" style="padding:0 4px;color:var(--text-secondary)">Квартиры 1–144</div></sc-if>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <h2 class="mx-t-description-strong" style="margin:0;padding:0 4px;color:var(--text-secondary)">Кто вы в квартире?</h2>
+              <div role="radiogroup" aria-label="Кто вы в квартире" style="border-radius:16px;overflow:hidden;background:var(--background-card)">
+                <sc-for list="{{ f.roles }}" as="o" hint-placeholder-count="4">
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" as="label" title="{{ o.label }}" after="{{ o.radio }}" separator="{{ o.sep }}" height="compact" hint-size="100%,48px"></x-import>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start;padding:16px;border-radius:16px;background:var(--background-card)">
+              {{ ic.shield }}
+              <div class="mx-t-detail" style="color:var(--text-secondary);text-wrap:pretty">Документы не нужны. Бот проверит, что вы состоите в чате дома, — и ваши отметки будут учитываться как «житель из чата дома»</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.S03 }}">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div style="min-width:0;display:flex;flex-direction:column;gap:4px">
+                <h1 class="{{ lay.h1 }}" style="margin:0">Дом 1</h1>
+                <div class="mx-t-detail" style="color:var(--text-secondary)">ул. Модельная, 1 · 144 квартиры</div>
+                <dc-import name="ModelDataBadge" hint-size="auto,28px"></dc-import>
+              </div>
+              <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.IconButton" variant="secondary" size="medium" aria-label="Профиль" onClick="{{ nav.S11 }}" hint-size="auto,40px">{{ ic.user }}</x-import>
+            </div>
+            <div style="{{ grid2 }}">
+              <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+                <h2 class="mx-t-description-strong" style="margin:0;padding:0 4px;color:var(--text-secondary)">Активные аварии</h2>
+                <sc-if value="{{ s03.active }}" hint-placeholder-val="{{ true }}">
+                  <div role="link" tabIndex="0" onClick="{{ nav.S05 }}" style="display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:var(--background-card);cursor:pointer" style-hover="box-shadow:inset 0 0 0 999px var(--states-background-hovered-transparent)" style-focus="outline:2px solid var(--controls-active);outline-offset:2px">
+                    <dc-import name="IncidentHeadline" status="{{ hl.status }}" eta="{{ hl.eta }}" brigade-at="{{ hl.brigadeAt }}" localized-at="{{ hl.localizedAt }}" question="{{ hl.question }}" count="{{ hl.count }}" dur="{{ hl.dur }}" density="compact" dl-state="{{ hl.dlState }}" dl-due="{{ hl.dlDue }}" dl-left="{{ hl.dlLeft }}" dl-prefix="{{ hl.dlPrefix }}" hint-size="100%,64px"></dc-import>
+                    <div style="display:flex;align-items:center;gap:8px">{{ ic.hot }}<span class="mx-t-body-strong">Нет горячей воды</span></div>
+                    <div class="mx-t-detail" style="color:var(--text-secondary)">с 17:40 · отметились 11 жителей · подъезды 2 и 3</div>
+                    <div class="mx-t-description" style="display:flex;align-items:center;gap:6px;color:var(--text-primary)">{{ ic.ok16 }}Вы присоединились · подъезд 2</div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ s03.empty }}">
+                  <dc-import name="EmptyState" icon="circle-check" title="Сейчас аварий нет" text="Если что-то случилось — сообщите, соседи увидят карточку в чате" action="" hint-size="100%,200px"></dc-import>
+                </sc-if>
+                <sc-if value="{{ s03.loading }}"><dc-import name="Skeleton" kind="card" count="{{ 1 }}" hint-size="100%,120px"></dc-import></sc-if>
+                <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="primary" size="large" stretched="{{ true }}" onClick="{{ nav.S04 }}" hint-size="100%,52px">Сообщить об аварии</x-import>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+                <h2 class="mx-t-description-strong" style="margin:0;padding:0 4px;color:var(--text-secondary)">Последние итоги</h2>
+                <div style="border-radius:16px;overflow:hidden;background:var(--background-card)">
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="Холодная вода · 12 сентября" subtitle="Устранено в норматив · 1 ч 10 мин" before="{{ ic.cellCold }}" show-chevron="{{ true }}" hint-size="100%,64px"></x-import>
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="Отопление · 2 сентября" subtitle="Устранено в норматив · 2 ч 05 мин" before="{{ ic.cellHeat }}" show-chevron="{{ true }}" separator="{{ true }}" hint-size="100%,64px"></x-import>
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="Горячая вода · 28 августа" subtitle="У 4 квартир сверх месячной нормы" before="{{ ic.cellHot }}" show-chevron="{{ true }}" separator="{{ true }}" hint-size="100%,64px"></x-import>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:16px;background:var(--background-card)">
+                  <div class="mx-t-description-strong" style="color:var(--text-secondary)">Сентябрь · горячая вода</div>
+                  <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span class="mx-t-hero">6 ч</span><span class="mx-t-detail" style="color:var(--text-secondary)">перерывов из 8 ч допустимых</span></div>
+                  <div aria-hidden="true" style="height:6px;border-radius:3px;background:var(--background-tertiary);overflow:hidden"><div style="width:75%;height:100%;background:var(--icon-tertiary)"></div></div>
+                  <div class="mx-t-description" style="color:var(--text-secondary)">Без учёта текущей аварии</div>
+                  <dc-import name="NormBasisLink" doc="Правила № 354" point="прил. 1, п. 4" norm-id="gvs" on-open="{{ openNorm }}" hint-size="auto,44px"></dc-import>
+                </div>
+                <div style="border-radius:16px;overflow:hidden;background:var(--background-card)">
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="Чат дома" subtitle="312 участников" before="{{ ic.cellChat }}" after="{{ el.openChat }}" hint-size="100%,64px"></x-import>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.S04 }}">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+                <h1 class="{{ lay.h1 }}" style="margin:0">Сообщить об аварии</h1>
+                <div class="mx-t-detail" style="color:var(--text-secondary)">Дом 1 · ул. Модельная, 1</div>
+              </div>
+              <dc-import name="ModelDataBadge" hint-size="auto,28px"></dc-import>
+            </div>
+            <sc-if value="{{ f.showProgress }}">
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div class="mx-t-description" style="color:var(--text-secondary)">{{ f.progress }}</div>
+                <div aria-hidden="true" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px">
+                  <sc-for list="{{ f.segs }}" as="sg" hint-placeholder-count="4"><div style="{{ sg.st }}"></div></sc-for>
+                </div>
+              </div>
+            </sc-if>
+            <div style="{{ f.formGrid }}">
+              <sc-if value="{{ f.step1 }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+                  <h2 id="svc-h" class="mx-t-title" style="margin:0">Что случилось?</h2>
+                  <div role="radiogroup" aria-labelledby="svc-h" style="{{ f.tilesGrid }}">
+                    <sc-for list="{{ f.tiles }}" as="t" hint-placeholder-count="7">
+                      <button type="button" role="radio" aria-checked="{{ t.sel }}" onClick="{{ t.pick }}" style="{{ t.st }}" style-hover="box-shadow:inset 0 0 0 999px var(--states-background-hovered-transparent)" style-focus="outline:2px solid var(--controls-active);outline-offset:2px">{{ t.ic }}<span class="mx-t-detail" style="text-wrap:pretty">{{ t.label }}</span></button>
+                    </sc-for>
+                  </div>
+                  <sc-if value="{{ f.gas }}">
+                    <div role="alert" style="display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:16px;background:var(--app-warning-bg)">
+                      {{ ic.warn }}
+                      <div style="display:flex;flex-direction:column;gap:4px"><div class="mx-t-body-strong">Если пахнет газом — звоните 112 или 104</div><div class="mx-t-detail">Выйдите из квартиры, не включайте свет и электроприборы. Потом отметьте аварию здесь</div></div>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-if>
+              <div style="display:flex;flex-direction:column;gap:20px;min-width:0">
+                <sc-if value="{{ f.step2 }}">
+                  <div style="display:flex;flex-direction:column;gap:12px">
+                    <h2 id="since-h" class="mx-t-title" style="margin:0">С какого времени?</h2>
+                    <div role="radiogroup" aria-labelledby="since-h" style="display:flex;flex-wrap:wrap;gap:8px">
+                      <sc-for list="{{ f.sinceOpts }}" as="o" hint-placeholder-count="5">
+                        <button type="button" role="radio" aria-checked="{{ o.sel }}" onClick="{{ o.pick }}" class="mx-t-detail" style="{{ o.st }}" style-focus="outline:2px solid var(--controls-active);outline-offset:2px">{{ o.label }}</button>
+                      </sc-for>
+                    </div>
+                    <sc-if value="{{ f.custom }}">
+                      <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Input" size="large" mode="contrast" aria-label="Время начала" value="{{ f.customVal }}" aria-invalid="{{ f.timeErr }}" hint-size="100%,52px"></x-import>
+                    </sc-if>
+                    <sc-if value="{{ f.timeErr }}"><div class="mx-t-description" style="display:flex;gap:6px;align-items:center;padding:0 4px;color:var(--app-text-negative)">{{ ic.err16 }}Время не может быть позже текущего. Выберите время до 17:58</div></sc-if>
+                    <div class="mx-t-description" style="color:var(--text-secondary);padding:0 4px;text-wrap:pretty">Можно указать время раньше, если вода пропала, пока вас не было</div>
+                    <div class="mx-t-body" style="padding:0 4px">Начало аварии: <span class="mx-t-body-strong">{{ f.startLabel }}</span></div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ f.step3 }}">
+                  <div style="display:flex;flex-direction:column;gap:12px">
+                    <h2 id="scope-h" class="mx-t-title" style="margin:0">Где нет горячей воды?</h2>
+                    <div role="radiogroup" aria-labelledby="scope-h" style="border-radius:16px;overflow:hidden;background:var(--background-card)">
+                      <sc-for list="{{ f.scopes }}" as="o" hint-placeholder-count="3">
+                        <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" as="label" title="{{ o.label }}" subtitle="{{ o.sub }}" after="{{ o.radio }}" separator="{{ o.sep }}" hint-size="100%,56px"></x-import>
+                      </sc-for>
+                    </div>
+                    <sc-if value="{{ f.needEntrance }}" hint-placeholder-val="{{ true }}">
+                      <div id="ent-h" class="mx-t-description-strong" style="padding:0 4px;color:var(--text-secondary)">Подъезд</div>
+                      <div role="radiogroup" aria-labelledby="ent-h" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px">
+                        <sc-for list="{{ f.entrances }}" as="e" hint-placeholder-count="4">
+                          <button type="button" role="radio" aria-checked="{{ e.sel }}" aria-label="{{ e.aria }}" onClick="{{ e.pick }}" class="mx-t-title" style="{{ e.st }}" style-focus="outline:2px solid var(--controls-active);outline-offset:2px">{{ e.n }}</button>
+                        </sc-for>
+                      </div>
+                      <label for="floor" class="mx-t-description-strong" style="padding:0 4px;color:var(--text-secondary)">Этаж — необязательно</label>
+                      <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Input" id="floor" size="large" mode="contrast" inputMode="numeric" placeholder="1–9" value="{{ f.floor }}" onChange="{{ f.onFloor }}" hint-size="100%,52px"></x-import>
+                    </sc-if>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+
+            <sc-if value="{{ f.dup }}">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <h2 class="mx-t-title" style="margin:0">В доме уже отмечена такая авария</h2>
+                <div class="mx-t-detail" style="color:var(--text-secondary);text-wrap:pretty">Присоединитесь — УК увидит масштаб, а в чате останется одна карточка</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:var(--background-card)">
+                <dc-import name="IncidentHeadline" status="open" density="compact" dl-state="soon" dl-due="18:10" dl-left="12 мин" dl-prefix="срок ответа" hint-size="100%,64px"></dc-import>
+                <div style="display:flex;align-items:center;gap:8px">{{ ic.hot }}<span class="mx-t-body-strong">Нет горячей воды</span></div>
+                <div class="mx-t-detail" style="color:var(--text-secondary)">с 17:40 · отметились 11 жителей</div>
+                <dc-import name="EntranceCounter" counts="{{ inc.counts }}" hint-size="100%,32px"></dc-import>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ f.step4 }}">
+              <div role="status" style="display:flex;gap:12px;align-items:center;padding:12px;border-radius:16px;background:var(--app-positive-bg)">{{ ic.okBig }}<div class="mx-t-detail" style="color:var(--text-primary)">Авария отмечена. Соседи видят карточку в чате дома</div></div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <h2 class="mx-t-title" style="margin:0;text-wrap:pretty">Сообщите в аварийно-диспетчерскую службу (АДС)</h2>
+                <div class="mx-t-body" style="color:var(--text-secondary);text-wrap:pretty">Карточка в чате помогает соседям и УК. Официально аварию регистрирует АДС: вам назовут номер и время</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:16px;background:var(--background-card)">
+                <div class="mx-t-description" style="color:var(--text-secondary)">АДС · УК Модельная</div>
+                <div class="mx-t-header" style="font-variant-numeric:tabular-nums">+7 000 000-41-60</div>
+                <sc-if value="{{ lay.isL }}"><div class="mx-t-description" style="color:var(--text-secondary)">На компьютере звонок не начнётся — скопируйте номер</div></sc-if>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <h3 class="mx-t-description-strong" style="margin:0;padding:0 4px;color:var(--text-secondary)">Что сказать диспетчеру</h3>
+                <div style="border-radius:16px;overflow:hidden;background:var(--background-card)">
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="Ваши фамилия и имя" height="compact" before="{{ ic.cellUser }}" hint-size="100%,48px"></x-import>
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="ул. Модельная, 1, кв. 57" height="compact" before="{{ ic.cellPin }}" separator="{{ true }}" hint-size="100%,48px"></x-import>
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="Нет горячей воды с 17:40" height="compact" before="{{ ic.cellHot }}" separator="{{ true }}" hint-size="100%,48px"></x-import>
+                </div>
+              </div>
+              <div style="{{ grid2 }}">
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <label for="ads-num" class="mx-t-description-strong" style="padding:0 4px;color:var(--text-secondary)">Номер заявки в АДС</label>
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Input" id="ads-num" size="large" mode="contrast" inputMode="numeric" placeholder="Например, 4127" value="{{ f.adsNum }}" onChange="{{ f.onAds }}" hint-size="100%,52px"></x-import>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <label for="ads-time" class="mx-t-description-strong" style="padding:0 4px;color:var(--text-secondary)">Время регистрации</label>
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Input" id="ads-time" size="large" mode="contrast" placeholder="17:52" value="{{ f.adsTime }}" hint-size="100%,52px"></x-import>
+                </div>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="secondary" size="medium" onClick="{{ f.saveAds }}" loading="{{ f.savingAds }}" hint-size="auto,40px">Сохранить номер</x-import>
+                <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="ghost" size="medium" onClick="{{ f.noAnswer }}" hint-size="auto,40px">Не дозвонился</x-import>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ f.done }}">
+              <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:24px 16px;border-radius:16px;background:var(--background-card)">
+                {{ ic.okHero }}
+                <h2 class="mx-t-subheader" style="margin:0">Авария отмечена</h2>
+                <div class="mx-t-body" style="color:var(--text-secondary);max-width:320px;text-wrap:pretty">{{ f.doneText }}</div>
+              </div>
+              <div style="border-radius:16px;overflow:hidden;background:var(--background-card)">
+                <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="Горячая вода · с 17:40" subtitle="Подъезд 2 · этаж 5" before="{{ ic.cellHot }}" hint-size="100%,64px"></x-import>
+                <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="Заявка в АДС № 4127" subtitle="Зарегистрирована в 17:52" before="{{ ic.cellPhone }}" separator="{{ true }}" hint-size="100%,64px"></x-import>
+              </div>
+            </sc-if>
+          </sc-if>
+
+          <sc-if value="{{ is.S05 }}">
+            <sc-if value="{{ v.staff }}">
+              <div role="tablist" aria-label="Режим просмотра" style="display:flex;gap:4px;padding:2px;border-radius:12px;background:var(--background-tertiary)">
+                <button type="button" role="tab" aria-selected="true" class="mx-t-detail" style="flex:1;min-height:40px;border:0;border-radius:10px;background:var(--background-card);color:var(--text-primary);font-family:inherit">Как житель</button>
+                <button type="button" role="tab" aria-selected="false" onClick="{{ nav.U02 }}" class="mx-t-detail" style="flex:1;min-height:40px;border:0;border-radius:10px;background:transparent;color:var(--text-primary);font-family:inherit;cursor:pointer">Как УК</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ s05.loading }}"><dc-import name="Skeleton" kind="card" count="{{ 3 }}" hint-size="100%,400px"></dc-import></sc-if>
+            <sc-if value="{{ s05.ready }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <dc-import name="IncidentHeadline" status="{{ hl.status }}" eta="{{ hl.eta }}" brigade-at="{{ hl.brigadeAt }}" localized-at="{{ hl.localizedAt }}" question="{{ hl.question }}" count="{{ hl.count }}" dur="{{ hl.dur }}" dl-state="{{ hl.dlState }}" dl-due="{{ hl.dlDue }}" dl-left="{{ hl.dlLeft }}" dl-prefix="{{ hl.dlPrefix }}" action-label="{{ hl.action }}" on-action="{{ hl.onAction }}" hint-size="100%,72px"></dc-import>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+                  <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                    <div style="display:flex;align-items:center;gap:8px">{{ ic.hot }}<span class="mx-t-body-strong">Нет горячей воды</span></div>
+                    <div class="mx-t-detail" style="color:var(--text-secondary)">Дом 1 · с 17:40 · отметились 11 жителей</div>
+                  </div>
+                  <dc-import name="ModelDataBadge" hint-size="auto,28px"></dc-import>
+                </div>
+              </div>
+
+              <sc-if value="{{ s05.brigadeAsk }}">
+                <div style="display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:var(--background-card)">
+                  <div class="mx-t-body-strong">УК отметила: бригада на месте с 18:05. Видите бригаду?</div>
+                  <div style="display:flex;flex-wrap:wrap;gap:8px">
+                    <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="secondary" size="medium" onClick="{{ s05.confirmBrigade }}" hint-size="auto,40px">Подтверждаю</x-import>
+                    <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="secondary" size="medium" onClick="{{ s05.noBrigade }}" hint-size="auto,40px">Бригады нет</x-import>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ s05.restoreAsk }}">
+                <div style="display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:var(--background-card)">
+                  <div class="mx-t-description" style="color:var(--text-secondary)">УК отметила устранение в 19:10</div>
+                  <div class="mx-t-title">Горячая вода вернулась?</div>
+                  <div role="radiogroup" aria-label="Горячая вода вернулась?" style="display:flex;flex-wrap:wrap;gap:8px">
+                    <sc-for list="{{ s05.answers }}" as="a" hint-placeholder-count="3">
+                      <button type="button" role="radio" aria-checked="{{ a.sel }}" onClick="{{ a.pick }}" class="mx-t-detail" style="{{ a.st }}" style-focus="outline:2px solid var(--controls-active);outline-offset:2px">{{ a.label }}</button>
+                    </sc-for>
+                  </div>
+                  <sc-if value="{{ s05.answered }}"><div class="mx-t-description" style="color:var(--text-secondary)">Ответ сохранён. Его можно изменить — считается последний</div></sc-if>
+                </div>
+              </sc-if>
+              <sc-if value="{{ s05.discHelp }}">
+                <div style="display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:var(--background-card)">
+                  <h2 class="mx-t-title" style="margin:0">Что делать, если воды нет</h2>
+                  <div class="mx-t-body" style="text-wrap:pretty">1. Повторно сообщите в АДС — так расхождение зафиксируют официально</div>
+                  <div style="display:flex;gap:8px;align-items:center">
+                    <div style="flex:1;min-width:0"><x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Input" size="large" mode="default" inputMode="numeric" aria-label="Номер повторной заявки" placeholder="Номер повторной заявки" hint-size="100%,52px"></x-import></div>
+                    <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="secondary" size="large" onClick="{{ s05.saveRepeat }}" hint-size="auto,52px">Сохранить</x-import>
+                  </div>
+                  <div class="mx-t-body" style="text-wrap:pretty">2. Если через 2 часа проверки нет, акт о нарушении качества могут составить 2 соседа и председатель совета дома</div>
+                  <dc-import name="NormBasisLink" doc="Правила № 354" point="пп. 108, 110(1)" norm-id="act110" on-open="{{ openNorm }}" hint-size="auto,44px"></dc-import>
+                </div>
+              </sc-if>
+
+              <div style="{{ grid2 }}">
+                <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+                  <section aria-labelledby="dl-h" style="display:flex;flex-direction:column;padding:16px 16px 4px;border-radius:16px;background:var(--background-card)">
+                    <h2 id="dl-h" class="mx-t-title" style="margin:0 0 4px">Сроки по нормативу</h2>
+                    <sc-for list="{{ inc.dls }}" as="d" hint-placeholder-count="3">
+                      <div style="{{ d.rowSt }}">
+                        <div class="mx-t-body" style="text-wrap:pretty">{{ d.title }}</div>
+                        <div style="display:flex"><dc-import name="DeadlineChip" state="{{ d.state }}" due="{{ d.due }}" left="{{ d.left }}" at="{{ d.at }}" hint-size="auto,28px"></dc-import></div>
+                        <sc-if value="{{ d.note }}"><div class="mx-t-description" style="color:var(--text-secondary)">{{ d.note }}</div></sc-if>
+                        <dc-import name="NormBasisLink" doc="{{ d.doc }}" point="{{ d.point }}" norm-id="{{ d.id }}" on-open="{{ openNorm }}" hint-size="auto,44px"></dc-import>
+                      </div>
+                    </sc-for>
+                    <sc-if value="{{ inc.doneCount }}">
+                      <button type="button" onClick="{{ inc.toggleDone }}" aria-expanded="{{ inc.showDone }}" class="mx-t-detail" style="display:flex;align-items:center;justify-content:space-between;min-height:48px;margin:0 -16px;padding:0 16px;border:0;border-top:0.5px solid var(--divider-primary);background:none;color:var(--text-primary);font-family:inherit;cursor:pointer" style-focus="outline:2px solid var(--controls-active);outline-offset:-2px"><span>{{ inc.doneLabel }}</span>{{ ic.chevDown }}</button>
+                    </sc-if>
+                  </section>
+                  <section aria-labelledby="st-h" style="display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:var(--background-card)">
+                    <h2 id="st-h" class="mx-t-title" style="margin:0">Статус УК</h2>
+                    <ol style="{{ inc.stepperSt }}">
+                      <sc-for list="{{ inc.steps }}" as="s" hint-placeholder-count="6">
+                        <li aria-current="{{ s.cur }}" style="{{ s.liSt }}"><span aria-hidden="true" style="{{ s.dotSt }}">{{ s.ic }}</span><span style="display:flex;flex-direction:column;min-width:0"><span class="mx-t-detail" style="{{ s.labelSt }}">{{ s.label }}</span><span class="mx-t-description" style="color:var(--text-secondary)">{{ s.sub }}</span></span></li>
+                      </sc-for>
+                    </ol>
+                  </section>
+                  <section aria-labelledby="where-h" style="display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:var(--background-card)">
+                    <h2 id="where-h" class="mx-t-title" style="margin:0">Где нет воды</h2>
+                    <dc-import name="EntranceCounter" counts="{{ inc.counts }}" scroll="{{ true }}" hint-size="100%,32px"></dc-import>
+                    <div class="mx-t-description" style="color:var(--text-secondary)">Ещё 2 жителя не подтверждены — пока не указали квартиру</div>
+                  </section>
+                  <section aria-labelledby="me-h" style="display:flex;flex-direction:column;border-radius:16px;background:var(--background-card);overflow:hidden">
+                    <h2 id="me-h" class="mx-t-title" style="margin:0;padding:16px 16px 4px">Моё участие</h2>
+                    <sc-if value="{{ s05.joined }}" hint-placeholder-val="{{ true }}">
+                      <div class="mx-t-body" style="display:flex;align-items:center;gap:8px;padding:8px 16px">{{ ic.ok20 }}Вы присоединились · подъезд 2</div>
+                    </sc-if>
+                    <sc-if value="{{ s05.notJoined }}">
+                      <div style="display:flex;flex-direction:column;gap:8px;padding:8px 16px">
+                        <div class="mx-t-body">У вас тоже нет горячей воды?</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                          <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="secondary" size="medium" onClick="{{ s05.join }}" loading="{{ s05.joining }}" hint-size="auto,40px">У меня тоже</x-import>
+                          <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="secondary" size="medium" onClick="{{ s05.notMe }}" hint-size="auto,40px">Не у меня</x-import>
+                        </div>
+                      </div>
+                    </sc-if>
+                    <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" as="label" title="Уведомлять меня" subtitle="Ответ УК и итог придут в личку от бота" after="{{ el.notifySwitch }}" hint-size="100%,64px"></x-import>
+                  </section>
+                </div>
+                <section aria-labelledby="tl-h" style="display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:16px;background:var(--background-card);min-width:0">
+                  <h2 id="tl-h" class="mx-t-title" style="margin:0">Хронология</h2>
+                  <dc-import name="Timeline" items="{{ inc.timeline }}" hint-size="100%,240px"></dc-import>
+                </section>
+              </div>
+            </sc-if>
+          </sc-if>
+
+          <sc-if value="{{ is.S07 }}">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+                <h1 class="{{ lay.h1 }}" style="margin:0">Итог аварии</h1>
+                <div class="mx-t-detail" style="color:var(--text-secondary)">Горячая вода · Дом 1 · 27 сентября</div>
+              </div>
+              <dc-import name="ModelDataBadge" hint-size="auto,28px"></dc-import>
+            </div>
+            <div style="{{ grid2 }}">
+              <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+                <div style="display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:16px;background:var(--background-card)">
+                  <div class="mx-t-description-strong" style="color:var(--text-secondary)">Без горячей воды в вашей квартире</div>
+                  <div class="mx-t-hero" style="font-variant-numeric:tabular-nums">{{ s07.dur }}</div>
+                  <div class="mx-t-detail" style="color:var(--text-secondary)">{{ s07.range }}</div>
+                  <div class="mx-t-detail" style="padding-top:8px;text-wrap:pretty">По отметке УК — 19:10 (1 ч 30 мин). Для вашей квартиры считаем по вашему ответу — {{ s07.end }}</div>
+                  <div class="mx-t-description" style="color:var(--text-secondary)">Источник: ваш ответ «Да, есть» в {{ s07.end }}</div>
+                </div>
+                <sc-if value="{{ s07.over }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:16px;background:var(--app-negative-bg)">
+                    <div class="mx-t-description-strong">Месячная норма — от неё зависит перерасчёт</div>
+                    <div class="mx-t-title" style="text-wrap:pretty">За сентябрь 11 ч 40 мин перерывов при норме 8 ч → сверх нормы 3 ч 40 мин</div>
+                    <dc-import name="NormBasisLink" doc="Правила № 354" point="прил. 1, п. 4" norm-id="gvs" on-open="{{ openNorm }}" hint-size="auto,44px"></dc-import>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ s07.within }}">
+                  <div style="display:flex;gap:12px;align-items:flex-start;padding:16px;border-radius:16px;background:var(--app-positive-bg)">
+                    {{ ic.okBig }}
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                      <div class="mx-t-title">Перерывы в пределах нормы — перерасчёт не положен</div>
+                      <div class="mx-t-detail">За сентябрь 7 ч 30 мин при норме 8 ч</div>
+                      <dc-import name="NormBasisLink" doc="Правила № 354" point="прил. 1, п. 4" norm-id="gvs" on-open="{{ openNorm }}" hint-size="auto,44px"></dc-import>
+                    </div>
+                  </div>
+                </sc-if>
+                <div style="display:flex;gap:12px;align-items:flex-start;padding:16px;border-radius:16px;background:var(--background-card)">
+                  {{ ic.info }}
+                  <div style="display:flex;flex-direction:column;gap:2px">
+                    <div class="mx-t-body">{{ s07.single }}</div>
+                    <div class="mx-t-description" style="color:var(--text-secondary)">Отмечаем отдельно, на расчёт не влияет</div>
+                    <dc-import name="NormBasisLink" doc="Правила № 354" point="прил. 1, п. 4" norm-id="gvs" on-open="{{ openNorm }}" hint-size="auto,44px"></dc-import>
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+                <sc-if value="{{ s07.over }}" hint-placeholder-val="{{ true }}">
+                  <div style="border-radius:16px;overflow:hidden;background:var(--background-card)">
+                    <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="3 квартиры могут оформить перерасчёт" subtitle="У них вода вернулась позже, в 23:20" before="{{ ic.cellUsers }}" hint-size="100%,64px"></x-import>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ s07.within }}">
+                  <div class="mx-t-body" style="padding:0 4px;text-wrap:pretty">Спасибо, что сообщили: итог видят все соседи</div>
+                </sc-if>
+                <div style="display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:16px;background:var(--background-card)">
+                  <div class="mx-t-body" style="text-wrap:pretty">Можно запросить у УК копию акта о нарушении качества — её выдают за 3 рабочих дня</div>
+                  <dc-import name="NormBasisLink" doc="ПП № 416" point="п. 34" norm-id="act" on-open="{{ openNorm }}" hint-size="auto,44px"></dc-import>
+                </div>
+                <div class="mx-t-description" style="padding:0 4px;color:var(--text-secondary);text-wrap:pretty">Это расчёт по нормам, итог определяет исполнитель услуги</div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.S08 }}">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+                <h1 class="{{ lay.h1 }}" style="margin:0">Перерасчёт и заявление</h1>
+                <div class="mx-t-description" style="color:var(--text-secondary)">{{ s08.progress }}</div>
+              </div>
+              <dc-import name="ModelDataBadge" hint-size="auto,28px"></dc-import>
+            </div>
+            <sc-if value="{{ s08.step1 }}" hint-placeholder-val="{{ true }}">
+              <div style="{{ grid2 }}">
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <label for="amount" class="mx-t-title">Сколько вы платите за горячую воду в месяц?</label>
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Input" id="amount" size="large" mode="contrast" inputMode="decimal" placeholder="Например, 1 250" value="{{ s08.amount }}" onChange="{{ s08.onAmount }}" aria-invalid="{{ s08.amountErr }}" icon-after="{{ ic.rub }}" hint-size="100%,52px"></x-import>
+                  <sc-if value="{{ s08.amountErr }}"><div class="mx-t-description" style="display:flex;gap:6px;align-items:center;padding:0 4px;color:var(--app-text-negative)">{{ ic.err16 }}Введите сумму из квитанции, например 1 250</div></sc-if>
+                  <div class="mx-t-description" style="padding:0 4px;color:var(--text-secondary)">Строка «Горячее водоснабжение» в квитанции</div>
+                </div>
+                <div aria-label="Схема квитанции" role="img" style="display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:16px;background:var(--background-card)">
+                  <div class="mx-t-description" style="color:var(--text-secondary)">Где найти сумму — схема квитанции</div>
+                  <div style="height:10px;width:60%;border-radius:4px;background:var(--background-tertiary)"></div>
+                  <div style="height:10px;width:80%;border-radius:4px;background:var(--background-tertiary)"></div>
+                  <div class="mx-t-detail" style="display:flex;justify-content:space-between;gap:8px;padding:6px 8px;border-radius:8px;background:var(--background-tertiary);border:1.5px solid var(--icon-tertiary)"><span>Горячее водоснабжение</span><span class="mx-t-detail-strong">1 200,00</span></div>
+                  <div style="height:10px;width:70%;border-radius:4px;background:var(--background-tertiary)"></div>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ s08.step2 }}">
+              <section aria-labelledby="calc-h" style="display:flex;flex-direction:column;border-radius:16px;overflow:hidden;background:var(--background-card)">
+                <h2 id="calc-h" class="mx-t-title" style="margin:0;padding:16px 16px 4px">Расчёт по нормам</h2>
+                <sc-for list="{{ s08.rows }}" as="m" hint-placeholder-count="4">
+                  <div style="{{ m.st }}"><span class="mx-t-body" style="color:var(--text-secondary)">{{ m.k }}</span><span class="mx-t-body-strong" style="text-align:right;font-variant-numeric:tabular-nums">{{ m.v }}</span></div>
+                </sc-for>
+                <div style="display:flex;flex-direction:column;gap:2px;padding:16px;border-top:0.5px solid var(--divider-primary)">
+                  <div class="mx-t-description-strong" style="color:var(--text-secondary)">Уменьшение платы за сентябрь</div>
+                  <div class="mx-t-hero" style="font-variant-numeric:tabular-nums">{{ s08.total }}</div>
+                  <div class="mx-t-description" style="color:var(--text-secondary)">Неполный час округляется вверх</div>
+                </div>
+              </section>
+              <div style="display:flex;flex-direction:column;gap:4px;padding:0 4px">
+                <div class="mx-t-description" style="color:var(--text-secondary);text-wrap:pretty">Это расчёт по нормам, итог определяет исполнитель услуги</div>
+                <dc-import name="NormBasisLink" doc="Правила № 354" point="раздел IX" norm-id="calc" on-open="{{ openNorm }}" hint-size="auto,44px"></dc-import>
+              </div>
+            </sc-if>
+            <sc-if value="{{ s08.none }}">
+              <div style="display:flex;gap:12px;align-items:flex-start;padding:16px;border-radius:16px;background:var(--app-positive-bg)">{{ ic.okBig }}<div class="mx-t-title">Перерасчёт не положен: перерывы за месяц в пределах 8 ч</div></div>
+            </sc-if>
+            <sc-if value="{{ s08.step3 }}">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <h2 id="acc-h" class="mx-t-title" style="margin:0">Лицевой счёт оформлен на вас?</h2>
+                <div role="radiogroup" aria-labelledby="acc-h" style="border-radius:16px;overflow:hidden;background:var(--background-card)">
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" as="label" title="Да, на меня" after="{{ el.accYes }}" hint-size="100%,56px"></x-import>
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" as="label" title="Нет, на собственника" after="{{ el.accNo }}" separator="{{ true }}" hint-size="100%,56px"></x-import>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ s08.doc }}">
+              <div style="{{ grid2 }}">
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <label for="fio" class="mx-t-description-strong" style="padding:0 4px;color:var(--text-secondary)">Фамилия, имя, отчество</label>
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Input" id="fio" size="large" mode="contrast" placeholder="Иванов Иван Иванович" value="{{ s08.fio }}" onChange="{{ s08.onFio }}" hint-size="100%,52px"></x-import>
+                  <label for="phone" class="mx-t-description-strong" style="padding:4px 4px 0;color:var(--text-secondary)">Телефон</label>
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Input" id="phone" size="large" mode="contrast" inputMode="tel" placeholder="+7" value="{{ s08.phone }}" hint-size="100%,52px"></x-import>
+                  <div style="display:flex"><x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="secondary" size="medium" onClick="{{ s08.fillPhone }}" hint-size="auto,40px">Подставить телефон из MAX</x-import></div>
+                  <div class="mx-t-description" style="padding:0 4px;color:var(--text-secondary)">ФИО и телефон не сохраняются на сервере</div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <div class="mx-t-description-strong" style="padding:0 4px;color:var(--text-secondary)">Заявление</div>
+                  <div class="mx-t-detail" style="padding:16px;border-radius:16px;background:var(--background-card);display:flex;flex-direction:column;gap:8px;text-wrap:pretty">
+                    <div>В УК Модельная от <span style="padding:0 4px;border-radius:4px;background:var(--background-tertiary)">{{ s08.fioShown }}</span>, <span style="padding:0 4px;border-radius:4px;background:var(--background-tertiary)">ул. Модельная, 1, кв. 57</span></div>
+                    <div class="mx-t-detail-strong">Заявление об изменении размера платы</div>
+                    <div>27.09.2026 в квартире не было горячего водоснабжения с <span style="padding:0 4px;border-radius:4px;background:var(--background-tertiary)">17:40</span> до <span style="padding:0 4px;border-radius:4px;background:var(--background-tertiary)">23:20</span> (заявки в АДС № 4127 и № 4163). За сентябрь перерывы составили 11 ч 40 мин при допустимых 8 ч (Правила № 354, прил. 1, п. 4).</div>
+                    <div>Прошу изменить размер платы за горячее водоснабжение в соответствии с разделом IX Правил № 354.</div>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ s08.share }}">
+              <div style="display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:16px;background:var(--background-card)">
+                <div class="mx-t-title">Перерасчёт оформляет плательщик</div>
+                <div class="mx-t-body" style="color:var(--text-secondary);text-wrap:pretty">Перешлите итог собственнику: он откроет его в MAX, подтвердит, что вы здесь живёте, и сможет оформить заявление</div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ s08.blocked }}">
+              <div role="alert" style="display:flex;gap:12px;align-items:flex-start;padding:16px;border-radius:16px;background:var(--app-warning-bg)">
+                {{ ic.warn }}
+                <div style="display:flex;flex-direction:column;gap:4px"><div class="mx-t-body-strong">Бот пока не может написать вам</div><div class="mx-t-detail" style="text-wrap:pretty">Откройте бота и нажмите «Старт», потом повторите. Или скопируйте текст заявления</div></div>
+              </div>
+            </sc-if>
+          </sc-if>
+
+          <sc-if value="{{ is.S11 }}">
+            <h1 class="{{ lay.h1 }}" style="margin:0;padding-top:8px">Профиль</h1>
+            <div style="{{ grid2 }}">
+              <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+                <div style="border-radius:16px;overflow:hidden;background:var(--background-card)">
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" overline="Дом" title="Дом 1 · ул. Модельная, 1" before="{{ ic.cellHouse }}" hint-size="100%,64px"></x-import>
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" overline="Квартира и роль" title="Кв. 57 · снимаю квартиру" before="{{ ic.cellUser }}" separator="{{ true }}" show-chevron="{{ true }}" hint-size="100%,64px"></x-import>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:16px;background:var(--background-card)">
+                  <span class="mx-t-description-strong" style="display:inline-flex;align-items:center;gap:6px;align-self:flex-start;min-height:28px;padding:4px 10px 4px 8px;border-radius:14px;background:var(--background-tertiary)">{{ ic.shield16 }}Уровень 1 · из чата дома</span>
+                  <div class="mx-t-detail" style="color:var(--text-secondary);text-wrap:pretty">Бот проверил, что вы состоите в чате дома. Ваши отметки учитываются в порогах «не меньше двух квартир». Уровень 2 даёт подтверждение собственника или УК</div>
+                </div>
+                <dc-import name="ModelDataBadge" hint-size="auto,28px"></dc-import>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+                <div style="border-radius:16px;overflow:hidden;background:var(--background-card)">
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" as="label" title="Уведомления" subtitle="Только по авариям, к которым вы присоединились" before="{{ ic.cellBell }}" after="{{ el.notifySwitch }}" hint-size="100%,64px"></x-import>
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="Чат дома" subtitle="312 участников" before="{{ ic.cellChat }}" show-chevron="{{ true }}" separator="{{ true }}" onClick="{{ act.openChat }}" hint-size="100%,64px"></x-import>
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="Я сотрудник УК" subtitle="Войти по демо-коду роли" before="{{ ic.cellKey }}" show-chevron="{{ true }}" separator="{{ true }}" onClick="{{ act.toggleCode }}" hint-size="100%,64px"></x-import>
+                </div>
+                <sc-if value="{{ s11.code }}">
+                  <div style="display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:16px;background:var(--background-card)">
+                    <label for="ukcode" class="mx-t-description-strong" style="color:var(--text-secondary)">Демо-код УК</label>
+                    <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Input" id="ukcode" size="large" mode="default" placeholder="Вставьте код со слайда" value="{{ s11.codeVal }}" hint-size="100%,52px"></x-import>
+                    <div class="mx-t-description" style="color:var(--text-secondary)">Код можно вставить из буфера обмена</div>
+                    <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="primary" size="large" stretched="{{ true }}" loading="{{ s11.entering }}" onClick="{{ act.enterUk }}" hint-size="100%,52px">Войти как сотрудник УК</x-import>
+                  </div>
+                </sc-if>
+                <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="destructive" size="large" stretched="{{ true }}" onClick="{{ act.askDelete }}" hint-size="100%,52px">Удалить мои данные</x-import>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.S12 }}">
+            <div style="{{ centerSt }}">
+              <dc-import name="InlineError" kind="{{ s12.kind }}" mode="full" on-action="{{ act.s12 }}" hint-size="100%,320px"></dc-import>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.U02 }}">
+            <sc-if value="{{ u02.placeholder }}">
+              <div style="{{ centerSt }}"><div class="mx-t-body" style="color:var(--text-secondary)">Выберите аварию в списке</div></div>
+            </sc-if>
+            <sc-if value="{{ u02.ready }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <dc-import name="IncidentHeadline" status="{{ hl.status }}" eta="{{ hl.eta }}" brigade-at="{{ hl.brigadeAt }}" localized-at="{{ hl.localizedAt }}" question="{{ hl.question }}" count="{{ hl.count }}" dur="{{ hl.dur }}" dl-state="{{ hl.dlState }}" dl-due="{{ hl.dlDue }}" dl-left="{{ hl.dlLeft }}" dl-prefix="{{ hl.dlPrefix }}" action-label="" hint-size="100%,72px"></dc-import>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+                  <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                    <div style="display:flex;align-items:center;gap:8px">{{ ic.hot }}<span class="mx-t-body-strong">Нет горячей воды · Дом 1</span></div>
+                    <div class="mx-t-detail" style="color:var(--text-secondary)">ул. Модельная, 1 · с 17:40 · 11 жителей</div>
+                  </div>
+                  <dc-import name="ModelDataBadge" hint-size="auto,28px"></dc-import>
+                </div>
+                <sc-if value="{{ u02.inlineActions }}">
+                  <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+                    <sc-if value="{{ bar.primary }}"><x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="primary" size="large" loading="{{ bar.loading }}" onClick="{{ bar.onPrimary }}" hint-size="auto,52px">{{ bar.primary }}</x-import></sc-if>
+                    <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="secondary" size="large" onClick="{{ act.openMenu }}" hint-size="auto,52px">Другой статус</x-import>
+                    <button type="button" onClick="{{ nav.S05 }}" class="mx-t-description" style="min-height:44px;padding:0 8px;border:0;background:none;color:var(--app-text-link);text-decoration:underline;cursor:pointer;font-family:inherit">Смотреть как житель</button>
+                  </div>
+                </sc-if>
+              </div>
+              <div style="{{ grid2 }}">
+                <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+                  <section aria-labelledby="grid-h" style="display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:var(--background-card)">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+                      <h2 id="grid-h" class="mx-t-title" style="margin:0">Подъезды и этажи</h2>
+                      <div class="mx-t-description" style="display:flex;gap:8px;align-items:center;color:var(--text-secondary)"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--background-tertiary)"></span>1–2<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--app-negative-bg)"></span>3+ квартиры</div>
+                    </div>
+                    <div role="table" aria-label="Квартиры без воды по подъездам и этажам" style="display:grid;grid-template-columns:52px repeat(4,minmax(0,1fr));gap:4px">
+                      <sc-for list="{{ u02.cells }}" as="c" hint-placeholder-count="20">
+                        <div role="{{ c.role }}" aria-label="{{ c.aria }}" class="{{ c.cls }}" style="{{ c.st }}">{{ c.label }}</div>
+                      </sc-for>
+                    </div>
+                  </section>
+                  <section aria-labelledby="dl2-h" style="display:flex;flex-direction:column;padding:16px 16px 4px;border-radius:16px;background:var(--background-card)">
+                    <h2 id="dl2-h" class="mx-t-title" style="margin:0 0 4px">Сроки по нормативу</h2>
+                    <sc-for list="{{ inc.dls }}" as="d" hint-placeholder-count="3">
+                      <div style="{{ d.rowSt }}">
+                        <div class="mx-t-body">{{ d.title }}</div>
+                        <div style="display:flex"><dc-import name="DeadlineChip" state="{{ d.state }}" due="{{ d.due }}" left="{{ d.left }}" at="{{ d.at }}" hint-size="auto,28px"></dc-import></div>
+                        <dc-import name="NormBasisLink" doc="{{ d.doc }}" point="{{ d.point }}" norm-id="{{ d.id }}" on-open="{{ openNorm }}" hint-size="auto,44px"></dc-import>
+                      </div>
+                    </sc-for>
+                  </section>
+                  <section aria-labelledby="res-h" style="display:flex;flex-direction:column;border-radius:16px;overflow:hidden;background:var(--background-card)">
+                    <h2 id="res-h" class="mx-t-title" style="margin:0;padding:16px 16px 4px">Жители</h2>
+                    <sc-for list="{{ u02.people }}" as="m" hint-placeholder-count="4">
+                      <div style="{{ m.st }}"><span class="mx-t-body" style="color:var(--text-secondary)">{{ m.k }}</span><span class="mx-t-body-strong" style="font-variant-numeric:tabular-nums">{{ m.v }}</span></div>
+                    </sc-for>
+                  </section>
+                </div>
+                <section aria-labelledby="tl2-h" style="display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:16px;background:var(--background-card);min-width:0">
+                  <h2 id="tl2-h" class="mx-t-title" style="margin:0">Хронология</h2>
+                  <dc-import name="Timeline" items="{{ inc.timeline }}" hint-size="100%,240px"></dc-import>
+                </section>
+              </div>
+            </sc-if>
+          </sc-if>
+
+          <sc-if value="{{ is.U03 }}">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+                <h1 class="{{ lay.h1 }}" style="margin:0">{{ u03.title }}</h1>
+                <div class="mx-t-detail" style="color:var(--text-secondary)">УК Модельная</div>
+              </div>
+              <dc-import name="ModelDataBadge" hint-size="auto,28px"></dc-import>
+            </div>
+            <div style="{{ grid2 }}">
+              <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+                <sc-if value="{{ u03.bind }}" hint-placeholder-val="{{ true }}">
+                  <section aria-labelledby="bind-h" style="display:flex;flex-direction:column;gap:12px">
+                    <div style="display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:16px;background:var(--background-card)">
+                      <div class="mx-t-description" style="color:var(--text-secondary)">Чат из приглашения бота</div>
+                      <h2 id="bind-h" class="mx-t-title" style="margin:0">«Дом 1 · соседи»</h2>
+                      <div class="mx-t-detail" style="color:var(--text-secondary)">312 участников · {{ u03.adminText }}</div>
+                    </div>
+                    <sc-if value="{{ u03.err }}">
+                      <div role="alert" style="display:flex;gap:12px;align-items:flex-start;padding:16px;border-radius:16px;background:var(--app-negative-bg)">
+                        {{ ic.warnNeg }}
+                        <div style="display:flex;flex-direction:column;gap:4px">
+                          <div class="mx-t-body-strong">Сделайте бота администратором чата</div>
+                          <div class="mx-t-detail" style="text-wrap:pretty">Без этого бот не сможет закрепить панель дома и обновлять карточку. Настройки чата → Администраторы → добавьте бота, затем нажмите «Привязать» ещё раз</div>
+                        </div>
+                      </div>
+                    </sc-if>
+                    <div id="house-h" class="mx-t-description-strong" style="padding:0 4px;color:var(--text-secondary)">К какому дому привязать</div>
+                    <div role="radiogroup" aria-labelledby="house-h" style="border-radius:16px;overflow:hidden;background:var(--background-card)">
+                      <sc-for list="{{ u03.houses }}" as="o" hint-placeholder-count="4">
+                        <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" as="label" title="{{ o.label }}" subtitle="{{ o.sub }}" after="{{ o.radio }}" separator="{{ o.sep }}" hint-size="100%,56px"></x-import>
+                      </sc-for>
+                    </div>
+                  </section>
+                </sc-if>
+                <div style="border-radius:16px;overflow:hidden;background:var(--background-card)">
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="4 подъезда · 9 этажей" subtitle="144 квартиры, по 4 на этаже" before="{{ ic.cellHouse }}" hint-size="100%,64px"></x-import>
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="Чат дома" subtitle="{{ u03.chatSub }}" before="{{ ic.cellChat }}" separator="{{ true }}" hint-size="100%,64px"></x-import>
+                </div>
+              </div>
+              <section aria-labelledby="demo-h" style="display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;border:1.5px dashed var(--divider-primary);min-width:0">
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <h2 id="demo-h" class="mx-t-title" style="margin:0">Демо-инструменты</h2>
+                  <div class="mx-t-description" style="color:var(--text-secondary)">Только в демо-режиме, для проверяющих</div>
+                </div>
+                <sc-for list="{{ u03.tools }}" as="t" hint-placeholder-count="3">
+                  <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;background:var(--background-card)">
+                    <div class="mx-t-body-strong">{{ t.title }}</div>
+                    <div class="mx-t-description" style="color:var(--text-secondary);text-wrap:pretty">{{ t.sub }}</div>
+                    <div style="display:flex"><x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="{{ t.variant }}" size="medium" loading="{{ t.loading }}" onClick="{{ t.run }}" hint-size="auto,40px">{{ t.cta }}</x-import></div>
+                  </div>
+                </sc-for>
+              </section>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.S09 }}">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:4px;min-width:0"><h1 class="{{ lay.h1 }}" style="margin:0">Акт без исполнителя</h1><div class="mx-t-detail" style="color:var(--text-secondary)">Горячая вода · Дом 1 · 27 сентября</div></div>
+              <dc-import name="ModelDataBadge" hint-size="auto,28px"></dc-import>
+            </div>
+            <div style="{{ grid2 }}">
+              <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+                <div style="display:flex;flex-direction:column;gap:6px;padding:16px;border-radius:16px;background:var(--background-card)">
+                  <div class="mx-t-body" style="text-wrap:pretty">Проверки нет больше 2 часов после повторного сообщения в АДС. Акт о нарушении качества можно составить без исполнителя</div>
+                  <div class="mx-t-detail" style="color:var(--text-secondary)">Нужны минимум 2 потребителя и председатель совета дома</div>
+                  <dc-import name="NormBasisLink" doc="Правила № 354" point="пп. 108, 110(1)" norm-id="act110" on-open="{{ openNorm }}" hint-size="auto,44px"></dc-import>
+                </div>
+                <section aria-labelledby="sign-h" style="display:flex;flex-direction:column;border-radius:16px;overflow:hidden;background:var(--background-card)">
+                  <div style="display:flex;flex-direction:column;gap:2px;padding:16px 16px 8px">
+                    <h2 id="sign-h" class="mx-t-description-strong" style="margin:0;color:var(--text-secondary)">Готовы подписать</h2>
+                    <div class="mx-t-hero" style="font-variant-numeric:tabular-nums">{{ w2.readyLabel }}</div>
+                  </div>
+                  <sc-for list="{{ w2.signRows }}" as="m" hint-placeholder-count="2">
+                    <div style="{{ m.st }}"><span class="mx-t-body" style="display:flex;align-items:center;gap:8px">{{ m.ic }}{{ m.k }}</span><span class="mx-t-body-strong" style="font-variant-numeric:tabular-nums">{{ m.v }}</span></div>
+                  </sc-for>
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" as="label" title="Познакомить меня с другими, кто готов подписать" subtitle="Когда согласятся двое и больше, бот пришлёт в личку их профили MAX. Контакты сервис не хранит" after="{{ w2.introSwitch }}" separator="{{ true }}" hint-size="100%,80px"></x-import>
+                </section>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 4px"><span class="mx-t-description-strong" style="color:var(--text-secondary)">Шаблон акта</span><span class="mx-t-description-strong" style="padding:2px 8px;border-radius:8px;background:var(--background-tertiary)">Образец</span></div>
+                <div class="mx-t-detail" style="display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:16px;background:var(--background-card);text-wrap:pretty">
+                  <div class="mx-t-detail-strong">Акт о нарушении качества коммунальной услуги</div>
+                  <div>Дата и время составления: <span style="padding:0 4px;border-radius:4px;background:var(--background-tertiary)">27.09.2026, 21:40</span></div>
+                  <div>Адрес: <span style="padding:0 4px;border-radius:4px;background:var(--background-tertiary)">ул. Модельная, 1</span>. Услуга: горячее водоснабжение</div>
+                  <div>Нарушение: отсутствие горячей воды с 17:40. Заявки в АДС № 4127 (17:52), № 4163 (19:30). Исполнитель на проверку не явился.</div>
+                  <div>Потребители: ____________ (кв. ___), ____________ (кв. ___). Председатель совета дома: ____________</div>
+                  <div class="mx-t-description" style="color:var(--text-secondary)">Форма акта в найденной редакции не установлена — это образец, проверьте перед подписанием</div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.S10 }}">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <h1 class="{{ lay.h1 }}" style="margin:0">Подтвердите жильца</h1>
+              <dc-import name="ModelDataBadge" hint-size="auto,28px"></dc-import>
+            </div>
+            <div style="{{ grid2 }}">
+              <div style="display:flex;flex-direction:column;gap:6px;padding:16px;border-radius:16px;background:var(--background-card)">
+                <div class="mx-t-title" style="text-wrap:pretty">Вас просят подтвердить, что в кв. 57 живёт ваш жилец</div>
+                <div class="mx-t-detail" style="color:var(--text-secondary);text-wrap:pretty">Имя жильца сервис не показывает и не хранит. После подтверждения жилец получит уровень «подтверждён», а вы сможете оформить перерасчёт</div>
+                <div class="mx-t-description" style="color:var(--text-secondary)">Дом 1 · ул. Модельная, 1, кв. 57</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:16px;background:var(--background-card)">
+                <div class="mx-t-description-strong" style="color:var(--text-secondary)">Итог аварии · горячая вода · 27 сентября</div>
+                <div class="mx-t-hero">5 ч 40 мин</div>
+                <div class="mx-t-detail">За сентябрь сверх месячной нормы — 3 ч 40 мин</div>
+                <dc-import name="NormBasisLink" doc="Правила № 354" point="прил. 1, п. 4" norm-id="gvs" on-open="{{ openNorm }}" hint-size="auto,44px"></dc-import>
+              </div>
+            </div>
+            <sc-if value="{{ w2.ownerDone }}">
+              <div role="status" style="display:flex;gap:12px;align-items:flex-start;padding:16px;border-radius:16px;background:var(--app-positive-bg)">{{ ic.okBig }}<div class="mx-t-body" style="text-wrap:pretty">Жилец подтверждён. Теперь вы можете оформить перерасчёт от своего имени</div></div>
+            </sc-if>
+          </sc-if>
+
+          <sc-if value="{{ is.U03L }}">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:4px;min-width:0"><h1 class="{{ lay.h1 }}" style="margin:0">Дома</h1><div class="mx-t-detail" style="color:var(--text-secondary)">УК Модельная · 4 дома</div></div>
+              <dc-import name="ModelDataBadge" hint-size="auto,28px"></dc-import>
+            </div>
+            <div style="{{ grid2 }}">
+              <div style="border-radius:16px;overflow:hidden;background:var(--background-card)">
+                <sc-for list="{{ w2.houses }}" as="o" hint-placeholder-count="4">
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="{{ o.title }}" subtitle="{{ o.sub }}" before="{{ o.ic }}" show-chevron="{{ true }}" separator="{{ o.sep }}" onClick="{{ o.open }}" hint-size="100%,72px"></x-import>
+                </sc-for>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <h2 class="mx-t-description-strong" style="margin:0;padding:0 4px;color:var(--text-secondary)">Дом 1 · ул. Модельная, 1</h2>
+                <div style="border-radius:16px;overflow:hidden;background:var(--background-card)">
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="Подтверждение жильцов" subtitle="4 заявки" before="{{ ic.cellUsers }}" after="{{ w2.resCounter }}" show-chevron="{{ true }}" onClick="{{ nav.U04 }}" hint-size="100%,64px"></x-import>
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="Тепловая карта" subtitle="Опрос «Тепло ли у вас?» 27.09" before="{{ ic.cellHeat }}" show-chevron="{{ true }}" separator="{{ true }}" onClick="{{ nav.U05 }}" hint-size="100%,64px"></x-import>
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="Итог месяца" subtitle="Сентябрь · 3 аварии" before="{{ ic.cellFile }}" show-chevron="{{ true }}" separator="{{ true }}" onClick="{{ nav.U06 }}" hint-size="100%,64px"></x-import>
+                  <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" title="Чат и демо-инструменты" subtitle="Подключён · бот — администратор" before="{{ ic.cellChat }}" show-chevron="{{ true }}" separator="{{ true }}" onClick="{{ nav.U03 }}" hint-size="100%,64px"></x-import>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.U04 }}">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:4px;min-width:0"><h1 class="{{ lay.h1 }}" style="margin:0">Подтверждение жильцов</h1><div class="mx-t-detail" style="color:var(--text-secondary)">{{ w2.resSub }}</div></div>
+              <dc-import name="ModelDataBadge" hint-size="auto,28px"></dc-import>
+            </div>
+            <sc-if value="{{ w2.resEmpty }}"><dc-import name="EmptyState" icon="circle-check" title="Нет заявок на подтверждение" text="Новые заявки появятся, когда жители укажут квартиру в личке или по QR" action="" hint-size="100%,200px"></dc-import></sc-if>
+            <ul style="{{ w2.resGrid }}">
+              <sc-for list="{{ w2.residents }}" as="r" hint-placeholder-count="4">
+                <li style="display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:16px;background:var(--background-card)">
+                  <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+                    <div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="mx-t-body-strong">{{ r.title }}</span><span class="mx-t-description" style="color:var(--text-secondary)">{{ r.from }}</span></div>
+                    <span class="mx-t-description-strong" style="display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:4px 10px 4px 8px;border-radius:14px;background:var(--background-tertiary);white-space:nowrap">{{ r.trustIc }}{{ r.trust }}</span>
+                  </div>
+                  <sc-if value="{{ r.pending }}" hint-placeholder-val="{{ true }}">
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                      <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="secondary" size="medium" onClick="{{ r.ok }}" hint-size="auto,40px">Подтвердить</x-import>
+                      <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="ghost" size="medium" onClick="{{ r.no }}" hint-size="auto,40px">Отклонить</x-import>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ r.decided }}"><div class="mx-t-description" style="display:flex;align-items:center;gap:6px">{{ r.doneIc }}{{ r.doneText }}</div></sc-if>
+                </li>
+              </sc-for>
+            </ul>
+          </sc-if>
+
+          <sc-if value="{{ is.U05 }}">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:4px;min-width:0"><h1 class="{{ lay.h1 }}" style="margin:0">Тепловая карта</h1><div class="mx-t-detail" style="color:var(--text-secondary)">Дом 1 · опрос «Тепло ли у вас?» 27.09, 10:00</div></div>
+              <dc-import name="ModelDataBadge" hint-size="auto,28px"></dc-import>
+            </div>
+            <div style="{{ grid2 }}">
+              <section aria-labelledby="heat-h" style="display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:var(--background-card)">
+                <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline"><h2 id="heat-h" class="mx-t-title" style="margin:0">Подъезды и этажи</h2><span class="mx-t-detail" style="color:var(--text-secondary)">Ответили 48 из 144 квартир</span></div>
+                <div role="table" aria-label="Ответы «Тепло ли у вас?» по подъездам и этажам" style="display:grid;grid-template-columns:52px repeat(4,minmax(0,1fr));gap:4px">
+                  <sc-for list="{{ w2.heatCells }}" as="c" hint-placeholder-count="20">
+                    <div role="{{ c.role }}" aria-label="{{ c.aria }}" class="{{ c.cls }}" style="{{ c.st }}">{{ c.label }}</div>
+                  </sc-for>
+                </div>
+              </section>
+              <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+                <section aria-labelledby="legend-h" style="display:flex;flex-direction:column;border-radius:16px;overflow:hidden;background:var(--background-card)">
+                  <h2 id="legend-h" class="mx-t-title" style="margin:0;padding:16px 16px 4px">Ответы</h2>
+                  <sc-for list="{{ w2.heatLegend }}" as="m" hint-placeholder-count="4">
+                    <div style="{{ m.st }}"><span class="mx-t-body" style="display:flex;align-items:center;gap:10px"><span style="{{ m.sw }}">{{ m.mark }}</span>{{ m.k }}</span><span class="mx-t-body-strong" style="font-variant-numeric:tabular-nums">{{ m.v }}</span></div>
+                  </sc-for>
+                </section>
+                <div class="mx-t-detail" style="padding:0 4px;color:var(--text-secondary);text-wrap:pretty">Опрос в чате не имеет юридической силы. Для перерасчёта нужны сообщение в АДС и акт</div>
+                <dc-import name="NormBasisLink" doc="Правила № 354" point="прил. 1, п. 15" norm-id="heat" on-open="{{ openNorm }}" hint-size="auto,44px"></dc-import>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.U06 }}">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:4px;min-width:0"><h1 class="{{ lay.h1 }}" style="margin:0">Итог месяца</h1><div class="mx-t-detail" style="color:var(--text-secondary)">Дом 1 · сентябрь 2026</div></div>
+              <dc-import name="ModelDataBadge" hint-size="auto,28px"></dc-import>
+            </div>
+            <div style="{{ w2.kpiGrid }}">
+              <sc-for list="{{ w2.kpis }}" as="k" hint-placeholder-count="4">
+                <div style="display:flex;flex-direction:column;gap:2px;padding:16px;border-radius:16px;background:var(--background-card)"><span class="mx-t-description-strong" style="color:var(--text-secondary)">{{ k.label }}</span><span class="mx-t-hero" style="font-variant-numeric:tabular-nums">{{ k.value }}</span><span class="mx-t-description" style="color:var(--text-secondary)">{{ k.sub }}</span></div>
+              </sc-for>
+            </div>
+            <section aria-labelledby="svc-m-h" style="display:flex;flex-direction:column;padding:16px 16px 4px;border-radius:16px;background:var(--background-card)">
+              <h2 id="svc-m-h" class="mx-t-title" style="margin:0 0 4px">Перерывы против месячных норм</h2>
+              <sc-for list="{{ w2.svcRows }}" as="d" hint-placeholder-count="3">
+                <div style="{{ d.rowSt }}">
+                  <div style="display:flex;justify-content:space-between;gap:12px;align-items:baseline"><span class="mx-t-body" style="display:flex;align-items:center;gap:8px">{{ d.ic }}{{ d.title }}</span><span class="mx-t-body-strong" style="font-variant-numeric:tabular-nums;white-space:nowrap">{{ d.value }}</span></div>
+                  <div style="display:flex"><span class="mx-t-detail" style="{{ d.chip }}">{{ d.stIc }}{{ d.state }}</span></div>
+                  <dc-import name="NormBasisLink" doc="Правила № 354" point="{{ d.point }}" norm-id="{{ d.norm }}" on-open="{{ openNorm }}" hint-size="auto,44px"></dc-import>
+                </div>
+              </sc-for>
+            </section>
+            <div class="mx-t-description" style="padding:0 4px;color:var(--text-secondary)">Это расчёт по нормам, итог определяет исполнитель услуги</div>
+          </sc-if>
+
+          <sc-if value="{{ barInline }}">
+            <dc-import name="ActionBar" primary="{{ bar.primary }}" secondary="{{ bar.secondary }}" variant="{{ bar.variant }}" loading="{{ bar.loading }}" disabled="{{ bar.disabled }}" reason="{{ bar.reason }}" pinned="{{ false }}" stack="{{ bar.stack }}" on-primary="{{ bar.onPrimary }}" on-secondary="{{ bar.onSecondary }}" hint-size="100%,72px"></dc-import>
+          </sc-if>
+        </div>
+      </div>
+      <sc-if value="{{ barPinned }}">
+        <div style="position:absolute;left:0;right:0;bottom:0;z-index:5">
+          <div style="{{ barWrapSt }}">
+            <dc-import name="ActionBar" primary="{{ bar.primary }}" secondary="{{ bar.secondary }}" variant="{{ bar.variant }}" loading="{{ bar.loading }}" disabled="{{ bar.disabled }}" reason="{{ bar.reason }}" pinned="{{ true }}" stack="{{ bar.stack }}" on-primary="{{ bar.onPrimary }}" on-secondary="{{ bar.onSecondary }}" hint-size="100%,72px"></dc-import>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ hasToast }}">
+    <div style="{{ toastSt }}"><dc-import name="Toast" kind="{{ toast.kind }}" text="{{ toast.text }}" action="{{ toast.action }}" hint-size="100%,48px"></dc-import></div>
+  </sc-if>
+
+  <sc-if value="{{ sheet.open }}">
+    <dc-import name="NormSheet" norm="{{ sheet.norm }}" side="{{ sheet.side }}" on-close="{{ sheet.close }}" hint-size="100%,100%" style="position:absolute;inset:0;z-index:30"></dc-import>
+  </sc-if>
+
+  <sc-if value="{{ ov.eta }}">
+    <div style="position:absolute;inset:0;z-index:30">
+      <div onClick="{{ ov.close }}" style="position:absolute;inset:0;background:var(--background-overlay)"></div>
+      <div role="dialog" aria-modal="true" aria-labelledby="eta-h" style="{{ ov.panelSt }}">
+        <h2 id="eta-h" class="mx-t-subheader" style="margin:0">Ориентир для жителей</h2>
+        <div class="mx-t-detail" style="color:var(--text-secondary);text-wrap:pretty">Время увидят все в карточке чата. Это плановое время УК, а не срок по нормативу</div>
+        <div role="radiogroup" aria-labelledby="eta-h" style="display:flex;flex-wrap:wrap;gap:8px">
+          <sc-for list="{{ ov.etaOpts }}" as="o" hint-placeholder-count="5">
+            <button type="button" role="radio" aria-checked="{{ o.sel }}" onClick="{{ o.pick }}" class="mx-t-detail" style="{{ o.st }}" style-focus="outline:2px solid var(--controls-active);outline-offset:2px">{{ o.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px;padding:12px;border-radius:12px;background:var(--background-secondary)">
+          <div class="mx-t-detail">Срок по нормативу: локализовать до 18:10</div>
+          <dc-import name="NormBasisLink" doc="ПП № 416" point="п. 13" norm-id="localize" on-open="{{ openNorm }}" hint-size="auto,44px"></dc-import>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="primary" size="large" stretched="{{ true }}" loading="{{ ov.sending }}" onClick="{{ ov.sendEta }}" hint-size="100%,52px">Отправить в чат</x-import>
+          <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="ghost" size="large" stretched="{{ true }}" onClick="{{ ov.close }}" hint-size="100%,52px">Отмена</x-import>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ov.menu }}">
+    <div style="position:absolute;inset:0;z-index:30">
+      <div onClick="{{ ov.close }}" style="position:absolute;inset:0;background:var(--background-overlay)"></div>
+      <div role="dialog" aria-modal="true" aria-labelledby="menu-h" style="{{ ov.panelSt }}">
+        <h2 id="menu-h" class="mx-t-subheader" style="margin:0">Другой статус</h2>
+        <div role="menu" style="border-radius:16px;overflow:hidden;background:var(--background-secondary)">
+          <sc-for list="{{ ov.menuItems }}" as="m" hint-placeholder-count="4">
+            <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.CellSimple" role="menuitem" title="{{ m.label }}" before="{{ m.ic }}" separator="{{ m.sep }}" onClick="{{ m.run }}" hint-size="100%,56px"></x-import>
+          </sc-for>
+        </div>
+        <div class="mx-t-description" style="color:var(--text-secondary)">Шаги можно пропустить — в хронологии это будет видно</div>
+        <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="ghost" size="large" stretched="{{ true }}" onClick="{{ ov.close }}" hint-size="100%,52px">Отмена</x-import>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ cf.open }}">
+    <div style="position:absolute;inset:0;z-index:40">
+      <div onClick="{{ cf.cancel }}" style="position:absolute;inset:0;background:var(--background-overlay)"></div>
+      <div role="alertdialog" aria-modal="true" aria-labelledby="cf-h" aria-describedby="cf-t" style="{{ cf.panelSt }}">
+        <h2 id="cf-h" class="mx-t-subheader" style="margin:0;text-wrap:pretty">{{ cf.title }}</h2>
+        <div id="cf-t" class="mx-t-body" style="color:var(--text-secondary);text-wrap:pretty">{{ cf.text }}</div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding-top:4px">
+          <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="{{ cf.variant }}" size="large" stretched="{{ true }}" loading="{{ cf.loading }}" onClick="{{ cf.ok }}" hint-size="100%,52px">{{ cf.okLabel }}</x-import>
+          <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="secondary" size="large" stretched="{{ true }}" onClick="{{ cf.cancel }}" hint-size="100%,52px">{{ cf.cancelLabel }}</x-import>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844},&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;S00&quot;,&quot;S01&quot;,&quot;S02&quot;,&quot;S03&quot;,&quot;S04&quot;,&quot;S05&quot;,&quot;S06&quot;,&quot;S07&quot;,&quot;S08&quot;,&quot;S11&quot;,&quot;S12&quot;,&quot;U01&quot;,&quot;U02&quot;,&quot;U03&quot;],&quot;default&quot;:&quot;S05&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;variant&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;},&quot;platform&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ios&quot;,&quot;android&quot;],&quot;default&quot;:&quot;ios&quot;,&quot;tsType&quot;:&quot;'ios'|'android'&quot;},&quot;status&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;eta&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;navKey&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;number&quot;},&quot;onStatus&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(status:string,extra:{eta?:string})=&gt;void&quot;},&quot;onOpenChat&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;()=&gt;void&quot;},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(screen:string,variant?:string)=&gt;void&quot;}}">
+class Component extends DCLogic {
+  scrollRef = React.createRef();
+  rootRef = (el) => {
+    if (this.ro) { this.ro.disconnect(); this.ro = null; }
+    if (el && window.ResizeObserver) {
+      this.ro = new ResizeObserver((es) => { const r = es[0].contentRect, w = Math.round(r.width), h = Math.round(r.height); if (w && (w !== this.state.w || h !== this.state.h)) this.setState({ w, h }); });
+      this.ro.observe(el);
+    }
+  };
+  state = { w: 390, h: 844, route: null, variant: null, service: undefined, since: undefined, scope: undefined, entrance: undefined, floor: '5', flat: undefined, role: undefined, consent: undefined, adsNum: '4127', amount: undefined, account: undefined, sheet: null, sheetOff: false, toast: null, cf: null, cfOff: false, ov: null, ovOff: false, statusLocal: null, etaLocal: null, etaPick: '19', joined: undefined, notify: true, busy: null, showDone: false, code: false, discOpen: false, fio: 'Иванов Иван Иванович', phone: '', house: 1, answer: null, filter: 'open', selRow: 'h1' };
+  componentDidMount() {
+    if (!window.VD_ICONS || !window.MAXUIDesignSystem_b9d019) { const t = setInterval(() => { if (window.VD_ICONS && window.MAXUIDesignSystem_b9d019) { clearInterval(t); this.forceUpdate(); } }, 60); }
+  }
+  componentDidUpdate(pp) {
+    if (pp.screen !== this.props.screen || pp.variant !== this.props.variant || pp.navKey !== this.props.navKey)
+      this.setState({ route: null, variant: null, sheet: null, sheetOff: false, cf: null, cfOff: false, ov: null, ovOff: false, service: undefined, since: undefined, scope: undefined, entrance: undefined, account: undefined, amount: undefined });
+  }
+  componentWillUnmount() { this.ro && this.ro.disconnect(); clearTimeout(this.tt); clearTimeout(this.bt); }
+
+  renderVals() {
+    const st = this.state, p = this.props, DS = window.MAXUIDesignSystem_b9d019 || {};
+    const DEF = { S00: 'loading', S01: 'default', S02: 'default', S03: 'default', S04: 'step1', S05: 'accepted', S06: 'accepted', S07: 'over', S08: 'step1', S11: 'default', S12: 'expired', U01: 'default', U02: 'open', U03: 'bind', S09: 'default', S10: 'default', U03L: 'default', U04: 'default', U05: 'default', U06: 'default' };
+    const scr0 = st.route || p.screen || 'S03';
+    const v0 = (st.route ? st.variant : p.variant) || DEF[scr0] || 'default';
+    const scr = scr0 === 'S06' ? 'S05' : scr0;
+    const w = p.fw || st.w, h = p.fh || st.h;
+    const bp = w < 360 ? 'XS' : w < 480 ? 'S' : w < 840 ? 'M' : 'L';
+    const isL = bp === 'L', short = h <= 480;
+    const pad = bp === 'XS' ? 12 : 16;
+    const I = (n, c, s, k) => (window.vdIcon ? window.vdIcon(React, n, s || 24, c || 'var(--icon-primary)', k) : null);
+    const cellIc = (n, c) => I(n, c || 'var(--icon-primary)', 24);
+    const set = (o) => this.setState(o);
+    const toast = (kind, text, action) => { clearTimeout(this.tt); set({ toast: { kind, text, action: action || '' } }); this.tt = setTimeout(() => this.setState({ toast: null }), 4000); };
+    const busy = (key, fn, ms) => { set({ busy: key }); clearTimeout(this.bt); this.bt = setTimeout(() => { this.setState({ busy: null }); fn(); }, ms || 700); };
+    const go = (s, vv) => { this.setState({ route: s, variant: vv || null, sheet: null, sheetOff: false, cf: null, cfOff: false, ov: null, ovOff: false }); if (this.scrollRef.current) this.scrollRef.current.scrollTop = 0; if (p.onNavigate) p.onNavigate(s, vv); };
+    const radio = (name, checked, onChange, k) => (DS.Radio ? React.createElement(DS.Radio, { key: k, name, checked, onChange, 'aria-label': k }) : null);
+    const sw = (checked, onChange) => (DS.Switch ? React.createElement(DS.Switch, { checked, onChange }) : null);
+    const chipSt = (sel) => ({ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 44, padding: '0 14px', borderRadius: 22, border: '2px solid ' + (sel ? 'var(--controls-active)' : 'transparent'), background: sel ? 'var(--background-card)' : 'var(--background-tertiary)', color: 'var(--text-primary)', fontFamily: 'inherit', cursor: 'pointer', boxSizing: 'border-box', fontWeight: sel ? 500 : 400 });
+    const rowKV = (i) => ({ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline', padding: '12px 16px', borderTop: i ? '0.5px solid var(--divider-primary)' : '0' });
+    const is = {}; is[scr] = true;
+    const v = {}; v[v0] = true;
+    const U416 = 'https://www.kontur-extern.ru/info/normativ/document/1/506725-postanovlenie-pravitelstva-rf-ot-15-05-2013-n-416';
+    const U354 = 'https://www.consultant.ru/document/cons_doc_LAW_114247/ffebcb4aeb7857996e07739ff465b72194318553/';
+    const n416 = { docFull: 'Постановление Правительства РФ от 15.05.2013 № 416', edition: 'от 20.06.2026, действует с 01.09.2026', checked: '23.09.2026', url: U416 };
+    const n354 = { docFull: 'Постановление Правительства РФ от 06.05.2011 № 354', edition: 'от 19.12.2025', checked: '23.09.2026', url: U354 };
+    const NORMS = {
+      answer: Object.assign({ head: 'ПП № 416, п. 13', text: 'Аварийно-диспетчерская служба сообщает заявителю планируемые сроки работ в течение 30 минут с момента регистрации заявки.' }, n416),
+      localize: Object.assign({ head: 'ПП № 416, п. 13', text: 'Аварию во внутридомовых системах водоснабжения, водоотведения, отопления и электроснабжения локализуют не более чем за 30 минут с момента регистрации заявки.' }, n416),
+      fix: Object.assign({ head: 'ПП № 416, п. 13', text: 'Аварию устраняют не более чем за 3 суток с даты повреждения.' }, n416),
+      act: Object.assign({ head: 'ПП № 416, п. 34', text: 'Копию акта о нарушении качества услуги выдают по запросу не позднее 3 рабочих дней.' }, n416),
+      gvs: Object.assign({ head: 'Правила № 354, прил. 1, п. 4', text: 'Горячая вода: допустимый перерыв — 8 часов суммарно в течение месяца и 4 часа единовременно. За каждый час сверх допустимого за месяц плата снижается на 0,15 %.' }, n354),
+      calc: Object.assign({ head: 'Правила № 354, раздел IX', text: 'Порядок изменения размера платы, если услуга была с перерывами сверх допустимой продолжительности. Итог определяет исполнитель услуги.' }, n354),
+      act110: Object.assign({ head: 'Правила № 354, пп. 108, 110(1)', text: 'Если причина неизвестна, проверку проводят не позднее 2 часов с сообщения. Если исполнитель не пришёл, акт могут составить не менее двух потребителей и председатель совета дома.' }, n354)
+    };
+    const openNorm = (n) => set({ sheet: (n && n.normId) || 'localize' });
+
+    // ---- incident status
+    const SL = ['open', 'accepted', 'brigade', 'localized', 'checking', 'discrepancy', 'closed'];
+    const vs = v0 === 'skipped' ? 'localized' : ({ eta: 'open', confirm: 'localized', menu: 'accepted', 'chat-fail': 'accepted', staff: 'accepted', loading: 'accepted' }[v0] || (SL.includes(v0) ? v0 : null));
+    const defStatus = scr === 'U02' || scr === 'U01' ? 'open' : 'accepted';
+    const status = p.status || st.statusLocal || vs || defStatus;
+    const eta = p.eta || st.etaLocal || '19:00';
+    const setStatus = (s, extra) => { if (p.onStatus) p.onStatus(s, extra || {}); else set(Object.assign({ statusLocal: s }, extra && extra.eta ? { etaLocal: extra.eta } : {})); };
+    const idx = SL.indexOf(status);
+    const skipped = v0 === 'skipped';
+    const hl = ({
+      open: { status: 'open', dlState: 'soon', dlDue: '18:10', dlLeft: '12 мин', dlPrefix: 'срок ответа' },
+      accepted: { status: 'accepted', eta, dlState: 'soon', dlDue: '18:10', dlLeft: '12 мин', dlPrefix: 'локализовать' },
+      brigade: { status: 'brigade', eta, brigadeAt: '18:05', dlState: 'soon', dlDue: '18:10', dlLeft: '4 мин', dlPrefix: 'локализовать' },
+      localized: { status: 'localized', eta, localizedAt: '18:20', dlState: 'normal', dlDue: '30.09 17:40', dlLeft: '2 сут 23 ч', dlPrefix: 'устранить' },
+      checking: { status: 'checking', question: 'горячая вода вернулась?', dlState: 'none' },
+      discrepancy: { status: 'discrepancy', count: 3, dlState: 'none' },
+      closed: { status: 'closed', dur: '1 ч 30 мин', dlState: 'none' }
+    })[status];
+    hl.action = status === 'discrepancy' ? (st.discOpen ? 'Скрыть подсказку' : 'Что делать') : '';
+    hl.onAction = () => set({ discOpen: !st.discOpen });
+    const gvsLeft = ['3 ч 42 мин', '3 ч 42 мин', '3 ч 34 мин', '3 ч 20 мин', '2 ч 30 мин', '2 ч 10 мин', ''][idx];
+    const allDl = [
+      { id: 'answer', title: 'УК сообщит сроки работ', state: idx >= 1 ? 'done' : 'soon', due: '18:10', left: '12 мин', at: '17:58', doc: 'ПП № 416', point: 'п. 13' },
+      { id: 'localize', title: 'Локализовать аварию', state: idx >= 3 ? 'done' : 'soon', due: '18:10', left: idx === 2 ? '4 мин' : '12 мин', at: '18:20', note: idx >= 3 ? 'Срок по нормативу был до 18:10' : '', doc: 'ПП № 416', point: 'п. 13' },
+      { id: 'fix', title: 'Устранить аварию', state: idx >= 4 ? 'done' : 'normal', due: '30.09 17:40', left: '2 сут 23 ч', at: '19:10', note: idx >= 4 ? 'По отметке УК' : '', doc: 'ПП № 416', point: 'п. 13' },
+      { id: 'gvs', title: 'Перерыв горячей воды — не дольше 4 ч подряд', state: idx === 6 ? 'expired' : 'normal', due: '21:40', left: gvsLeft, at: '21:40', note: idx === 6 ? 'У 3 квартир перерыв был дольше' : '', doc: 'Правила № 354', point: 'прил. 1, п. 4' }
+    ];
+    const doneCount = allDl.filter((d) => d.state === 'done').length;
+    const dlsRaw = allDl.filter((d) => st.showDone || d.state !== 'done' || scr === 'U02');
+    const dls = dlsRaw.map((d, i) => Object.assign({}, d, { rowSt: { display: 'flex', flexDirection: 'column', gap: 6, padding: '12px 0 4px', borderTop: i ? '0.5px solid var(--divider-primary)' : '0' } }));
+    const stepDefs = [['Открыта', 'сообщили в 17:40'], ['Принята', 'в 17:58, ориентир ' + eta], ['Бригада на месте', 'с 18:05'], ['Локализована', 'в 18:20'], [status === 'discrepancy' ? 'Расхождение' : 'Проверяем', 'устранено по отметке УК в 19:10'], ['Закрыта', 'в 23:20']];
+    const cur = status === 'closed' ? 6 : status === 'discrepancy' ? 4 : idx;
+    const steps = stepDefs.map((d, i) => {
+      const s = i === 2 && skipped ? 'skipped' : i < cur ? 'done' : i === cur ? 'current' : 'future';
+      const dot = { width: 24, height: 24, borderRadius: 12, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box',
+        background: s === 'done' ? 'var(--background-tertiary)' : s === 'current' ? 'var(--controls-active)' : 'transparent',
+        border: s === 'future' ? '1.5px solid var(--divider-primary)' : s === 'skipped' ? '1.5px dashed var(--icon-tertiary)' : '0' };
+      return { label: d[0], sub: s === 'skipped' ? 'шаг пропущен' : s === 'future' ? '' : d[1], cur: s === 'current' ? 'step' : undefined,
+        ic: s === 'done' ? I('check', 'var(--icon-primary)', 14, 'c' + i) : s === 'current' ? I(i === 4 && status === 'discrepancy' ? 'triangle-alert' : 'circle-dot', '#fff', 14, 'c' + i) : null,
+        dotSt: dot, labelSt: { color: s === 'future' || s === 'skipped' ? 'var(--text-secondary)' : 'var(--text-primary)', fontWeight: s === 'current' ? 600 : 400 },
+        liSt: isL ? { display: 'flex', flexDirection: 'column', gap: 6, flex: '1 1 0', minWidth: 90 } : { display: 'flex', gap: 12, alignItems: 'flex-start' } };
+    });
+    const TL = [
+      [0, { time: '17:40', text: 'Нет горячей воды — авария открыта', src: 'sys', who: 'Сообщил житель подъезда 2' }],
+      [0, { time: '17:45', text: 'Присоединились соседи из подъездов 2 и 3', src: 'res', who: 'Отметили жители: 11' }],
+      [0, { time: '17:52', text: 'Сообщили в АДС, заявка № 4127', src: 'res', who: 'Отметил житель' }],
+      [1, { time: '17:58', text: 'Принято, ориентир ' + eta, src: 'uk' }],
+      [2, { time: '18:05', text: 'Бригада на месте', src: 'uk' }],
+      [2, { time: '18:07', text: 'Подтвердили: бригада на месте', src: 'res', who: 'Отметили жители: 3 квартиры' }],
+      [3, { time: '18:20', text: 'Авария локализована', src: 'uk' }],
+      [4, { time: '19:10', text: 'Устранено. В чат ушёл вопрос «Горячая вода вернулась?»', src: 'uk' }],
+      [5, { time: '19:24', text: 'Воды нет у 3 квартир', src: 'disc', who: 'Отметили жители: 3 квартиры' }],
+      [5, { time: '19:30', text: 'Повторно сообщили в АДС, заявка № 4163', src: 'res', who: 'Отметил житель' }],
+      [6, { time: '23:20', text: 'Вода вернулась у всех ответивших. Авария закрыта', src: 'sys' }]
+    ];
+    const lim = status === 'checking' ? 4 : idx;
+    let timeline = TL.filter(([k]) => k <= lim && !(skipped && k === 2)).map((x) => x[1]);
+    if (skipped) timeline.push({ time: '18:20', text: 'Шаг «Бригада на месте» пропущен', src: 'sys' });
+    timeline = timeline.reverse();
+    const counts = [0, 6, 5, 0];
+
+    // ---- layout
+    const uk = scr === 'U01' || scr === 'U02';
+    const split = uk && isL;
+    const showList = scr === 'U01' || (split && scr === 'U02');
+    const showMain = !(scr === 'U01' && !isL);
+    const narrowCol = scr === 'S01' || scr === 'S02';
+    const maxW = split ? 880 : narrowCol ? 480 : isL ? 880 : bp === 'M' ? 640 : 9999;
+    const twoCol = isL && !split ? true : split;
+    const grid2 = { display: 'grid', gridTemplateColumns: twoCol && !narrowCol ? 'minmax(0,1fr) minmax(0,1fr)' : 'minmax(0,1fr)', gap: 16, alignItems: 'start' };
+
+    // ---- bar
+    let bar = null;
+    const tel = () => (isL ? toast('success', 'Номер АДС скопирован') : toast('info', 'Открываем звонок: +7 000 000-41-60'));
+    const telLabel = isL ? 'Скопировать номер АДС' : 'Позвонить в АДС';
+    const f = {};
+    // S01/S02
+    const consent = st.consent !== undefined ? st.consent : v0 === 'checked';
+    const flat = st.flat !== undefined ? st.flat : v0 === 'empty' ? '' : v0 === 'error' ? '150' : '57';
+    const fv = parseInt(flat, 10); const flatValid = /^\d+$/.test(flat) && fv >= 1 && fv <= 144;
+    const role = st.role !== undefined ? st.role : v0 === 'empty' ? null : 'rent';
+    f.flat = flat; f.onFlat = (e) => set({ flat: e.target.value.replace(/\D/g, '') });
+    f.flatErr = !!flat && !flatValid; f.flatOk = !f.flatErr;
+    f.roles = [['owner', 'Собственник'], ['social', 'Наниматель по соцнайму'], ['rent', 'Снимаю квартиру'], ['family', 'Член семьи собственника']].map((o, i) => ({ label: o[1], sep: i > 0, radio: radio('role', role === o[0], () => set({ role: o[0] }), o[1]) }));
+    if (scr === 'S01') bar = { primary: 'Согласен, продолжить', disabled: !consent, reason: 'Включите согласие, чтобы продолжить', onPrimary: () => go('S02') };
+    if (scr === 'S02') bar = { primary: 'Готово', disabled: !(flatValid && role), reason: f.flatErr ? 'Проверьте номер квартиры' : 'Укажите квартиру и роль', loading: st.busy === 's02',
+      onPrimary: () => busy('s02', () => { go('S03'); toast('success', 'Готово. Вы — житель дома 1, кв. ' + flat); }) };
+
+    // S04
+    const s4 = scr === 'S04' ? v0 : '';
+    const lform = isL && ['step1', 'gas', 'step2', 'time-error', 'step3'].includes(s4);
+    const service = st.service !== undefined ? st.service : s4 === 'step1' ? null : s4 === 'gas' ? 'gas' : 'hot';
+    const since = st.since !== undefined ? st.since : s4 === 'time-error' ? 'custom' : 'now';
+    const scope = st.scope !== undefined ? st.scope : s4 === 'step3' || lform ? 'entrance' : 'entrance';
+    const entrance = st.entrance !== undefined ? st.entrance : s4 === 'step3' && !isL ? null : 2;
+    const SV = [['cold', 'Холодная вода', 'droplet'], ['hot', 'Горячая вода', 'shower-head'], ['heat', 'Отопление', 'heater'], ['power', 'Свет', 'zap'], ['sewer', 'Канализация', 'waves'], ['gas', 'Газ', 'flame'], ['leak', 'Протечка', 'droplets']];
+    const cols = bp === 'XS' ? 2 : bp === 'S' ? 3 : isL ? 3 : 4;
+    f.tiles = SV.map((o) => { const sel = service === o[0]; return { label: o[1], sel, pick: () => set({ service: o[0] }), ic: I(o[2], sel ? 'var(--icon-themed)' : 'var(--icon-primary)', 28, o[0]),
+      st: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, minHeight: short ? 72 : 88, padding: 12, borderRadius: 16, border: '2px solid ' + (sel ? 'var(--controls-active)' : 'transparent'), background: 'var(--background-card)', color: 'var(--text-primary)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', boxSizing: 'border-box' } }; });
+    f.tilesGrid = { display: 'grid', gridTemplateColumns: 'repeat(' + cols + ',minmax(0,1fr))', gap: 8 };
+    f.gas = service === 'gas';
+    const SO = [['now', 'Сейчас', 'сегодня 17:58'], ['1h', '1 ч назад', 'сегодня 16:58'], ['3h', '3 ч назад', 'сегодня 14:58'], ['12h', '12 ч назад', 'сегодня 05:58'], ['custom', 'Указать время', 'сегодня 17:40']];
+    f.sinceOpts = SO.map((o) => ({ label: o[1], sel: since === o[0], pick: () => set({ since: o[0] }), st: chipSt(since === o[0]) }));
+    f.custom = since === 'custom'; f.timeErr = s4 === 'time-error' && st.since === undefined;
+    f.customVal = f.timeErr ? '27.09.2026 18:30' : '27.09.2026 17:40';
+    f.startLabel = f.timeErr ? '—' : (SO.find((o) => o[0] === since) || SO[0])[2];
+    f.scopes = [['flat', 'Только в моей квартире', 'В чат дома не попадёт — увидят УК и вы'], ['entrance', 'В подъезде', 'Соседи по подъезду увидят карточку'], ['house', 'Во всём доме', 'Карточка для всего дома']].map((o, i) => ({ label: o[1], sub: o[2], sep: i > 0, radio: radio('scope', scope === o[0], () => set({ scope: o[0] }), o[1]) }));
+    f.needEntrance = scope !== 'house';
+    f.entrances = [1, 2, 3, 4].map((n) => ({ n, aria: 'Подъезд ' + n, sel: entrance === n, pick: () => set({ entrance: n }), st: Object.assign(chipSt(entrance === n), { minHeight: 48, borderRadius: 12, padding: 0 }) }));
+    f.floor = st.floor; f.onFloor = (e) => set({ floor: e.target.value.replace(/\D/g, '') });
+    f.step1 = lform || s4 === 'step1' || s4 === 'gas';
+    f.step2 = lform || s4 === 'step2' || s4 === 'time-error';
+    f.step3 = lform || s4 === 'step3';
+    f.dup = s4 === 'dup'; f.step4 = s4 === 'step4'; f.done = s4 === 'done' || s4 === 'done-flat';
+    const stepN = { step1: 1, gas: 1, step2: 2, 'time-error': 2, step3: 3, dup: 3, step4: 4 }[s4];
+    f.showProgress = !!stepN && !lform;
+    f.progress = 'Шаг ' + stepN + ' из 4';
+    f.segs = [1, 2, 3, 4].map((n) => ({ st: { height: 4, borderRadius: 2, background: n <= stepN ? 'var(--controls-active)' : 'var(--controls-inactive)' } }));
+    f.formGrid = lform ? { display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 24, alignItems: 'start' } : { display: 'flex', flexDirection: 'column', gap: 20 };
+    f.adsNum = st.adsNum; f.onAds = (e) => set({ adsNum: e.target.value.replace(/\D/g, '') }); f.adsTime = '17:52';
+    f.savingAds = st.busy === 'ads';
+    f.saveAds = () => busy('ads', () => toast('success', 'Номер заявки сохранён. Он виден в хронологии'));
+    f.noAnswer = () => toast('info', 'Записали попытку дозвониться. Напомним через 30 минут');
+    const flatOnly = s4 === 'done-flat' || st.scope === 'flat';
+    f.doneText = flatOnly ? 'Авария видна УК и вам. В чат дома она не попадёт' : 'Соседи видят карточку в чате дома';
+    const afterStep3 = () => (service === 'hot' && scope !== 'flat' ? go('S04', 'dup') : go('S04', 'step4'));
+    if (scr === 'S04') {
+      if (lform) bar = { primary: 'Отметить аварию', disabled: !service || (f.needEntrance && !entrance) || f.timeErr, reason: !service ? 'Выберите, что случилось' : f.timeErr ? 'Выберите время до 17:58' : 'Выберите подъезд', loading: st.busy === 'create', onPrimary: () => busy('create', afterStep3) };
+      else if (f.step1) bar = { primary: 'Продолжить', disabled: !service, reason: 'Выберите, что случилось', onPrimary: () => go('S04', 'step2') };
+      else if (f.step2) bar = { primary: 'Продолжить', disabled: f.timeErr, reason: 'Выберите время до 17:58', onPrimary: () => go('S04', 'step3') };
+      else if (f.step3) bar = { primary: 'Отметить аварию', disabled: f.needEntrance && !entrance, reason: 'Выберите подъезд', loading: st.busy === 'create', onPrimary: () => busy('create', afterStep3) };
+      else if (f.dup) bar = { primary: 'Присоединиться', secondary: 'Это другая авария', stack: true, loading: st.busy === 'join', onPrimary: () => busy('join', () => { set({ joined: true }); go('S05'); toast('success', 'Вы отметились: подъезд 2. Ответ УК пришлём в личку'); }), onSecondary: () => go('S04', 'step4') };
+      else if (f.step4) bar = { primary: telLabel, secondary: 'Заполню позже', onPrimary: () => { tel(); }, onSecondary: () => go('S04', 'done') };
+      else if (f.done) bar = { primary: 'Открыть аварию', secondary: 'В чат дома', onPrimary: () => go('S05', 'open'), onSecondary: () => p.onOpenChat && p.onOpenChat() };
+    }
+
+    // S05
+    const joined = st.joined !== undefined ? st.joined : v0 !== 'not-joined';
+    const s05 = { loading: v0 === 'loading', ready: v0 !== 'loading', joined, notJoined: !joined, joining: st.busy === 'join5',
+      join: () => busy('join5', () => { set({ joined: true }); toast('success', 'Вы отметились: подъезд 2. Ответ УК пришлём в личку'); }),
+      notMe: () => toast('info', 'Отметили: у вас услуга есть. Спасибо'),
+      brigadeAsk: status === 'brigade', restoreAsk: status === 'checking', discHelp: status === 'discrepancy' && st.discOpen,
+      confirmBrigade: () => toast('success', 'Спасибо. Отметка видна в хронологии'), noBrigade: () => toast('info', 'Отметили: бригады нет. УК увидит это в хронологии'),
+      saveRepeat: () => toast('success', 'Повторная заявка сохранена. Она видна в хронологии'), answered: !!st.answer };
+    s05.answers = [['yes', 'Да, есть'], ['no', 'Нет'], ['bad', 'Есть, но плохая']].map((o) => ({ label: o[1], sel: st.answer === o[0], st: chipSt(st.answer === o[0]),
+      pick: () => { set({ answer: o[0] }); toast('success', o[0] === 'no' ? 'Ответ «Нет» сохранён. В личку придёт подсказка, как сообщить в АДС' : 'Ответ сохранён. Его можно изменить'); } }));
+    if (scr === 'S05' && s05.ready) bar = status === 'closed' ? { primary: 'Итог и перерасчёт', onPrimary: () => go('S07') } : { primary: telLabel, onPrimary: tel };
+
+    // S07
+    const within = scr === 'S07' && v0 === 'within';
+    const s07 = { over: !within, within, dur: within ? '1 ч 30 мин' : '5 ч 40 мин', range: within ? 'сегодня 17:40–19:10' : 'сегодня 17:40–23:20', end: within ? '19:10' : '23:20',
+      single: within ? 'Единовременный перерыв — в пределах 4 ч' : 'Допустимо 4 ч подряд — перерыв был дольше' };
+    if (scr === 'S07') bar = within ? { primary: 'На главную', secondary: 'Скопировать хронологию', onPrimary: () => go('S03'), onSecondary: () => toast('success', 'Хронология скопирована') }
+      : { primary: 'Оформить перерасчёт', secondary: 'Скопировать хронологию', onPrimary: () => go('S08', 'step1'), onSecondary: () => toast('success', 'Хронология скопирована') };
+
+    // S08
+    const s8 = scr === 'S08' ? v0 : '';
+    const account = st.account !== undefined ? st.account : s8 === 'doc' || s8 === 'bot-blocked' ? 'yes' : s8 === 'share' ? 'no' : null;
+    const amount = st.amount !== undefined ? st.amount : s8 === 'amount-error' ? '0' : '1 200';
+    const amt = parseFloat(String(amount).replace(/\s/g, '').replace(',', '.'));
+    const amountOk = amt > 0;
+    const s08 = { amount, onAmount: (e) => set({ amount: e.target.value }), amountErr: !!amount && !amountOk, step1: s8 === 'step1' || s8 === 'amount-error', step2: s8 === 'step2', none: s8 === 'step2-none',
+      step3: ['step3', 'doc', 'share', 'bot-blocked'].includes(s8), doc: account === 'yes' && ['step3', 'doc', 'bot-blocked'].includes(s8), share: account === 'no', blocked: s8 === 'bot-blocked',
+      fio: st.fio, onFio: (e) => set({ fio: e.target.value }), fioShown: st.fio || 'ФИО', phone: st.phone, fillPhone: () => set({ phone: '+7 900 000-00-57' }) };
+    s08.progress = 'Шаг ' + (s08.step1 ? 1 : s08.step2 || s08.none ? 2 : 3) + ' из 3';
+    const tot = amountOk ? (4 * 0.0015 * amt) : 0;
+    s08.total = tot.toFixed(2).replace('.', ',') + ' ₽';
+    s08.rows = [['Сверх месячной нормы', '3 ч 40 мин → 4 ч'], ['Снижение за каждый час', '0,15 %'], ['Плата за горячую воду', (amountOk ? amount : '1 200') + ' ₽'], ['Формула', '4 ч × 0,15 % × ' + (amountOk ? amount : '1 200') + ' ₽']].map((r, i) => ({ k: r[0], v: r[1], st: rowKV(i) }));
+    if (scr === 'S08') {
+      if (s08.step1) bar = { primary: 'Рассчитать', disabled: !amountOk, reason: 'Введите сумму из квитанции, например 1 250', onPrimary: () => go('S08', 'step2') };
+      else if (s08.step2) bar = { primary: 'Продолжить', onPrimary: () => go('S08', 'step3') };
+      else if (s08.none) bar = { primary: 'Готово', onPrimary: () => go('S03') };
+      else if (s08.blocked) bar = { primary: 'Открыть бота', secondary: 'Скопировать', onPrimary: () => toast('info', 'Открываем бота в MAX'), onSecondary: () => toast('success', 'Текст заявления скопирован') };
+      else if (s08.doc) bar = { primary: 'Отправить себе в чат', secondary: 'Скопировать', loading: st.busy === 'send', onPrimary: () => busy('send', () => toast('success', 'Бот прислал заявление в личку')), onSecondary: () => toast('success', 'Текст заявления скопирован') };
+      else if (s08.share) bar = { primary: 'Переслать собственнику', secondary: 'Скопировать ссылку', onPrimary: () => toast('info', 'Открываем «Поделиться» в MAX'), onSecondary: () => toast('success', 'Ссылка скопирована') };
+      else bar = { primary: 'Продолжить', disabled: true, reason: 'Выберите ответ' };
+    }
+    const el = {
+      consentSwitch: sw(consent, (e) => set({ consent: e.target.checked })),
+      notifySwitch: sw(st.notify, (e) => set({ notify: e.target.checked })),
+      accYes: radio('acc', account === 'yes', () => set({ account: 'yes' }), 'Да'), accNo: radio('acc', account === 'no', () => set({ account: 'no' }), 'Нет'),
+      changeHouse: DS.Button ? React.createElement(DS.Button, { variant: 'ghost', size: 'small', onClick: () => toast('info', 'Сейчас подключены модельные дома') }, 'Изменить') : null,
+      openChat: DS.Button ? React.createElement(DS.Button, { variant: 'secondary', size: 'small', onClick: () => p.onOpenChat && p.onOpenChat() }, 'Открыть чат') : null
+    };
+
+    // S11
+    const s11 = { code: st.code || v0 === 'uk-code', codeVal: v0 === 'uk-code' ? 'DEMO-UK-2026' : '', entering: st.busy === 'uk' };
+
+    // S12
+    const s12 = { kind: scr === 'S12' ? v0 : 'expired' };
+
+    // U01 / U02
+    const rowsAll = [
+      { id: 'h3', house: 'Дом 3 · ул. Модельная, 3', svc: 'Отопление', icn: 'heater', status: 'open', since: 'с 16:50', meta: '4 квартиры · П1', dlState: 'expired', dlAt: '17:20', dlPrefix: 'срок ответа' },
+      { id: 'h1', house: 'Дом 1 · ул. Модельная, 1', svc: 'Горячая вода', icn: 'shower-head', status, eta, brigadeAt: '18:05', since: 'с 17:40', meta: '11 жителей · П2, П3', dlState: hl.dlState, dlDue: hl.dlDue, dlLeft: hl.dlLeft, dlPrefix: hl.dlPrefix },
+      { id: 'h2', house: 'Дом 2 · ул. Модельная, 2', svc: 'Холодная вода', icn: 'droplet', status: 'accepted', eta: '20:00', since: 'с 17:05', meta: '7 квартир · П1, П3', dlState: 'normal', dlDue: '30.09 17:05', dlLeft: '2 сут 23 ч', dlPrefix: 'устранить' },
+      { id: 'h4', house: 'Дом 4 · ул. Модельная, 4', svc: 'Свет', icn: 'zap', status: 'brigade', eta: '19:30', brigadeAt: '17:30', since: 'с 16:55', meta: '3 квартиры · П4', dlState: 'normal', dlDue: '30.09 16:55', dlLeft: '2 сут 22 ч', dlPrefix: 'устранить' }
+    ];
+    const closedRows = [
+      { id: 'c1', house: 'Дом 2 · ул. Модельная, 2', svc: 'Горячая вода', icn: 'shower-head', status: 'closed', dur: '2 ч 10 мин', since: '26.09', meta: '9 квартир', dlState: 'none' },
+      { id: 'c2', house: 'Дом 3 · ул. Модельная, 3', svc: 'Свет', icn: 'zap', status: 'closed', dur: '55 мин', since: '24.09', meta: '14 квартир', dlState: 'none' }
+    ];
+    const ukEmpty = scr === 'U01' && v0 === 'empty', ukLoading = scr === 'U01' && v0 === 'loading';
+    const filt = st.filter;
+    const src = ukEmpty || ukLoading ? [] : filt === 'closed' ? closedRows : filt === 'expired' ? rowsAll.filter((r) => r.dlState === 'expired') : rowsAll;
+    const ukObj = { empty: ukEmpty, loading: ukLoading,
+      rows: src.map((r) => ({ ...r, sel: split && st.selRow === r.id ? 'true' : undefined, ic: I(r.icn, 'var(--icon-primary)', 20, r.id),
+        st: { display: 'flex', flexDirection: 'column', gap: 8, width: '100%', padding: 16, borderRadius: 16, border: '2px solid ' + (split && st.selRow === r.id ? 'var(--controls-active)' : 'transparent'), background: 'var(--background-card)', color: 'var(--text-primary)', textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', boxSizing: 'border-box' },
+        open: () => { set({ selRow: r.id }); if (!isL) go('U02'); else if (scr !== 'U02') go('U02'); } })),
+      filters: [['open', 'Открытые', 4, null], ['expired', 'Срок истёк', 1, 'attention'], ['closed', 'Закрытые', 0, null]].map((o) => ({ label: o[1] + (o[3] ? '' : o[2] ? ' · ' + o[2] : ''), sel: filt === o[0], pick: () => set({ filter: o[0] }),
+        counter: o[3] && DS.Counter ? React.createElement(DS.Counter, { value: o[2], variant: 'attention' }) : null,
+        st: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 40, padding: '0 8px', border: 0, borderRadius: 10, background: filt === o[0] ? 'var(--background-card)' : 'transparent', color: 'var(--text-primary)', fontFamily: 'inherit', cursor: 'pointer', fontWeight: filt === o[0] ? 500 : 400 } })) };
+    const G = { 3: [0, 2, 0, 0], 5: [0, 3, 0, 0], 6: [0, 1, 0, 0], 2: [0, 0, 1, 0], 4: [0, 0, 2, 0], 7: [0, 0, 2, 0] };
+    const cells = [{ label: '', role: 'columnheader', aria: 'Этаж', cls: 'mx-t-description', st: {} }];
+    [1, 2, 3, 4].forEach((e) => cells.push({ label: 'П' + e, role: 'columnheader', aria: 'Подъезд ' + e, cls: 'mx-t-description-strong', st: { textAlign: 'center', color: 'var(--text-secondary)', padding: '4px 0' } }));
+    for (let fl = 9; fl >= 1; fl--) {
+      cells.push({ label: fl + ' эт.', role: 'rowheader', aria: 'Этаж ' + fl, cls: 'mx-t-description', st: { display: 'flex', alignItems: 'center', color: 'var(--text-secondary)' } });
+      [0, 1, 2, 3].forEach((e) => { const n = (G[fl] || [0, 0, 0, 0])[e];
+        cells.push({ label: n ? String(n) : '·', role: 'cell', aria: 'Подъезд ' + (e + 1) + ', этаж ' + fl + ': ' + n + (n === 1 ? ' квартира' : n >= 2 && n <= 4 ? ' квартиры' : ' квартир'), cls: n ? 'mx-t-detail-strong' : 'mx-t-detail',
+          st: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: 32, borderRadius: 8, background: n >= 3 ? 'var(--app-negative-bg)' : n ? 'var(--background-tertiary)' : 'transparent', color: n ? 'var(--text-primary)' : 'var(--text-secondary)' } }); });
+    }
+    cells.push({ label: 'не указан', role: 'rowheader', aria: 'Этаж не указан', cls: 'mx-t-description', st: { display: 'flex', alignItems: 'center', color: 'var(--text-secondary)', lineHeight: '14px' } });
+    [0, 0, 0, 0].forEach((n, e) => cells.push({ label: e === 1 ? '2' : '·', role: 'cell', aria: 'Подъезд ' + (e + 1) + ', этаж не указан: ' + (e === 1 ? 2 : 0), cls: e === 1 ? 'mx-t-detail-strong' : 'mx-t-detail', st: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: 32, borderRadius: 8, background: e === 1 ? 'var(--background-tertiary)' : 'transparent', color: e === 1 ? 'var(--text-primary)' : 'var(--text-secondary)' } }));
+    const people = [['Отметились', '11 жителей'], ['Подтверждены (уровень 1–2)', '9'], ['Не подтверждены', '2'], ['Ответили «Не у меня»', '1']];
+    if (idx >= 4) people.push(['Ответы на проверку', status === 'discrepancy' ? 'есть — 6, нет — 3' : 'есть — 2, нет — 0']);
+    const u02 = { placeholder: scr === 'U02' && split && st.selRow !== 'h1', ready: !(split && st.selRow !== 'h1'), inlineActions: isL, cells, people: people.map((r, i) => ({ k: r[0], v: r[1], st: rowKV(i) })) };
+    const doStatus = (s, msg, extra) => busy('status', () => { setStatus(s, extra); set({ ov: null, ovOff: true, cf: null, cfOff: true }); if (v0 === 'chat-fail') toast('info', 'Статус сохранён. Карточку в чате обновим автоматически'); else toast('success', msg || 'Статус обновлён. Жители видят его в чате'); });
+    const askResolve = () => set({ cf: 'resolve' });
+    const NEXT = { open: ['Принято, указать ориентир', () => set({ ov: 'eta' })], accepted: ['Бригада на месте', () => doStatus('brigade')], brigade: ['Локализовано', () => doStatus('localized')], localized: ['Устранено', askResolve], discrepancy: ['Отметить устранение повторно', askResolve] };
+    if (scr === 'U02' && u02.ready) { const nx = NEXT[status]; if (nx) bar = { primary: nx[0], secondary: isL ? '' : 'Другой статус', loading: st.busy === 'status', onPrimary: nx[1], onSecondary: () => set({ ov: 'menu' }) }; else if (!isL) bar = { primary: 'Другой статус', onPrimary: () => set({ ov: 'menu' }) }; }
+
+    // U03
+    const u03 = { bind: v0 === 'bind' || v0 === 'bind-error', err: v0 === 'bind-error', title: v0 === 'tools' ? 'Дом 1 · ул. Модельная, 1' : 'Привязка чата к дому',
+      adminText: v0 === 'bind-error' ? 'бот — не администратор' : 'бот — администратор', chatSub: v0 === 'tools' ? 'Подключён · бот — администратор · 312 участников' : 'Будет подключён после привязки',
+      houses: [['1', 'Дом 1 · ул. Модельная, 1', '4 подъезда · 144 квартиры'], ['2', 'Дом 2 · ул. Модельная, 2', '3 подъезда · 60 квартир'], ['3', 'Дом 3 · ул. Модельная, 3', '2 подъезда · 204 квартиры'], ['4', 'Дом 4 · ул. Модельная, 4', '4 подъезда · 144 квартиры']].map((o, i) => ({ label: o[1], sub: o[2], sep: i > 0, radio: radio('house', String(st.house) === o[0], () => set({ house: o[0] }), o[1]) })),
+      tools: [
+        ['Добавить 5 модельных соседей', 'В текущую аварию, уровень 1. Через минуту они сами ответят «Да» на вопрос о восстановлении', 'Добавить', 'secondary', 'n5', () => busy('n5', () => toast('success', 'Добавили 5 модельных соседей. Карточка в чате обновлена'))],
+        ['Сдвинуть начало аварии на 6 ч назад', 'Чтобы сразу увидеть истёкшие сроки и превышение месячной нормы', 'Сдвинуть', 'secondary', 'sh', () => busy('sh', () => toast('success', 'Начало аварии — 11:40. Сроки пересчитаны'))],
+        ['Сбросить демо-данные дома', 'Аварии, отметки и хронология дома 1 вернутся к исходным. Реальные чаты не затронуты', 'Сбросить', 'destructive', 'rs', () => set({ cf: 'reset' })]
+      ].map((t) => ({ title: t[0], sub: t[1], cta: t[2], variant: t[3], loading: st.busy === t[4], run: t[5] })) };
+    if (scr === 'U03' && u03.bind) bar = { primary: 'Привязать', loading: st.busy === 'bind', onPrimary: () => busy('bind', () => (v0 === 'bind-error' ? toast('error', 'Бот не администратор чата. Проверьте права и повторите', 'Повторить') : toast('success', 'Панель дома опубликована и закреплена'))) };
+
+    // wave 2–3: S09, S10, U03L, U04, U05, U06
+    NORMS.hvs = Object.assign({ head: 'Правила № 354, прил. 1, п. 1', text: 'Холодная вода: допустимый перерыв — 8 часов суммарно в течение месяца и 4 часа единовременно. За каждый час сверх допустимого за месяц плата снижается на 0,15 %.' }, n354);
+    NORMS.heat = Object.assign({ head: 'Правила № 354, прил. 1, п. 15', text: 'Температура воздуха в жилых помещениях — не ниже +18 °C, в угловых комнатах — не ниже +20 °C; в районах с температурой наиболее холодной пятидневки −31 °C и ниже — +20 °C и +22 °C.' }, n354);
+    NORMS.heat14 = Object.assign({ head: 'Правила № 354, прил. 1, п. 14', text: 'Отопление: допустимый перерыв — не более 24 часов суммарно в течение месяца; единовременно — 16 ч при +12 °C и выше, 8 ч при +10…+12 °C, 4 ч при +8…+10 °C. За каждый час сверх допустимого за месяц плата снижается на 0,15 %.' }, n354);
+    const w2 = {};
+    const signed = st.signed !== undefined ? st.signed : v0 === 'signed';
+    const readyN = 3 + (signed ? 1 : 0);
+    w2.readyLabel = readyN + ' соседа';
+    w2.signRows = [['Потребители', readyN + ' из 2', true], ['Председатель совета дома', v0 === 'complete' ? '1 из 1' : '0 из 1', v0 === 'complete']].map((r, i) => ({ k: r[0], v: r[1], ic: I(r[2] ? 'circle-check' : 'clock', r[2] ? 'var(--app-icon-positive)' : 'var(--icon-tertiary)', 20, 'sg' + i), st: rowKV(i + 1) }));
+    w2.introSwitch = sw(st.intro !== undefined ? st.intro : true, (e) => set({ intro: e.target.checked }));
+    if (scr === 'S09') bar = signed ? { primary: 'Отправить шаблон себе в чат', secondary: 'Скопировать', onPrimary: () => busy('send', () => toast('success', 'Бот прислал шаблон акта в личку')), onSecondary: () => toast('success', 'Шаблон акта скопирован'), loading: st.busy === 'send' }
+      : { primary: 'Я готов подписать', secondary: 'Скопировать', loading: st.busy === 'sign', onPrimary: () => busy('sign', () => { set({ signed: true }); toast('success', 'Вы в списке готовых подписать. Готовы 4 соседа'); }), onSecondary: () => toast('success', 'Шаблон акта скопирован') };
+    w2.ownerDone = st.ownerDone !== undefined ? st.ownerDone : v0 === 'confirmed';
+    if (scr === 'S10') bar = w2.ownerDone ? { primary: 'Оформить перерасчёт', onPrimary: () => go('S08', 'step1') }
+      : { primary: 'Подтвердить', secondary: 'Не знаю этого человека', loading: st.busy === 'owner', onPrimary: () => busy('owner', () => { set({ ownerDone: true }); toast('success', 'Жилец подтверждён. Он увидит это в личке'); }), onSecondary: () => toast('info', 'Отметили: вы не знаете этого человека. Уровень жильца не изменится') };
+    w2.houses = [['1', 'Дом 1 · ул. Модельная, 1', 'Чат подключён · бот — администратор · 312 участников · 1 авария'], ['2', 'Дом 2 · ул. Модельная, 2', 'Чат подключён · бот — администратор · 118 участников · 1 авария'], ['3', 'Дом 3 · ул. Модельная, 3', 'Чат подключён · бот — не администратор · 407 участников · 1 авария'], ['4', 'Дом 4 · ул. Модельная, 4', 'Чат не подключён']].map((o, i) => ({ title: o[1], sub: o[2], sep: i > 0, ic: cellIc('building-2'), open: () => go('U03', i === 3 ? 'bind' : 'tools') }));
+    w2.resCounter = DS.Counter ? React.createElement(DS.Counter, { value: 4, variant: 'primary' }) : null;
+    const resDone = st.resDone || {};
+    const resList = v0 === 'empty' ? [] : [['57', 'Кв. 57 · снимаю квартиру', 'Из чата дома · 27.09, 17:31', 1], ['12', 'Кв. 12 · наниматель по соцнайму', 'По QR в подъезде · 26.09', 0], ['88', 'Кв. 88 · член семьи собственника', 'Из чата дома · 25.09', 1], ['131', 'Кв. 131 · снимаю квартиру', 'По ссылке собственника · 24.09', 0]];
+    w2.residents = resList.map((r) => { const d = resDone[r[0]] || (v0 === 'done' && r[0] === '57' ? 'ok' : null); return { title: r[1], from: r[2], trust: r[3] ? 'Уровень 1 · из чата' : 'Уровень 0 · заявлено', trustIc: I('shield', r[3] ? 'var(--icon-themed)' : 'var(--icon-tertiary)', 16, 't' + r[0]),
+      pending: !d, decided: !!d, doneText: d === 'ok' ? 'Подтверждён · уровень 2' : 'Отклонено · жилец останется на своём уровне', doneIc: I(d === 'ok' ? 'circle-check' : 'x', d === 'ok' ? 'var(--app-icon-positive)' : 'var(--icon-tertiary)', 16, 'd' + r[0]),
+      ok: () => { set({ resDone: Object.assign({}, resDone, { [r[0]]: 'ok' }) }); toast('success', 'Жилец кв. ' + r[0] + ' подтверждён'); }, no: () => { set({ resDone: Object.assign({}, resDone, { [r[0]]: 'no' }) }); toast('info', 'Заявка кв. ' + r[0] + ' отклонена'); } }; });
+    const pendingN = w2.residents.filter((r) => r.pending).length;
+    w2.resEmpty = resList.length === 0; w2.resSub = 'Дом 1 · ' + (pendingN ? pendingN + ' заявки ждут ответа' : 'заявок нет');
+    w2.resGrid = { listStyle: 'none', margin: 0, padding: 0, display: 'grid', gridTemplateColumns: isL ? 'repeat(2,minmax(0,1fr))' : 'minmax(0,1fr)', gap: 8 };
+    if (scr === 'U04' && isL && pendingN > 1) bar = { primary: 'Подтвердить всех (' + pendingN + ')', onPrimary: () => { const all = {}; resList.forEach((r) => { all[r[0]] = resDone[r[0]] || 'ok'; }); set({ resDone: all }); toast('success', 'Подтвердили ' + pendingN + ' жильцов'); } };
+    const H = { warm: ['Тепло', 'var(--app-positive-bg)', 'Т'], luke: ['Чуть тёплые', 'var(--app-warning-bg)', 'Ч'], cold: ['Холодные', 'var(--app-negative-bg)', 'Х'] };
+    const HG = { 9: ['cold', 'cold', 'luke', 'cold'], 8: ['cold', 'luke', 'luke', 'cold'], 7: ['luke', null, 'warm', 'luke'], 6: ['warm', 'luke', 'warm', null], 5: ['warm', null, 'warm', 'warm'], 4: [null, 'warm', null, 'warm'], 3: ['warm', 'warm', null, 'warm'], 2: [null, 'warm', 'warm', null], 1: ['warm', null, 'warm', 'warm'] };
+    const HN = { 9: [3, 2, 1, 3], 8: [2, 1, 2, 2], 7: [1, 0, 2, 1], 6: [2, 2, 1, 0], 5: [1, 0, 2, 1], 4: [0, 2, 0, 1], 3: [1, 1, 0, 2], 2: [0, 1, 1, 0], 1: [2, 0, 1, 1] };
+    const heatCells = [{ label: '', role: 'columnheader', aria: 'Этаж', cls: 'mx-t-description', st: {} }];
+    [1, 2, 3, 4].forEach((e) => heatCells.push({ label: 'П' + e, role: 'columnheader', aria: 'Подъезд ' + e, cls: 'mx-t-description-strong', st: { textAlign: 'center', color: 'var(--text-secondary)', padding: '4px 0' } }));
+    for (let fl = 9; fl >= 1; fl--) {
+      heatCells.push({ label: fl + ' эт.', role: 'rowheader', aria: 'Этаж ' + fl, cls: 'mx-t-description', st: { display: 'flex', alignItems: 'center', color: 'var(--text-secondary)' } });
+      [0, 1, 2, 3].forEach((e) => { const k = HG[fl][e], n = HN[fl][e], h = H[k];
+        heatCells.push({ label: h ? h[2] + ' ' + n : '—', role: 'cell', aria: 'Подъезд ' + (e + 1) + ', этаж ' + fl + ': ' + (h ? h[0].toLowerCase() + ', ' + n + (n === 1 ? ' ответ' : n < 5 ? ' ответа' : ' ответов') : 'нет ответа'), cls: h ? 'mx-t-detail-strong' : 'mx-t-detail',
+          st: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: 32, borderRadius: 8, background: h ? h[1] : 'transparent', color: h ? 'var(--text-primary)' : 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' } }); });
+    }
+    w2.heatCells = heatCells;
+    w2.heatLegend = [['warm', 'Тепло', '21'], ['luke', 'Чуть тёплые', '14'], ['cold', 'Холодные', '13'], [null, 'Нет ответа', '96']].map((r, i) => ({ k: r[1], v: r[2], mark: r[0] ? H[r[0]][2] : '—', st: rowKV(i),
+      sw: { width: 28, height: 28, borderRadius: 8, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: r[0] ? H[r[0]][1] : 'transparent', border: r[0] ? '0' : '1px dashed var(--divider-primary)', fontWeight: 600, flexShrink: 0 } }));
+    w2.kpiGrid = { display: 'grid', gridTemplateColumns: isL ? 'repeat(4,minmax(0,1fr))' : 'repeat(2,minmax(0,1fr))', gap: 8 };
+    w2.kpis = [['Аварий', '3', 'горячая вода, холодная, отопление'], ['В норматив', '2 из 3', 'устранено в срок'], ['До «Принято»', '12 мин', 'в среднем, норма 30 мин'], ['Расхождения', '1', 'после «Устранено»']].map((k) => ({ label: k[0], value: k[1], sub: k[2] }));
+    w2.svcRows = [['shower-head', 'Горячая вода', '11 ч 40 мин из 8 ч', 'Сверх нормы 3 ч 40 мин', 'neg', 'прил. 1, п. 4', 'gvs'], ['droplet', 'Холодная вода', '1 ч 10 мин из 8 ч', 'В пределах нормы', 'ok', 'прил. 1, п. 1', 'hvs'], ['heater', 'Отопление', '2 ч 05 мин из 24 ч', 'В пределах нормы', 'ok', 'прил. 1, п. 14', 'heat14']].map((r, i) => ({ ic: I(r[0], 'var(--icon-primary)', 20, 'sv' + i), title: r[1], value: r[2], state: r[3], point: r[5], norm: r[6],
+      stIc: I(r[4] === 'neg' ? 'circle-alert' : 'check', r[4] === 'neg' ? 'var(--icon-negative)' : 'var(--app-icon-positive)', 16, 'si' + i),
+      chip: { display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 28, padding: '4px 10px 4px 8px', borderRadius: 14, background: r[4] === 'neg' ? 'var(--app-negative-bg)' : 'var(--background-tertiary)', color: 'var(--text-primary)' },
+      rowSt: { display: 'flex', flexDirection: 'column', gap: 6, padding: '12px 0 4px', borderTop: i ? '0.5px solid var(--divider-primary)' : '0' } }));
+
+    // overlays
+    const ovKind = st.ov || (!st.ovOff && scr === 'U02' ? { eta: 'eta', menu: 'menu' }[v0] : null);
+    const panelSt = isL ? { position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: 440, maxWidth: 'calc(100% - 32px)', maxHeight: 'calc(100% - 32px)', overflowY: 'auto', background: 'var(--background-primary)', borderRadius: 16, padding: 24, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 12 }
+      : { position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '100%', overflowY: 'auto', background: 'var(--background-primary)', borderRadius: '16px 16px 0 0', padding: '20px ' + pad + 'px calc(16px + env(safe-area-inset-bottom))', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 12 };
+    const ETA = [['1830', '18:30'], ['19', '19:00'], ['20', '20:00'], ['22', 'Сегодня до 22:00'], ['c', 'Другое время']];
+    const ov = { eta: ovKind === 'eta', menu: ovKind === 'menu', panelSt, sending: st.busy === 'status', close: () => set({ ov: null, ovOff: true }),
+      etaOpts: ETA.map((o) => ({ label: o[1], sel: st.etaPick === o[0], pick: () => set({ etaPick: o[0] }), st: chipSt(st.etaPick === o[0]) })),
+      sendEta: () => { const e = (ETA.find((o) => o[0] === st.etaPick) || ETA[1])[1].replace('Сегодня до ', ''); doStatus('accepted', 'Статус обновлён. Жители видят ориентир ' + e + ' в чате', { eta: e }); },
+      menuItems: [['Бригада на месте', 'wrench', 'brigade'], ['Локализовано', 'shield', 'localized'], ['Устранено', 'circle-check', 'resolve'], ['Объединить с другой аварией', 'merge', 'merge']].map((m, i) => ({ label: m[0], sep: i > 0, ic: I(m[1], 'var(--icon-primary)', 24, m[2]),
+        run: () => (m[2] === 'resolve' ? set({ ov: null, cf: 'resolve' }) : m[2] === 'merge' ? (set({ ov: null }), toast('info', 'Выберите аварию, с которой объединить')) : doStatus(m[2])) })) };
+    const cfKind = st.cf || (!st.cfOff ? (scr === 'U02' && v0 === 'confirm' ? 'resolve' : scr === 'S11' && v0 === 'delete' ? 'delete' : null) : null);
+    const CF = {
+      resolve: ['Отметить устранение?', 'Жителям уйдёт вопрос «Горячая вода вернулась?». Отменить нельзя', 'Отметить устранение', 'Не сейчас', 'primary', () => doStatus('checking', 'Статус обновлён. В чате — вопрос «Горячая вода вернулась?»')],
+      delete: ['Удалить ваши данные?', 'Дом, квартира и роль будут удалены. Ваши отметки в авариях останутся без привязки к вам. Отменить нельзя', 'Удалить', 'Отмена', 'destructive', () => busy('status', () => { set({ cf: null, cfOff: true }); go('S01'); toast('success', 'Данные удалены'); })],
+      reset: ['Сбросить демо-данные дома?', 'Аварии, отметки и хронология дома 1 вернутся к исходным. Реальные чаты не затронуты', 'Сбросить', 'Отмена', 'destructive', () => busy('status', () => { set({ cf: null, cfOff: true }); toast('success', 'Демо-данные дома 1 сброшены'); })]
+    }[cfKind];
+    const cf = CF ? { open: true, title: CF[0], text: CF[1], okLabel: CF[2], cancelLabel: CF[3], variant: CF[4], ok: CF[5], loading: st.busy === 'status', cancel: () => set({ cf: null, cfOff: true }), panelSt } : { open: false };
+    const sheetId = st.sheet || (!st.sheetOff && scr0 === 'S06' ? 'localize' : null);
+    const sheet = { open: !!sheetId, norm: NORMS[sheetId] || NORMS.localize, side: isL ? 'right' : 'bottom', close: () => set({ sheet: null, sheetOff: true }) };
+
+    const forced = !st.toast && !st.route && scr === 'U02' && v0 === 'chat-fail' ? { kind: 'info', text: 'Статус сохранён. Карточку в чате обновим автоматически', action: '' } : null;
+    const tst = st.toast || forced;
+    const barPinned = !!bar && !short && !isL;
+    const barInline = !!bar && !barPinned && !(scr === 'U02' && isL);
+    const barH = bar ? 76 + (bar.disabled && bar.reason ? 24 : 0) + (bar.stack && bar.secondary ? 56 : 0) : 0;
+    const hTitle = short ? 'mx-t-title' : isL ? 'mx-t-header' : 'mx-t-subheader';
+    const centerMin = Math.max(200, h - (barPinned ? barH : 0) - 48);
+
+    return {
+      rootRef: this.rootRef, scrollRef: this.scrollRef, rootSt: { width: '100%', height: p.frame ? '100%' : '100vh', position: 'relative' }, maxProps: { style: { width: '100%', height: '100%' } },
+      theme: p.theme || 'light', platform: p.platform || (isL ? 'android' : 'ios'), screenLabel: scr0 + ' ' + v0,
+      is, v, lay: { h1: hTitle, isL }, grid2, f, s05, s07, s08, s11, s12, u02, u03, uk: ukObj, hl, el, openNorm,
+      inc: { dls, doneCount: doneCount && scr !== 'U02' ? doneCount : 0, doneLabel: (st.showDone ? 'Скрыть выполненные' : 'Выполнено: ' + doneCount), showDone: !!st.showDone, toggleDone: () => set({ showDone: !st.showDone }), steps, timeline, counts,
+        stepperSt: isL ? { listStyle: 'none', margin: 0, padding: 0, display: 'flex', gap: 12, flexWrap: 'wrap' } : { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 12 } },
+      s03: { active: scr === 'S03' && v0 === 'default', empty: v0 === 'empty', loading: v0 === 'loading' },
+      webBack: p.host === 'web' && !['S00', 'S03', 'U01', 'S12'].includes(scr) && !(scr === 'U02' && split),
+      goRoot: () => go(uk || ['U03', 'U03L', 'U04', 'U05', 'U06'].includes(scr) ? 'U01' : 'S03'),
+      w2, nav: { U03: () => go('U03', 'tools'), U04: () => go('U04'), U05: () => go('U05'), U06: () => go('U06'), S04: () => go('S04', 'step1'), S05: () => go('S05', status), S11: () => go('S11'), U02: () => go('U02') },
+      act: { noop: () => {}, openChat: () => p.onOpenChat && p.onOpenChat(), toggleCode: () => set({ code: !st.code }), enterUk: () => busy('uk', () => { go('U01'); toast('success', 'Вы вошли как сотрудник УК Модельная (демо-роль)'); }),
+        askDelete: () => set({ cf: 'delete' }), openMenu: () => set({ ov: 'menu' }), s12: (k) => (k === 'network' || k === 'server' || k === 'slow' ? toast('info', 'Повторяем…') : go(k === 'forbidden' ? 'S11' : k === 'merged' ? 'S05' : 'S03')) },
+      showList, showMain,
+      listPaneSt: { width: showMain ? 380 : '100%', flexShrink: 0, height: '100%', overflowY: 'auto', borderRight: showMain ? '0.5px solid var(--divider-primary)' : '0', boxSizing: 'border-box' },
+      listColSt: { display: 'flex', flexDirection: 'column', gap: 12, padding: (short ? 12 : 16) + 'px ' + pad + 'px 24px', maxWidth: showMain ? 'none' : (bp === 'M' ? 640 : 9999), margin: '0 auto' },
+      scrollSt: { position: 'absolute', inset: 0, overflowY: 'auto', overflowX: 'hidden' },
+      colSt: { display: 'flex', flexDirection: 'column', gap: 16, maxWidth: maxW, margin: '0 auto', padding: (short ? 12 : 16) + 'px ' + (isL ? 24 : pad) + 'px ' + ((barPinned ? barH : 0) + 24) + 'px', boxSizing: 'border-box' },
+      centerSt: { minHeight: centerMin, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, textAlign: 'center' },
+      bar: bar || {}, barPinned, barInline, barWrapSt: { maxWidth: 'none' },
+      hasToast: !!tst, toast: tst || {},
+      toastSt: { position: 'absolute', left: pad, right: pad, bottom: (barPinned ? barH : 0) + 12, zIndex: 20, maxWidth: 480, margin: '0 auto' },
+      sheet, ov, cf,
+      ic: {
+        user: I('user', 'var(--icon-primary)', 20), hot: I('shower-head', 'var(--icon-primary)', 20), ok16: I('check', 'var(--app-icon-positive)', 16), ok20: I('circle-check', 'var(--app-icon-positive)', 20),
+        okBig: I('circle-check', 'var(--app-icon-positive)', 24), okHero: I('circle-check', 'var(--app-icon-positive)', 48), warn: I('triangle-alert', 'var(--app-warning-icon)', 24), warnNeg: I('triangle-alert', 'var(--icon-negative)', 24),
+        err16: I('circle-alert', 'var(--app-text-negative)', 16), info: I('info', 'var(--icon-tertiary)', 24), shield: I('shield', 'var(--icon-tertiary)', 24), shield16: I('shield', 'var(--icon-themed)', 16),
+        chevDown: I('chevron-right', 'var(--icon-mute)', 16), rub: React.createElement('span', { className: 'mx-t-body', style: { color: 'var(--text-secondary)' } }, '₽'),
+        cellUsers: cellIc('users'), cellClock: cellIc('clock'), cellFile: cellIc('file-text'), cellHouse: cellIc('building-2'), cellCold: cellIc('droplet'), cellHeat: cellIc('heater'), cellHot: cellIc('shower-head'),
+        cellChat: cellIc('message-circle'), cellUser: cellIc('user'), cellPin: cellIc('map-pin'), cellPhone: cellIc('phone'), cellBell: cellIc('bell'), cellKey: cellIc('key-round')
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

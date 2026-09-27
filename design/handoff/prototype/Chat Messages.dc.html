@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/sizes.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/components/max-ui.css">
+  <link rel="stylesheet" href="design/handoff/tokens/app-tokens.css">
+  <script src="vd-icons.js"></script>
+  <style>body{margin:0;background:#D9DBE1}a{color:#0068DB}a:hover{color:#004FA8}</style>
+</helmet>
+<div style="display:flex;flex-direction:column;gap:80px;padding:64px;font-family:-apple-system,system-ui,'Helvetica Neue',Roboto,sans-serif;color:#060708">
+  <header style="display:flex;flex-direction:column;gap:8px;max-width:980px">
+    <div style="font-size:15px;color:rgba(6,7,8,.68)">«Всем домом» · сообщения бота в чате MAX</div>
+    <h1 style="margin:0;font-size:40px;line-height:44px;font-weight:600">C01–C09</h1>
+    <div style="font-size:17px;line-height:24px;color:rgba(6,7,8,.68);text-wrap:pretty">Первая строка — статус УК и ближайший срок. Маркер статуса только в начале первой строки, статус назван словами. Не больше 8 строк, «Модельные данные» — последней строкой. Кнопки: ряд из 2 — до 18 символов, из 3 — до 12, из 4–7 — цифры. Под кнопками — тип и payload (переключатель «annotate» в Tweaks).</div>
+  </header>
+
+  <section id="C02" data-screen-label="C02 states" style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:baseline;gap:12px"><span style="padding:4px 10px;border-radius:8px;background:#060708;color:#fff;font-size:17px;font-weight:600">C02</span><h2 style="margin:0;font-size:28px;font-weight:600">Карточка аварии — одно сообщение, которое бот правит</h2></div>
+    <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+      <sc-for list="{{ c02 }}" as="c" hint-placeholder-count="11">
+        <figure style="margin:0;display:flex;flex-direction:column;gap:8px;width:390px">
+          <figcaption style="font-size:14px;color:rgba(6,7,8,.68)">{{ c.label }}</figcaption>
+          <div class="max-light" style="padding:12px;border-radius:20px;background:var(--background-surface)">
+            <dc-import name="BotMessage" tpl="C02" status="{{ c.status }}" annotate="{{ annotate }}" hint-size="100%,380px"></dc-import>
+          </div>
+        </figure>
+      </sc-for>
+    </div>
+  </section>
+
+  <section id="C01" data-screen-label="C01 C03 C04 C09" style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:baseline;gap:12px"><span style="padding:4px 10px;border-radius:8px;background:#060708;color:#fff;font-size:17px;font-weight:600">C01 · C03 · C04 · C09</span><h2 style="margin:0;font-size:28px;font-weight:600">Панель в закрепе, вопрос о восстановлении, итог, бот добавлен в чат</h2></div>
+    <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+      <sc-for list="{{ singles }}" as="c" hint-placeholder-count="4">
+        <figure style="margin:0;display:flex;flex-direction:column;gap:8px;width:390px">
+          <figcaption style="font-size:14px;color:rgba(6,7,8,.68)">{{ c.label }}</figcaption>
+          <div class="max-light" style="padding:12px;border-radius:20px;background:var(--background-surface)">
+            <dc-import name="BotMessage" tpl="{{ c.tpl }}" annotate="{{ annotate }}" hint-size="100%,300px"></dc-import>
+          </div>
+        </figure>
+      </sc-for>
+    </div>
+  </section>
+
+  <section id="C05" data-screen-label="C05 DM" style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:baseline;gap:12px"><span style="padding:4px 10px;border-radius:8px;background:#060708;color:#fff;font-size:17px;font-weight:600">C05</span><h2 style="margin:0;font-size:28px;font-weight:600">Личка с ботом</h2></div>
+    <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+      <sc-for list="{{ dms }}" as="g" hint-placeholder-count="3">
+        <figure style="margin:0;display:flex;flex-direction:column;gap:8px;width:390px">
+          <figcaption style="font-size:14px;color:rgba(6,7,8,.68)">{{ g.label }}</figcaption>
+          <div class="max-light" style="display:flex;flex-direction:column;gap:12px;padding:12px;border-radius:20px;background:var(--background-surface)">
+            <sc-for list="{{ g.msgs }}" as="m" hint-placeholder-count="4">
+              <dc-import name="BotMessage" tpl="{{ m.tpl }}" text="{{ m.text }}" time="{{ m.time }}" annotate="{{ annotate }}" hint-size="100%,120px"></dc-import>
+            </sc-for>
+          </div>
+        </figure>
+      </sc-for>
+    </div>
+  </section>
+
+  <section id="phone" data-screen-label="Phone group chat" style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:baseline;gap:12px"><span style="padding:4px 10px;border-radius:8px;background:#060708;color:#fff;font-size:17px;font-weight:600">Телефон и веб</span><h2 style="margin:0;font-size:28px;font-weight:600">Чат дома: карточка, вопрос, итог</h2></div>
+    <div style="display:flex;gap:40px;align-items:flex-start">
+      <sc-for list="{{ phones }}" as="ph" hint-placeholder-count="2">
+        <figure style="margin:0;display:flex;flex-direction:column;gap:8px">
+          <figcaption style="font-size:14px;color:rgba(6,7,8,.68)">{{ ph.label }}</figcaption>
+          <div class="{{ ph.cls }}" style="width:390px;height:844px;border-radius:28px;overflow:hidden;outline:1px solid rgba(12,13,14,.16);display:flex;flex-direction:column;background:var(--background-surface);font-family:var(--family-base);color:var(--text-primary)">
+            <div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 12px;background:var(--background-primary);border-bottom:0.5px solid var(--divider-secondary)">
+              <span style="display:flex;color:var(--icon-themed);transform:scaleX(-1)">{{ ic.back }}</span>
+              <div aria-hidden="true" class="mx-t-description-strong" style="width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;background:var(--gradient-green);color:#fff">Д1</div>
+              <div style="display:flex;flex-direction:column;min-width:0"><span class="mx-t-body-strong">Дом 1 · соседи</span><span class="mx-t-description" style="color:var(--text-secondary)">312 участников</span></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;min-height:48px;padding:6px 12px;background:var(--background-primary);border-bottom:0.5px solid var(--divider-secondary)">
+              <span style="width:2px;align-self:stretch;border-radius:1px;background:var(--icon-themed)"></span>
+              <div style="display:flex;flex-direction:column;min-width:0;flex:1"><span class="mx-t-description-strong" style="color:var(--app-text-link)">Закреплённое сообщение</span><span class="mx-t-description" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🏠 Дом 1 · Активные аварии: 1 — нет горячей воды с 17:40</span></div>
+            </div>
+            <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:12px;padding:12px">
+              <sc-for list="{{ ph.msgs }}" as="m" hint-placeholder-count="3">
+                <dc-import name="BotMessage" tpl="{{ m.tpl }}" status="{{ m.status }}" text="{{ m.text }}" time="{{ m.time }}" hint-size="100%,120px"></dc-import>
+              </sc-for>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:8px 12px 24px;background:var(--background-primary)">
+              <div class="mx-t-body" style="flex:1;min-height:40px;display:flex;align-items:center;padding:0 16px;border-radius:20px;background:var(--background-tertiary);color:var(--text-secondary)">Сообщение</div>
+            </div>
+          </div>
+        </figure>
+      </sc-for>
+      <figure style="margin:0;display:flex;flex-direction:column;gap:8px">
+        <figcaption style="font-size:14px;color:rgba(6,7,8,.68)">Веб-версия MAX · 1280 × 800 · светлая</figcaption>
+        <div class="max-light" style="width:1280px;height:800px;border-radius:12px;overflow:hidden;outline:1px solid rgba(12,13,14,.16);display:flex;background:var(--background-surface);font-family:var(--family-base);color:var(--text-primary)">
+          <div style="width:320px;flex-shrink:0;display:flex;flex-direction:column;background:var(--background-primary);border-right:0.5px solid var(--divider-primary)">
+            <div class="mx-t-subheader" style="padding:16px">Чаты</div>
+            <sc-for list="{{ webChats }}" as="wc" hint-placeholder-count="4">
+              <div style="{{ wc.st }}">
+                <div aria-hidden="true" class="mx-t-description-strong" style="{{ wc.av }}">{{ wc.ini }}</div>
+                <div style="display:flex;flex-direction:column;min-width:0"><span class="mx-t-body-strong">{{ wc.name }}</span><span class="mx-t-description" style="color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ wc.last }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+            <div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 20px;background:var(--background-primary);border-bottom:0.5px solid var(--divider-secondary)">
+              <div style="display:flex;flex-direction:column"><span class="mx-t-body-strong">Дом 1 · соседи</span><span class="mx-t-description" style="color:var(--text-secondary)">312 участников</span></div>
+            </div>
+            <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:12px;padding:20px 32px">
+              <sc-for list="{{ webMsgs }}" as="m" hint-placeholder-count="3">
+                <dc-import name="BotMessage" tpl="{{ m.tpl }}" status="{{ m.status }}" max-width="{{ 440 }}" hint-size="100%,120px"></dc-import>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </figure>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;annotate&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  componentDidMount() { if (!window.VD_ICONS) { const t = setInterval(() => { if (window.VD_ICONS) { clearInterval(t); this._m = null; this.forceUpdate(); } }, 60); } }
+  renderVals() {
+    if (this._m && this._m.annotate === (this.props.annotate ?? true) && this._m.ic.back) return this._m;
+    const c02 = [['open', 'Открыта'], ['open_expired', 'Открыта, срок ответа истёк'], ['accepted', 'Принята'], ['brigade', 'Бригада на месте'], ['localized', 'Локализована'], ['checking', 'Проверяем'], ['discrepancy', 'Расхождение'], ['closed', 'Закрыта в норматив'], ['closed_over', 'Закрыта сверх нормы'], ['closed_disc', 'Закрыта с расхождением'], ['merged', 'Объединена']].map((x) => ({ status: x[0], label: x[1] }));
+    const singles = [['C01', 'C01 · панель дома в закрепе'], ['C03', 'C03 · вопрос о восстановлении (горячая вода)'], ['C04', 'C04 · итог, ответом на карточку'], ['C09', 'C09 · бот добавлен в чат'], ['C06', 'C06 · ответ на «нет воды» · волна 3 · подписи в две строки ⚠'], ['C07', 'C07 · опрос «Как вода сейчас?» · волна 3'], ['C07.heat', 'C07 · опрос «Тепло ли у вас?» → подъезд · волна 3'], ['C08', 'C08 · итог месяца · волна 3, раз в месяц, не в тихие часы']].map((x) => ({ tpl: x[0], label: x[1] }));
+    const M = (tpl, text, time) => ({ tpl, text: text || '', time: time || '' });
+    const dms = [
+      { label: 'Регистрация: согласие → роль → квартира → чат → меню', msgs: [M('C05.welcome', '', '17:30'), M('user', 'Согласен', '17:30'), M('C05.role', '', '17:30'), M('C05.flat', '', '17:31'), M('user', '150', '17:31'), M('C05.flat_error', '', '17:31'), M('user', '57', '17:31'), M('C05.join', '', '17:31'), M('C05.menu', '', '17:32')] },
+      { label: 'Сообщить об аварии в личке и путь в АДС', msgs: [M('C05.report', '', '17:40'), M('C05.report_time', '', '17:40'), M('C05.report_where', '', '17:41'), M('C05.ads', '', '17:41')] },
+      { label: 'Уведомления присоединившимся', msgs: [M('C05.status', '', '17:58'), M('C05.timer', '', '17:10'), M('C05.expired', '', '18:10'), M('C05.nowater', '', '19:25')] },
+      { label: 'Заявление и удаление данных', msgs: [M('C05.statement', '', '23:31'), M('user', '/delete', '23:40'), M('C05.delete', '', '23:40')] }
+    ];
+    const phones = [
+      { label: 'Телефон · 390 × 844 · светлая', cls: 'max-light', msgs: [{ tpl: 'C02', status: 'accepted', text: '', time: '' }, { tpl: 'C03', status: '', text: '', time: '' }] },
+      { label: 'Телефон · 390 × 844 · тёмная', cls: 'max-dark', msgs: [{ tpl: 'C02', status: 'closed_over', text: '', time: '' }, { tpl: 'C04', status: '', text: '', time: '' }] }
+    ];
+    const av = (g) => ({ width: 44, height: 44, borderRadius: 22, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: g, color: '#fff' });
+    const webChats = [['Д1', 'Дом 1 · соседи', '✅ Закрыта · горячая вода есть', 'var(--gradient-green)', true], ['ВД', 'Всем домом', 'Заявление на перерасчёт — текст ниже', 'var(--gradient-blue)', false], ['ИИ', 'Иван Иванов', 'До вечера', 'var(--gradient-purple)', false], ['МХ', 'Работа', 'Созвон в 10:00', 'var(--gradient-orange)', false]].map((c) => ({ ini: c[0], name: c[1], last: c[2], av: av(c[3]),
+      st: { display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', minHeight: 64, background: c[4] ? 'var(--states-background-pressed-transparent)' : 'transparent' } }));
+    const webMsgs = [{ tpl: 'C02', status: 'closed_over' }, { tpl: 'C04', status: '' }];
+    this._m = { annotate: (this.props.annotate ?? true), c02, singles, dms, phones, webChats, webMsgs, ic: { back: window.vdIcon ? window.vdIcon(React, 'chevron-right', 24, 'currentColor') : null } };
+    return this._m;
+  }
+}
+</script>
+</body>
+</html>

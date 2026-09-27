@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/components/max-ui.css">
+  <link rel="stylesheet" href="design/handoff/tokens/app-tokens.css">
+</helmet>
+<button type="button" onClick="{{ open }}" aria-haspopup="dialog" class="mx-t-description" style="display:inline-flex;align-items:center;min-height:44px;margin:-12px 0;padding:0;border:0;background:none;cursor:pointer;color:var(--app-text-link);text-decoration:underline;text-underline-offset:2px;text-align:left;font-family:inherit;border-radius:4px" style-focus="outline:2px solid var(--controls-active);outline-offset:2px">{{ label }}</button>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:260,&quot;height&quot;:44},&quot;doc&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;ПП № 416&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;point&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;п. 13&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;normId&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;pp416_13_localize&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;onOpen&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(n:{doc:string,point:string,normId:string})=&gt;void&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props;
+    return { label: 'Основание: ' + (p.doc || 'ПП № 416') + ', ' + (p.point || 'п. 13'), open: () => p.onOpen && p.onOpen({ doc: p.doc, point: p.point, normId: p.normId }) };
+  }
+}
+</script>
+</body>
+</html>

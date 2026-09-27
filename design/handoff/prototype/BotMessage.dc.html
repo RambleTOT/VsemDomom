@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/components/max-ui.css">
+  <link rel="stylesheet" href="design/handoff/tokens/app-tokens.css">
+</helmet>
+<div style="font-family:var(--family-base);color:var(--text-primary)">
+<sc-if value="{{ isUser }}">
+  <div style="display:flex;justify-content:flex-end;padding-left:48px">
+    <div style="display:flex;flex-direction:column;gap:2px;padding:8px 12px;border-radius:16px 16px 4px 16px;background:var(--button-secondary);color:var(--text-primary);max-width:320px">
+      <div class="mx-t-body" style="text-wrap:pretty">{{ userText }}</div>
+      <div class="mx-t-description" style="align-self:flex-end;color:var(--text-secondary)">{{ time }}</div>
+    </div>
+  </div>
+</sc-if>
+<sc-if value="{{ isBot }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;gap:8px;align-items:flex-start">
+    <div aria-hidden="true" class="mx-t-description-strong" style="width:32px;height:32px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--gradient-blue);color:#fff">ВД</div>
+    <div style="{{ colSt }}">
+      <div style="display:flex;flex-direction:column;gap:2px;padding:8px 12px;border-radius:16px 16px 16px 4px;background:var(--background-card);color:var(--text-primary)">
+        <div class="mx-t-description-strong" style="color:var(--app-text-link)">Всем домом</div>
+        <sc-if value="{{ reply }}">
+          <div class="mx-t-description" style="display:flex;flex-direction:column;padding:2px 8px;margin:2px 0 4px;border-radius:6px;background:var(--background-tertiary);box-shadow:inset 2px 0 0 var(--icon-themed);color:var(--text-secondary);overflow:hidden;white-space:nowrap;text-overflow:ellipsis">{{ reply }}</div>
+        </sc-if>
+        <sc-for list="{{ lines }}" as="l" hint-placeholder-count="5">
+          <div class="{{ l.cls }}" style="{{ l.st }}">{{ l.t }}</div>
+        </sc-for>
+        <div class="mx-t-description" style="align-self:flex-end;color:var(--text-secondary)">{{ time }}{{ edited }}</div>
+      </div>
+      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="2">
+        <div style="{{ r.st }}">
+          <sc-for list="{{ r.btns }}" as="b" hint-placeholder-count="2">
+            <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+              <button type="button" onClick="{{ b.press }}" title="{{ b.t }}" class="mx-t-action-small" style="display:flex;align-items:center;justify-content:center;gap:4px;min-height:36px;padding:4px 8px;border:0;border-radius:10px;background:var(--background-card);color:var(--app-text-link);cursor:pointer;min-width:0" style-hover="box-shadow:inset 0 0 0 999px var(--states-background-hovered-transparent)" style-focus="outline:2px solid var(--controls-active);outline-offset:1px"><span style="{{ b.lblSt }}">{{ b.t }}</span></button>
+              <sc-if value="{{ annotate }}"><div class="mx-t-description" style="color:var(--text-secondary);text-align:center;font-family:ui-monospace,Menlo,monospace;font-size:11px;line-height:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ b.k }}</div></sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:420},&quot;tpl&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;C01&quot;,&quot;C02&quot;,&quot;C03&quot;,&quot;C04&quot;,&quot;C09&quot;,&quot;C05.welcome&quot;,&quot;C05.role&quot;,&quot;C05.flat&quot;,&quot;C05.flat_error&quot;,&quot;C05.join&quot;,&quot;C05.menu&quot;,&quot;C05.report&quot;,&quot;C05.report_time&quot;,&quot;C05.report_where&quot;,&quot;C05.ads&quot;,&quot;C05.status&quot;,&quot;C05.timer&quot;,&quot;C05.expired&quot;,&quot;C05.nowater&quot;,&quot;C05.statement&quot;,&quot;C05.delete&quot;,&quot;user&quot;],&quot;default&quot;:&quot;C02&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;status&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;open&quot;,&quot;open_expired&quot;,&quot;accepted&quot;,&quot;brigade&quot;,&quot;localized&quot;,&quot;checking&quot;,&quot;discrepancy&quot;,&quot;closed&quot;,&quot;closed_over&quot;,&quot;closed_disc&quot;,&quot;merged&quot;],&quot;default&quot;:&quot;open&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;eta&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;19:00&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;annotate&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;text&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;57&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;time&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;maxWidth&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;onButton&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(kind:string,payload:string,label:string)=&gt;void&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props, tpl = p.tpl || 'C02', s = p.status || 'open', eta = p.eta || '19:00';
+    const B = (t, k, pl) => ({ t, k: k + (pl ? ' · ' + pl : '') });
+    const FOOT = 'Модельные данные';
+    const common = ['С 17:40 · отметились 11 жителей: подъезд 2 — 6, подъезд 3 — 5', 'Из них не подтверждены: 2'];
+    const H = {
+      open: ['🔴 Нет горячей воды · УК ещё не ответила', 'Срок ответа УК по нормативу — до 18:10 (ПП № 416, п. 13)'],
+      open_expired: ['🔴 Нет горячей воды · УК ещё не ответила', 'Срок ответа по нормативу истёк в 18:10 · телефон АДС в «Подробнее»'],
+      accepted: ['🟠 Нет горячей воды · УК приняла, ориентир ' + eta, 'Локализовать до 18:10 · устранить до 30.09 17:40 (ПП № 416, п. 13)'],
+      brigade: ['🟠 Нет горячей воды · бригада на месте с 18:05', 'Ориентир УК ' + eta],
+      localized: ['🟠 Нет горячей воды · авария локализована в 18:20', 'Ориентир УК ' + eta],
+      checking: ['🔵 Горячая вода · УК отметила устранение в 19:10', 'Ответьте на вопрос ниже: есть ли у вас вода'],
+      discrepancy: ['⚠️ Горячая вода · у 3 квартир воды нет', 'УК отметила устранение в 19:10. Им пришла подсказка в личку'],
+      closed: ['✅ Закрыта · горячая вода есть', '1 ч 30 мин по отметке УК, в пределах нормы. Итог ниже'],
+      closed_over: ['✅ Закрыта · горячая вода есть', 'У 3 квартир перерыв 5 ч 40 мин, сверх месячной нормы. Итог ниже'],
+      closed_disc: ['⚠️ Закрыта · у 2 квартир восстановление не подтверждено', 'За 72 ч ответа «есть вода» не пришло. Итог ниже'],
+      merged: ['🔗 Эта авария объединена с другой', 'Сроки и отметки — в актуальной карточке']
+    };
+    const updated = { open: '17:58', open_expired: '18:11', accepted: '17:58', brigade: '18:05', localized: '18:20', checking: '19:10', discrepancy: '19:24', closed: '23:20', closed_over: '23:20', closed_disc: '22:10', merged: '17:47' }[s];
+    const entRow = [B('1', 'callback', 'join:1'), B('2', 'callback', 'join:2'), B('3', 'callback', 'join:3'), B('4', 'callback', 'join:4')];
+    let lines = [], rows = [], time = '17:58', reply = '', edited = '';
+    if (tpl === 'C01') {
+      lines = ['🏠 Дом 1 · ул. Модельная, 1', 'Активные аварии: 1 — нет горячей воды с 17:40', 'Последний итог: 12.09 холодная вода, устранено в норматив', 'В чате 312 участников', FOOT];
+      rows = [[B('Сообщить об аварии', 'open_app', 'n_h1')], [B('Мой дом', 'open_app', 'h_h1')]]; time = '09:00'; edited = ' · изменено';
+    } else if (tpl === 'C02') {
+      const h = H[s] || H.open;
+      if (s === 'merged') { lines = [h[0], h[1]]; rows = [[B('Открыть актуальную', 'open_app', 'i_<newId>')]]; }
+      else if (s.indexOf('closed') === 0) { lines = [h[0], h[1], common[0], 'Обновлено ' + updated + ' · ' + FOOT]; rows = [[B('Итог и перерасчёт', 'open_app', 'r_<id>')]]; }
+      else {
+        lines = [h[0], h[1], common[0], common[1], 'У вас тоже нет воды? Нажмите свой подъезд:', 'Обновлено ' + updated + ' · ' + FOOT];
+        rows = [entRow, [B('Не знаю подъезд', 'callback', 'join:0'), B('Не у меня', 'callback', 'not_me')]];
+        if (s === 'brigade') rows.push([B('Подтверждаю', 'callback', 'crew_yes'), B('Бригады нет', 'callback', 'crew_no')]);
+        rows.push([B('Подробнее и сроки', 'open_app', 'i_<id>')]);
+      }
+      time = '17:40'; edited = s === 'open' ? '' : ' · изменено';
+    } else if (tpl === 'C03') {
+      lines = ['Горячая вода вернулась?', 'УК отметила устранение в 19:10. Ответ поможет увидеть, у всех ли всё в порядке.', FOOT];
+      rows = [[B('Да, есть', 'callback', 'restore:yes'), B('Нет', 'callback', 'restore:no')], [B('Есть, но плохая', 'callback', 'restore:bad')]]; time = '19:10';
+    } else if (tpl === 'C04') {
+      reply = '🔴 Нет горячей воды · УК ещё не ответила';
+      lines = ['Итог: горячая вода, Дом 1', 'По отметке УК: 17:40–19:10, 1 ч 30 мин', 'Отметились 11 квартир. У 3 вода вернулась позже, в 23:20', 'У этих 3 квартир за сентябрь 11 ч 40 мин перерывов при норме 8 ч', 'Им можно подать заявление на перерасчёт', 'Копию акта о нарушении качества выдают по запросу за 3 рабочих дня (ПП № 416, п. 34)', 'Это расчёт по нормам · ' + FOOT];
+      rows = [[B('Оформить перерасчёт', 'open_app', 'r_<id>')]]; time = '23:20';
+    } else if (tpl === 'C06') {
+      lines = ['Похоже, в доме нет воды. Сообщите об этом одной кнопкой — соседи увидят в карточке', FOOT];
+      rows = [[B('Присоединиться к аварии', 'callback', 'join:0'), B('Сообщить об аварии', 'open_app', 'n_h1')]]; time = '17:43';
+    } else if (tpl === 'C07') {
+      lines = ['Как вода сейчас?', 'Опрос УК по дому 1. Ответ видит только УК, в чате — общий счётчик', 'Опрос не заменяет обращение в АДС · ' + FOOT];
+      rows = [[B('Нормально', 'callback', 'poll:ok'), B('Ржавая', 'callback', 'poll:rust'), B('Слабый напор', 'callback', 'poll:low')]]; time = '10:00';
+    } else if (tpl === 'C07.heat') {
+      lines = ['Тепло ли у вас?', 'Опрос УК по дому 1. После ответа бот спросит подъезд', 'Опрос не заменяет обращение в АДС · ' + FOOT];
+      rows = [[B('Тепло', 'callback', 'heat:warm'), B('Чуть тёплые', 'callback', 'heat:luke'), B('Холодные', 'callback', 'heat:cold')], [B('1', 'callback', 'heat_ent:1'), B('2', 'callback', 'heat_ent:2'), B('3', 'callback', 'heat_ent:3'), B('4', 'callback', 'heat_ent:4')]]; time = '10:00';
+    } else if (tpl === 'C08') {
+      lines = ['Сентябрь в доме 1: 3 аварии, 2 устранены в норматив', 'В среднем УК отвечала за 12 минут', 'Горячая вода: 11 ч 40 мин перерывов при норме 8 ч (Правила № 354, прил. 1)', FOOT];
+      rows = [[B('Подробнее', 'open_app', 'h_h1')]]; time = '10:00';
+    } else if (tpl === 'C09') {
+      lines = ['Здравствуйте. Я «Всем домом»: собираю аварию в доме в одну карточку со сроками по нормативам.', 'Чтобы начать, сотрудник УК привязывает чат к дому, а бот должен быть администратором чата'];
+      rows = [[B('Привязать к дому', 'open_app', 'c_<token>')]]; time = '12:00';
+    } else {
+      const D = {
+        'C05.welcome': [['Здравствуйте. Я «Всем домом» — помогаю дому сообщать об авариях и видеть сроки по нормативам', 'Для начала нужно ваше согласие на обработку данных: дом, квартира и роль. Имена в чате не показываем'], [[B('Согласен', 'callback', 'pdn:yes'), B('Политика данных', 'link', 'https://…/privacy')]]],
+        'C05.role': [['Кто вы в квартире?', 'Это нужно, чтобы понять, от чьего имени можно подать заявление'], [[B('Собственник', 'callback', 'role:owner'), B('Снимаю', 'callback', 'role:rent')], [B('Соцнайм', 'callback', 'role:social'), B('Член семьи', 'callback', 'role:family')]]],
+        'C05.flat': [['Напишите номер квартиры, например 57'], []],
+        'C05.flat_error': [['Квартиры в этом доме: 1–144. Проверьте номер и напишите ещё раз'], []],
+        'C05.join': [['Вступите в чат дома — там карточки аварий и ответы УК', 'Дом 1 · ул. Модельная, 1 · ' + FOOT], [[B('Вступить в чат дома', 'link', 'chat.link')]]],
+        'C05.menu': [['Готово. Вы — житель дома 1, кв. 57', 'Если что-то случилось — сообщите здесь или кнопкой в чате дома', FOOT], [[B('Сообщить об аварии', 'callback', 'report'), B('Мой дом', 'open_app', 'h_h1')]]],
+        'C05.report': [['Что случилось?', 'Выберите одну кнопку'], [[B('Холодная вода', 'callback', 'svc:cold'), B('Горячая вода', 'callback', 'svc:hot')], [B('Отопление', 'callback', 'svc:heat'), B('Свет', 'callback', 'svc:power')], [B('Канализация', 'callback', 'svc:sewer'), B('Газ', 'callback', 'svc:gas')], [B('Протечка', 'callback', 'svc:leak')]]],
+        'C05.report_time': [['С какого времени нет горячей воды?'], [[B('Сейчас', 'callback', 'since:now'), B('Указать время', 'callback', 'since:ask')]]],
+        'C05.report_where': [['Где нет горячей воды?'], [[B('Квартира', 'callback', 'scope:flat'), B('Подъезд', 'callback', 'scope:ent'), B('Дом', 'callback', 'scope:house')]]],
+        'C05.ads': [['Сообщите в аварийно-диспетчерскую службу (АДС) — так аварию зарегистрируют официально', 'Телефон: +7 000 000-41-60', 'Назовите ФИО, адрес «ул. Модельная, 1, кв. 57» и «нет горячей воды с 17:40». Вам скажут номер заявки', FOOT], [[B('Позвонить', 'link', 'tel:+70000004160')], [B('Ввести номер заявки', 'callback', 'ads:num')], [B('Не дозвонился', 'callback', 'ads:fail')]]],
+        'C05.status': [['🟠 УК приняла аварию, ориентир ' + eta, 'Горячая вода, Дом 1. Локализовать до 18:10 (ПП № 416, п. 13)', FOOT], [[B('Подробнее', 'open_app', 'i_<id>'), B('Не присылать', 'callback', 'mute')]]],
+        'C05.timer': [['До срока по нормативу 30 минут: устранить до 30.09 17:40', 'Горячая вода, Дом 1. Ориентир УК — ' + eta + ' (ПП № 416, п. 13)', FOOT], [[B('Подробнее', 'open_app', 'i_<id>')]]],
+        'C05.expired': [['Срок по нормативу истёк в 18:10: УК ещё не назвала сроки', 'Горячая вода, Дом 1. Телефон АДС: +7 000 000-41-60 (ПП № 416, п. 13)', FOOT], [[B('Подробнее', 'open_app', 'i_<id>')]]],
+        'C05.nowater': [['Воды нет — что делать', '1. Повторно сообщите в АДС: +7 000 000-41-60', '2. Если через 2 часа проверки нет, акт могут составить 2 соседа и председатель совета (Правила № 354, пп. 108, 110(1))', FOOT], [[B('Я сообщил в АДС', 'callback', 'ads:again')], [B('Как составить акт', 'open_app', 'a_<id>')]]],
+        'C05.statement': [['Заявление на перерасчёт — текст ниже. Скопируйте и отправьте в УК', 'В УК Модельная от Иванова И. И., ул. Модельная, 1, кв. 57. 27.09.2026 горячей воды не было с 17:40 до 23:20 (заявки АДС № 4127, № 4163)…', 'ФИО и телефон не сохраняются на сервере'], [[B('Скопировать', 'clipboard', 'text')]]],
+        'C05.delete': [['Удалить ваши данные?', 'Дом, квартира и роль будут удалены. Отменить нельзя'], [[B('Удалить', 'callback', 'delete:yes'), B('Отмена', 'callback', 'delete:no')]]]
+      }[tpl] || [['—'], []];
+      lines = D[0]; rows = D[1]; time = p.time || '17:50';
+    }
+    const annotate = !!p.annotate;
+    const press = (b) => () => p.onButton && p.onButton(b.k.split(' · ')[0], b.k.split(' · ')[1] || '', b.t);
+    return {
+      isUser: tpl === 'user', isBot: tpl !== 'user', userText: p.text || '57', time: p.time || time, edited, reply, annotate,
+      colSt: { display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, flex: 1, maxWidth: p.maxWidth || 360 },
+      lines: lines.map((t, i) => ({ t, cls: i === 0 ? 'mx-t-body-strong' : 'mx-t-body', st: { textWrap: 'pretty', color: t === FOOT || /Модельные данные$/.test(t) && i === lines.length - 1 ? 'var(--text-secondary)' : 'var(--text-primary)', fontSize: /Модельные данные$/.test(t) && i === lines.length - 1 ? 13 : undefined } })),
+      rows: rows.map((r) => ({ st: { display: 'grid', gridTemplateColumns: 'repeat(' + r.length + ',minmax(0,1fr))', gap: 4 }, btns: r.map((b) => ({ t: b.t, k: b.k, press: press(b), lblSt: tpl === 'C06' ? { textAlign: 'center', lineHeight: '16px', textWrap: 'balance' } : { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } })) }))
+    };
+  }
+}
+</script>
+</body>
+</html>

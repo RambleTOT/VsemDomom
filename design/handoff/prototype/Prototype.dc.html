@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/sizes.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/components/max-ui.css">
+  <link rel="stylesheet" href="design/handoff/tokens/app-tokens.css">
+  <script src="vd-icons.js"></script>
+  <style>body{margin:0;background:#D9DBE1}a{color:#0068DB}a:hover{color:#004FA8}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;gap:24px;padding:32px;box-sizing:border-box;font-family:-apple-system,system-ui,'Helvetica Neue',Roboto,sans-serif;color:#060708">
+  <header style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between">
+    <div style="display:flex;flex-direction:column;gap:6px;max-width:760px">
+      <div style="font-size:15px;color:rgba(6,7,8,.68)">«Всем домом» · прототип для коридорного теста · C02 → S04 → S05 и U02</div>
+      <h1 style="margin:0;font-size:28px;line-height:32px;font-weight:600">Задание: в доме нет горячей воды. Что сделаете?</h1>
+      <div style="font-size:15px;line-height:20px;color:rgba(6,7,8,.68);text-wrap:pretty">Слева — телефон жителя: чат дома и мини-приложение. Справа — ноутбук УК. Статус, который ставит УК, сразу меняет карточку в чате и экран жителя.</div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:2px;padding:8px 12px;border-radius:12px;background:#fff;font-size:14px"><span style="color:rgba(6,7,8,.68)">До первого действия</span><span style="font-size:17px;font-weight:600;font-variant-numeric:tabular-nums">{{ firstAction }}</span></div>
+      <div style="display:flex;flex-direction:column;gap:2px;padding:8px 12px;border-radius:12px;background:#fff;font-size:14px"><span style="color:rgba(6,7,8,.68)">Касаний</span><span style="font-size:17px;font-weight:600;font-variant-numeric:tabular-nums">{{ taps }}</span></div>
+      <button type="button" onClick="{{ reset }}" style="min-height:44px;padding:0 16px;border:0;border-radius:12px;background:#060708;color:#fff;font-size:15px;font-family:inherit;cursor:pointer">Начать заново</button>
+    </div>
+  </header>
+
+  <div style="display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap">
+    <sc-if value="{{ showPhone }}" hint-placeholder-val="{{ true }}">
+      <div onClickCapture="{{ countTap }}" class="{{ themeCls }}" data-screen-label="Resident phone" style="width:390px;height:844px;flex-shrink:0;border-radius:28px;overflow:hidden;outline:1px solid rgba(12,13,14,.16);position:relative;display:flex;flex-direction:column;background:var(--background-surface);font-family:var(--family-base);color:var(--text-primary)">
+        <sc-if value="{{ inChat }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 12px;background:var(--background-primary);border-bottom:0.5px solid var(--divider-secondary)">
+            <span style="display:flex;color:var(--icon-themed);transform:scaleX(-1)">{{ ic.back }}</span>
+            <div aria-hidden="true" class="mx-t-description-strong" style="width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;background:var(--gradient-green);color:#fff">Д1</div>
+            <div style="display:flex;flex-direction:column;min-width:0"><span class="mx-t-body-strong">Дом 1 · соседи</span><span class="mx-t-description" style="color:var(--text-secondary)">312 участников</span></div>
+          </div>
+          <button type="button" onClick="{{ scrollTop }}" style="display:flex;align-items:center;gap:10px;min-height:48px;padding:6px 12px;border:0;background:var(--background-primary);border-bottom:0.5px solid var(--divider-secondary);text-align:left;cursor:pointer;color:var(--text-primary)">
+            <span style="width:2px;align-self:stretch;border-radius:1px;background:var(--icon-themed)"></span>
+            <span style="display:flex;flex-direction:column;min-width:0;flex:1"><span class="mx-t-description-strong" style="color:var(--app-text-link)">Закреплённое сообщение</span><span class="mx-t-description" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🏠 Дом 1 · Активные аварии: 1 — нет горячей воды с 17:40</span></span>
+          </button>
+          <div ref="{{ chatRef }}" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:12px">
+            <div style="margin-top:auto"></div>
+            <sc-for list="{{ msgs }}" as="m" hint-placeholder-count="2">
+              <dc-import name="BotMessage" tpl="{{ m.tpl }}" status="{{ m.status }}" eta="{{ eta }}" text="{{ m.text }}" time="{{ m.time }}" on-button="{{ onButton }}" hint-size="100%,120px"></dc-import>
+            </sc-for>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px 24px;background:var(--background-primary)">
+            <div class="mx-t-body" style="flex:1;min-height:40px;display:flex;align-items:center;padding:0 16px;border-radius:20px;background:var(--background-tertiary);color:var(--text-secondary)">Сообщение</div>
+          </div>
+          <sc-if value="{{ chatToast }}">
+            <div role="status" class="mx-t-detail" style="position:absolute;left:12px;right:12px;bottom:84px;padding:12px 14px;border-radius:14px;background:var(--background-primary);border:0.5px solid var(--divider-primary);color:var(--text-primary);text-wrap:pretty">{{ chatToast }}</div>
+          </sc-if>
+        </sc-if>
+        <sc-if value="{{ inApp }}">
+          <div style="display:flex;align-items:center;gap:8px;min-height:48px;padding:4px 8px;background:var(--background-primary);border-bottom:0.5px solid var(--divider-secondary)">
+            <button type="button" onClick="{{ closeApp }}" aria-label="Закрыть мини-приложение" style="width:44px;height:44px;border:0;background:none;display:flex;align-items:center;justify-content:center;color:var(--icon-primary);cursor:pointer">{{ ic.close }}</button>
+            <span class="mx-t-body-strong" style="flex:1;text-align:center">Всем домом</span>
+            <span class="mx-t-description" style="width:44px;text-align:center;color:var(--text-secondary)">MAX</span>
+          </div>
+          <div style="position:relative;height:796px">
+            <dc-import name="MiniApp" screen="{{ app.screen }}" variant="{{ app.variant }}" nav-key="{{ app.key }}" status="{{ status }}" eta="{{ eta }}" theme="{{ theme }}" platform="ios" fw="{{ 390 }}" fh="{{ 796 }}" frame="{{ true }}" on-status="{{ onStatus }}" on-open-chat="{{ closeApp }}" style="width:100%;height:100%" hint-size="100%,100%"></dc-import>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showUk }}" hint-placeholder-val="{{ true }}">
+      <div data-screen-label="UK laptop" style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:14px;color:rgba(6,7,8,.68)">Ноутбук УК · 1280 × 800 · масштаб 75 %</div>
+        <div style="width:960px;height:600px;border-radius:12px;overflow:hidden;outline:1px solid rgba(12,13,14,.16);position:relative;background:#fff">
+          <div style="position:absolute;left:0;top:0;width:1280px;height:800px;transform:scale(0.75);transform-origin:0 0">
+            <dc-import name="MiniApp" screen="U02" variant="open" status="{{ status }}" eta="{{ eta }}" nav-key="{{ ukKey }}" theme="{{ theme }}" platform="android" fw="{{ 1280 }}" fh="{{ 800 }}" frame="{{ true }}" on-status="{{ onStatus }}" style="width:100%;height:100%" hint-size="100%,100%"></dc-import>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;layout&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;both&quot;,&quot;resident&quot;,&quot;uk&quot;],&quot;default&quot;:&quot;both&quot;,&quot;tsType&quot;:&quot;'both'|'resident'|'uk'&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;}}">
+class Component extends DCLogic {
+  chatRef = React.createRef();
+  state = { view: 'chat', app: { screen: 'S05', variant: 'open', key: 0 }, status: 'open', eta: '19:00', toast: '', t0: Date.now(), first: null, taps: 0, ukKey: 0 };
+  componentDidMount() { this.scroll(); if (!window.VD_ICONS) { const t = setInterval(() => { if (window.VD_ICONS) { clearInterval(t); this._ic = null; this.forceUpdate(); } }, 60); } }
+  componentDidUpdate(pp, ps) { if (ps.status !== this.state.status || ps.view !== this.state.view) this.scroll(); }
+  componentWillUnmount() { clearTimeout(this.tt); clearTimeout(this.ct); }
+  scroll() { setTimeout(() => { const el = this.chatRef.current; if (el) el.scrollTop = el.scrollHeight; }, 60); }
+  mark() { if (this.state.first == null) this.setState({ first: Date.now() - this.state.t0 }); }
+  toast(t) { clearTimeout(this.tt); this.setState({ toast: t }); this.tt = setTimeout(() => this.setState({ toast: '' }), 4000); }
+  open(screen, variant) { this.mark(); this.setState((s) => ({ view: 'app', app: { screen, variant, key: s.app.key + 1 } })); }
+  msgsFor(status) {
+    const k = status;
+    if (this._mk === k) return this._msgs;
+    const card = { tpl: 'C02', status: status === 'closed' ? 'closed_over' : status, text: '', time: '' };
+    const list = [{ tpl: 'C01', status: '', text: '', time: '' }, { tpl: 'user', status: '', text: 'У кого-нибудь есть горячая вода?', time: '17:42' }, card];
+    if (['checking', 'discrepancy', 'closed'].includes(status)) list.push({ tpl: 'C03', status: '', text: '', time: '' });
+    if (status === 'closed') list.push({ tpl: 'C04', status: '', text: '', time: '' });
+    this._mk = k; this._msgs = list; return list;
+  }
+  renderVals() {
+    const st = this.state, p = this.props, layout = p.layout || 'both', theme = p.theme || 'light';
+    if (!this._ic && window.vdIcon) this._ic = { back: window.vdIcon(React, 'chevron-right', 24, 'currentColor'), close: window.vdIcon(React, 'x', 24, 'currentColor') };
+    if (!this._h) this._h = {
+      onButton: (kind, payload) => {
+        if (kind === 'open_app') { const m = { n_h1: ['S04', 'step1'], h_h1: ['S03', 'default'], 'i_<id>': ['S05', this.state.status], 'r_<id>': ['S07', 'over'], 'i_<newId>': ['S05', this.state.status] }[payload] || ['S03', 'default']; this.open(m[0], m[1]); return; }
+        this.mark();
+        if (payload.indexOf('join:') === 0) { const n = payload.split(':')[1]; this.toast(n === '0' ? 'Вы отметились. Подъезд можно указать в «Подробнее и сроки»' : 'Вы отметились: подъезд ' + n + '. Ответ УК пришлём в личку'); }
+        else if (payload === 'not_me') this.toast('Отметили: у вас горячая вода есть');
+        else if (payload === 'crew_yes') this.toast('Спасибо. Отметка видна в хронологии');
+        else if (payload === 'crew_no') this.toast('Отметили: бригады нет. УК увидит это в хронологии');
+        else if (payload === 'restore:yes') { this.toast('Ответ сохранён: вода есть. Его можно изменить'); clearTimeout(this.ct); this.ct = setTimeout(() => this.setState({ status: 'closed', ukKey: this.state.ukKey + 1 }), 1200); }
+        else if (payload === 'restore:no') { this.toast('Ответ «Нет» сохранён. В личку пришла подсказка, как сообщить в АДС'); this.setState({ status: 'discrepancy', ukKey: this.state.ukKey + 1 }); }
+        else if (payload === 'restore:bad') this.toast('Ответ сохранён. В личку придёт предложение сообщить о качестве');
+      },
+      onStatus: (s, extra) => this.setState({ status: s, eta: (extra && extra.eta) || this.state.eta }),
+      closeApp: () => this.setState({ view: 'chat' }),
+      countTap: () => this.setState({ taps: this.state.taps + 1 }),
+      scrollTop: () => { const el = this.chatRef.current; if (el) el.scrollTop = 0; },
+      reset: () => this.setState({ view: 'chat', status: 'open', eta: '19:00', toast: '', t0: Date.now(), first: null, taps: 0, ukKey: this.state.ukKey + 1, app: { screen: 'S05', variant: 'open', key: this.state.app.key + 1 } })
+    };
+    return Object.assign({}, this._h, {
+      chatRef: this.chatRef, ic: this._ic || {}, theme, themeCls: theme === 'dark' ? 'max-dark' : 'max-light',
+      showPhone: layout !== 'uk', showUk: layout !== 'resident', inChat: st.view === 'chat', inApp: st.view === 'app',
+      msgs: this.msgsFor(st.status), status: st.status, eta: st.eta, chatToast: st.toast, app: st.app, ukKey: st.ukKey,
+      firstAction: st.first == null ? '—' : (st.first / 1000).toFixed(1).replace('.', ',') + ' с', taps: String(st.taps)
+    });
+  }
+}
+</script>
+</body>
+</html>

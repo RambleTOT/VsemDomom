@@ -1,0 +1,26 @@
+# секреты
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+
+# Claude — локальные настройки
+.claude/
+CLAUDE.local.md
+
+# внутренние документы (остаются только локально)
+docs/TZ.md
+docs/SOLUTION.md
+docs/FEATURES.md
+docs/DESIGN_TZ.md
+
+# сборка и зависимости
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+.DS_Store

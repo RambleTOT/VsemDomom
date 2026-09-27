@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/components/max-ui.css">
+  <link rel="stylesheet" href="design/handoff/tokens/app-tokens.css">
+</helmet>
+<ul aria-label="Отметки по подъездам" style="{{ wrap }}">
+  <sc-for list="{{ chips }}" as="c" hint-placeholder-count="4">
+    <li aria-label="{{ c.aria }}" style="{{ c.st }}"><span aria-hidden="true" class="mx-t-detail" style="white-space:nowrap">{{ c.label }}</span></li>
+  </sc-for>
+</ul>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:60},&quot;counts&quot;:{&quot;editor&quot;:null,&quot;default&quot;:[0,6,5,0],&quot;tsType&quot;:&quot;number[]&quot;},&quot;unknown&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;tsType&quot;:&quot;number&quot;},&quot;selected&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;tsType&quot;:&quot;number&quot;},&quot;scroll&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props, counts = p.counts || [0, 6, 5, 0];
+    const pl = (n) => { const a = n % 10, b = n % 100; return a === 1 && b !== 11 ? 'квартира' : a >= 2 && a <= 4 && (b < 12 || b > 14) ? 'квартиры' : 'квартир'; };
+    const chips = counts.map((n, i) => ({ label: 'П' + (i + 1) + ' · ' + (n > 99 ? '99+' : n), aria: 'Подъезд ' + (i + 1) + ': ' + n + ' ' + pl(n),
+      st: { display: 'inline-flex', alignItems: 'center', minHeight: 32, padding: '4px 12px', borderRadius: 16, flexShrink: 0, background: p.selected === i + 1 ? 'var(--app-text-link)' : 'var(--background-tertiary)', color: p.selected === i + 1 ? 'var(--text-primary-inverse-static)' : n === 0 ? 'var(--text-secondary)' : 'var(--text-primary)', fontWeight: n === 0 ? 400 : 500, boxSizing: 'border-box' } }));
+    if (p.unknown) chips.push({ label: 'не указан · ' + p.unknown, aria: 'Подъезд не указан: ' + p.unknown + ' ' + pl(p.unknown), st: { display: 'inline-flex', alignItems: 'center', minHeight: 32, padding: '4px 12px', borderRadius: 16, flexShrink: 0, background: 'var(--background-tertiary)', color: 'var(--text-secondary)', boxSizing: 'border-box' } });
+    const scroll = counts.length > 6 && p.scroll;
+    return { chips, wrap: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', gap: 8, flexWrap: scroll ? 'nowrap' : 'wrap', overflowX: scroll ? 'auto' : 'visible' } };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/colors.css">
+  <link rel="stylesheet" href="design/handoff/tokens/app-tokens.css">
+  <style>@keyframes vdPulse{0%,100%{opacity:1}50%{opacity:.45}}</style>
+</helmet>
+<div aria-busy="true" aria-label="Загрузка" style="display:flex;flex-direction:column;gap:12px">{{ blocks }}</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:320},&quot;kind&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;line&quot;,&quot;card&quot;,&quot;list&quot;,&quot;timeline&quot;],&quot;default&quot;:&quot;card&quot;,&quot;tsType&quot;:&quot;'line'|'card'|'list'|'timeline'&quot;},&quot;count&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:2,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const b = (w, h, r, k, extra) => React.createElement('div', { key: k, style: Object.assign({ width: w, height: h, borderRadius: r, background: 'var(--background-tertiary)', animation: reduce ? 'none' : 'vdPulse 1.2s linear infinite' }, extra) });
+    const card = (k) => React.createElement('div', { key: k, style: { display: 'flex', flexDirection: 'column', gap: 10, padding: 16, borderRadius: 16, background: 'var(--background-card)' } }, [b('78%', 24, 8, 'a'), b('46%', 28, 14, 'b'), b('60%', 16, 6, 'c')]);
+    const row = (k) => React.createElement('div', { key: k, style: { display: 'flex', gap: 12, alignItems: 'center' } }, [b(32, 32, 16, 'a'), React.createElement('div', { key: 'b', style: { flex: 1, display: 'flex', flexDirection: 'column', gap: 6 } }, [b('70%', 16, 6, 'x'), b('40%', 12, 6, 'y')])]);
+    const kind = this.props.kind || 'card', n = this.props.count || 3;
+    let blocks;
+    if (kind === 'line') blocks = [b('70%', 24, 8, 'l')];
+    else if (kind === 'timeline') blocks = Array.from({ length: n }, (_, i) => row('r' + i));
+    else if (kind === 'list') blocks = Array.from({ length: n }, (_, i) => React.createElement('div', { key: 'q' + i, style: { padding: 12, borderRadius: 16, background: 'var(--background-card)' } }, row('r')));
+    else blocks = Array.from({ length: n }, (_, i) => card('c' + i));
+    return { blocks };
+  }
+}
+</script>
+</body>
+</html>

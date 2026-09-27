@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/components/max-ui.css">
+  <link rel="stylesheet" href="design/handoff/tokens/app-tokens.css">
+  <script src="vd-icons.js"></script>
+</helmet>
+<span title="Дома, УК и телефоны АДС — модельные. Нормы — реальные" style="position:relative;display:inline-flex;align-items:center;gap:4px;min-height:28px;padding:4px 8px 4px 6px;border-radius:8px;background:var(--app-model-data-bg);color:var(--text-secondary);box-sizing:border-box;white-space:nowrap">
+  {{ ic }}
+  <span class="mx-t-description" style="{{ lbl }}">Модельные данные</span>
+</span>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:200,&quot;height&quot;:40},&quot;compact&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  componentDidMount() { if (!window.VD_ICONS) { const t = setInterval(() => { if (window.VD_ICONS) { clearInterval(t); this.forceUpdate(); } }, 50); } }
+  renderVals() {
+    const c = !!this.props.compact;
+    return { ic: window.vdIcon ? window.vdIcon(React, 'info', 16, 'var(--icon-tertiary)') : null,
+      lbl: c ? { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' } : {} };
+  }
+}
+</script>
+</body>
+</html>

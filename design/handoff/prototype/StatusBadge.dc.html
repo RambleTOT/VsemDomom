@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/components/max-ui.css">
+  <link rel="stylesheet" href="design/handoff/tokens/app-tokens.css">
+  <script src="vd-icons.js"></script>
+</helmet>
+<span style="{{ chip }}">{{ ic }}<span class="mx-t-description" style="white-space:nowrap"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Статус: </span>{{ label }}</span></span>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:220,&quot;height&quot;:40},&quot;status&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;open&quot;,&quot;accepted&quot;,&quot;brigade&quot;,&quot;localized&quot;,&quot;checking&quot;,&quot;discrepancy&quot;,&quot;closed&quot;,&quot;closed_disc&quot;,&quot;merged&quot;],&quot;default&quot;:&quot;accepted&quot;,&quot;tsType&quot;:&quot;'open'|'accepted'|'brigade'|'localized'|'checking'|'discrepancy'|'closed'|'closed_disc'|'merged'&quot;}}">
+class Component extends DCLogic {
+  componentDidMount() { if (!window.VD_ICONS) { const t = setInterval(() => { if (window.VD_ICONS) { clearInterval(t); this.forceUpdate(); } }, 50); } }
+  renderVals() {
+    const T = 'var(--background-tertiary)', N = 'var(--app-negative-bg)', th = 'var(--icon-themed)', ng = 'var(--icon-negative)';
+    const M = {
+      open: ['Открыта', 'circle-slash', ng, T], accepted: ['Принята', 'clock', th, T], brigade: ['Бригада на месте', 'wrench', th, T],
+      localized: ['Локализована', 'shield', th, T], checking: ['Проверяем', 'circle-help', th, T], discrepancy: ['Расхождение', 'triangle-alert', ng, N],
+      closed: ['Закрыта', 'circle-check', 'var(--app-icon-positive)', T], closed_disc: ['Закрыта с расхождением', 'triangle-alert', ng, N], merged: ['Объединена', 'merge', 'var(--icon-tertiary)', T]
+    };
+    const m = M[this.props.status] || M.open;
+    return {
+      label: m[0],
+      chip: { position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 4, height: 24, padding: '0 8px 0 6px', borderRadius: 12, background: m[3], color: 'var(--text-primary)', boxSizing: 'border-box' },
+      ic: window.vdIcon ? window.vdIcon(React, m[1], 16, m[2]) : null
+    };
+  }
+}
+</script>
+</body>
+</html>

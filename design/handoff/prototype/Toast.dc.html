@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/components/max-ui.css">
+  <link rel="stylesheet" href="design/handoff/tokens/app-tokens.css">
+  <script src="vd-icons.js"></script>
+</helmet>
+<div role="status" style="display:flex;align-items:center;gap:12px;min-height:48px;padding:10px 12px 10px 14px;border-radius:14px;background:var(--background-primary);border:0.5px solid var(--divider-primary);color:var(--text-primary);box-sizing:border-box">
+  {{ ic }}
+  <div class="mx-t-detail" style="flex:1;min-width:0;text-wrap:pretty">{{ text }}</div>
+  <sc-if value="{{ action }}">
+    <button type="button" onClick="{{ act }}" class="mx-t-action-small" style="min-height:44px;margin:-8px 0;padding:0 8px;border:0;background:none;color:var(--app-text-link);cursor:pointer;font-family:inherit;border-radius:8px" style-focus="outline:2px solid var(--controls-active);outline-offset:2px">{{ action }}</button>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:64},&quot;kind&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;success&quot;,&quot;error&quot;,&quot;info&quot;],&quot;default&quot;:&quot;success&quot;,&quot;tsType&quot;:&quot;'success'|'error'|'info'&quot;},&quot;text&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Статус обновлён. Жители видят его в чате&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;action&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;onAction&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;()=&gt;void&quot;}}">
+class Component extends DCLogic {
+  componentDidMount() { if (!window.VD_ICONS) { const t = setInterval(() => { if (window.VD_ICONS) { clearInterval(t); this.forceUpdate(); } }, 50); } }
+  renderVals() {
+    const p = this.props, k = p.kind || 'success';
+    const I = { success: ['circle-check', 'var(--app-icon-positive)'], error: ['circle-alert', 'var(--icon-negative)'], info: ['info', 'var(--icon-themed)'] }[k];
+    return { text: p.text || 'Статус обновлён. Жители видят его в чате', action: p.action || (k === 'error' ? 'Повторить' : ''), act: () => p.onAction && p.onAction(),
+      ic: window.vdIcon ? window.vdIcon(React, I[0], 20, I[1]) : null };
+  }
+}
+</script>
+</body>
+</html>

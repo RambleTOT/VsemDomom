@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/sizes.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/components/max-ui.css">
+  <link rel="stylesheet" href="design/handoff/tokens/app-tokens.css">
+  <script src="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/_ds_bundle.js"></script>
+  <script src="vd-icons.js"></script>
+</helmet>
+<div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:24px 16px;border-radius:16px;background:var(--background-card)">
+  {{ ic }}
+  <div class="mx-t-title" style="color:var(--text-primary);padding-top:8px">{{ title }}</div>
+  <div class="mx-t-detail" style="color:var(--text-secondary);max-width:320px;text-wrap:pretty">{{ text }}</div>
+  <sc-if value="{{ action }}">
+    <div style="padding-top:8px"><x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="{{ variant }}" size="medium" onClick="{{ act }}" hint-size="auto,40px">{{ action }}</x-import></div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:260},&quot;icon&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;circle-check&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Сейчас аварий нет&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;text&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Если что-то случилось — сообщите, соседи увидят карточку в чате&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;action&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Сообщить об аварии&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;variant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;primary&quot;,&quot;secondary&quot;],&quot;default&quot;:&quot;secondary&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;onAction&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;()=&gt;void&quot;}}">
+class Component extends DCLogic {
+  componentDidMount() { if (!window.VD_ICONS) { const t = setInterval(() => { if (window.VD_ICONS) { clearInterval(t); this.forceUpdate(); } }, 50); } }
+  renderVals() {
+    const p = this.props;
+    return { title: p.title || 'Сейчас аварий нет', text: p.text || 'Если что-то случилось — сообщите, соседи увидят карточку в чате', action: p.action != null ? p.action : 'Сообщить об аварии',
+      variant: p.variant || 'secondary', act: () => p.onAction && p.onAction(), ic: window.vdIcon ? window.vdIcon(React, p.icon || 'circle-check', 48, 'var(--icon-tertiary)') : null };
+  }
+}
+</script>
+</body>
+</html>

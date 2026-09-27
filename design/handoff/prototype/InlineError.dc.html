@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/tokens/sizes.css">
+  <link rel="stylesheet" href="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/components/max-ui.css">
+  <link rel="stylesheet" href="design/handoff/tokens/app-tokens.css">
+  <script src="_ds/max-ui-design-system-b9d0190a-6dd3-40a2-821f-57fdce9dead2/_ds_bundle.js"></script>
+  <script src="vd-icons.js"></script>
+</helmet>
+<div role="alert" style="{{ box }}">
+  <span style="{{ icBox }}">{{ ic }}</span>
+  <div style="{{ col }}">
+    <div class="{{ tClass }}" style="color:var(--text-primary);text-wrap:pretty">{{ title }}</div>
+    <div class="mx-t-detail" style="color:var(--text-secondary);text-wrap:pretty">{{ text }}</div>
+    <sc-if value="{{ code }}"><div class="mx-t-description" style="color:var(--text-secondary)">{{ code }}</div></sc-if>
+    <div style="{{ btnRow }}">
+      <x-import component-from-global-scope="MAXUIDesignSystem_b9d019.Button" variant="{{ btnVariant }}" size="medium" stretched="{{ full }}" loading="{{ loading }}" onClick="{{ act }}" hint-size="auto,40px">{{ action }}</x-import>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:200},&quot;kind&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;network&quot;,&quot;server&quot;,&quot;forbidden&quot;,&quot;merged&quot;,&quot;notfound&quot;,&quot;session&quot;,&quot;outside&quot;,&quot;expired&quot;,&quot;feature_off&quot;,&quot;slow&quot;],&quot;default&quot;:&quot;network&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;inline&quot;,&quot;full&quot;],&quot;default&quot;:&quot;inline&quot;,&quot;tsType&quot;:&quot;'inline'|'full'&quot;},&quot;loading&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;onAction&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(kind:string)=&gt;void&quot;}}">
+class Component extends DCLogic {
+  componentDidMount() { if (!window.VD_ICONS) { const t = setInterval(() => { if (window.VD_ICONS) { clearInterval(t); this.forceUpdate(); } }, 50); } }
+  renderVals() {
+    const p = this.props, full = p.mode === 'full';
+    const K = {
+      network: ['wifi-off', 'Нет соединения', 'Проверьте интернет. Введённое сохранено на экране', 'Повторить'],
+      server: ['server-crash', 'Не получилось сохранить', 'Сервис ответил ошибкой. Данные на экране не потеряны', 'Повторить', 'Код для поддержки: 502 · 7f3a'],
+      forbidden: ['lock', 'Раздел для сотрудников УК', 'Этот раздел видят сотрудники УК, которая обслуживает дом. Если вы сотрудник — введите код в профиле', 'Открыть профиль'],
+      merged: ['merge', 'Эта авария объединена с другой', 'Сроки, хронология и ответы соседей теперь в актуальной карточке', 'Открыть актуальную'],
+      notfound: ['search-x', 'Авария не найдена', 'Возможно, ссылка неполная. Откройте аварию из карточки в чате дома', 'На главную'],
+      session: ['log-in', 'Сессия устарела', 'Откройте приложение заново из чата', 'Закрыть'],
+      outside: ['smartphone', 'Откройте приложение в MAX', '«Всем домом» работает внутри MAX: так сервис узнаёт ваш дом без паролей', 'Открыть бота в MAX'],
+      expired: ['link-2-off', 'Ссылка устарела', 'Эта ссылка больше не действует. Актуальные аварии дома — на главной', 'На главную'],
+      feature_off: ['square-dashed', 'Функция недоступна', 'Эта функция выключена в текущей версии', 'На главную'],
+      slow: ['clock', 'Загружаем дольше обычного', 'Проверьте интернет или попробуйте ещё раз', 'Повторить']
+    };
+    const k = K[p.kind] || K.network;
+    const neg = ['network', 'server'].includes(p.kind || 'network');
+    return {
+      title: p.title || k[1], text: p.text || k[2], action: p.action || k[3], code: p.kind === 'server' ? k[4] : '', loading: !!p.loading, full,
+      act: () => p.onAction && p.onAction(p.kind), btnVariant: full ? 'primary' : 'secondary', tClass: full ? 'mx-t-subheader' : 'mx-t-title',
+      ic: window.vdIcon ? window.vdIcon(React, k[0], full ? 48 : 24, neg ? 'var(--icon-negative)' : 'var(--icon-tertiary)') : null,
+      box: full ? { display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 16, padding: '24px 16px', maxWidth: 400, margin: '0 auto' }
+        : { display: 'flex', gap: 12, alignItems: 'flex-start', padding: 16, borderRadius: 16, background: 'var(--background-card)' },
+      icBox: { display: 'flex', flexShrink: 0 },
+      col: { display: 'flex', flexDirection: 'column', gap: full ? 8 : 4, flex: full ? 'none' : 1, minWidth: 0, width: full ? '100%' : 'auto', alignItems: full ? 'center' : 'stretch' },
+      btnRow: { display: 'flex', paddingTop: full ? 12 : 8, width: full ? '100%' : 'auto' }
+    };
+  }
+}
+</script>
+</body>
+</html>
