@@ -48,6 +48,17 @@ describe('события MAX', () => {
     expect(normalizeUpdate(parse(groupMessage), off).keywordHit).toBeUndefined();
   });
 
+  it('группа: текст передаётся только для команды /connect', () => {
+    const group = (text: string) =>
+      normalizeUpdate(parse({ ...groupMessage, message: { ...groupMessage.message, body: { mid: 'mid.c', seq: 3, text } } }), off).text;
+    expect(group('/connect dom1model1')).toBe('/connect dom1model1');
+    expect(group('/CONNECT@vsemdomom_bot dom1model1')).toBe('/CONNECT@vsemdomom_bot dom1model1');
+    expect(group('/connect')).toBe('/connect');
+    expect(group('/connectdom1')).toBeUndefined();
+    expect(group('кв. 57, нет воды /connect')).toBeUndefined();
+    expect(group(`/connect ${'x'.repeat(200)}`)).toHaveLength(64);
+  });
+
   it('bot_started с payload диплинка; остальные типы — без имён', () => {
     expect(normalizeUpdate(parse(botStarted), off)).toMatchObject({ type: 'bot_started', chatId: 555, userId: 1001, payload: 'h_dom1model1', locale: 'ru' });
     const added = normalizeUpdate(parse({ update_type: 'user_added', timestamp: 1, chat_id: -1001, user: { user_id: 7, first_name: 'Вера' }, inviter_id: null, is_channel: false }), off);

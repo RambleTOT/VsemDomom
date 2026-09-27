@@ -61,6 +61,10 @@ export const SUBSCRIBED_UPDATE_TYPES = [
 /** Текст из лички передаётся в задачу только для шагов диалога и команд — не длиннее этого. */
 const MAX_DM_TEXT = 500;
 
+/** Из группы в задачу попадает только команда привязки /connect <код дома>. */
+const GROUP_COMMAND = /^\/connect(@\S+)?(\s|$)/i;
+const MAX_GROUP_COMMAND_TEXT = 64;
+
 export interface NormalizedUpdate {
   type: string;
   timestamp: number;
@@ -71,7 +75,7 @@ export interface NormalizedUpdate {
   /** Payload кнопки или диплинка bot_started. */
   payload?: string | null;
   mid?: string;
-  /** Текст сообщения — только из лички (команды и шаги диалога). */
+  /** Текст сообщения — только из лички (команды и шаги диалога) и команда /connect в группе. */
   text?: string;
   /** Сообщение группы содержит ключевые слова F13; сам текст не хранится. */
   keywordHit?: boolean;
@@ -130,6 +134,7 @@ export function normalizeUpdate(u: RawUpdate, options: NormalizeOptions): Normal
         userId: u.message?.sender?.user_id ?? null,
         ...(u.message?.body?.mid ? { mid: u.message.body.mid } : {}),
         ...(isDialog ? { text: text.slice(0, MAX_DM_TEXT) } : {}),
+        ...(!isDialog && GROUP_COMMAND.test(text) ? { text: text.slice(0, MAX_GROUP_COMMAND_TEXT) } : {}),
         ...(!isDialog && options.keywordMatcher ? { keywordHit: options.keywordMatcher(text) } : {}),
       };
     }

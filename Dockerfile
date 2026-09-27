@@ -54,4 +54,5 @@ FROM ${CADDY_IMAGE} AS web
 COPY infra/Caddyfile /etc/caddy/Caddyfile
 COPY infra/Caddyfile.prod /etc/caddy/Caddyfile.prod
 COPY --from=build /out/web /srv/app
+COPY infra/privacy /srv/privacy
 EXPOSE 8080

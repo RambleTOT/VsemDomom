@@ -233,3 +233,35 @@ export function isOneOf<const T extends readonly unknown[]>(values: T, value: un
 export function isOpenStatus(status: IncidentStatus): status is OpenStatus {
   return isOneOf(OPEN_STATUSES, status);
 }
+
+/** Суффикс ключей словаря для вида услуги: service.<key>, service_gen.<key>, restore.question.<key>. */
+export const SERVICE_I18N_KEY: Record<ServiceType, string> = {
+  cold_water: 'cold',
+  hot_water: 'hot',
+  heating: 'heat',
+  electricity: 'power',
+  sewerage: 'sewer',
+  gas: 'gas',
+  leak: 'leak',
+};
+
+/** Суффикс ключей словаря для роли в квартире: role.<key>. */
+export const RESIDENCY_ROLE_I18N_KEY: Record<ResidencyRole, string> = {
+  owner: 'owner',
+  social_tenant: 'social',
+  renter: 'rent',
+  family: 'family',
+};
+
+/** Суффикс ключей словаря для статуса: status.<key>. */
+export const DISPLAY_STATUS_I18N_KEY: Record<DisplayStatus, string> = {
+  open: 'open',
+  accepted: 'accepted',
+  brigade_on_site: 'brigade',
+  localized: 'localized',
+  checking: 'checking',
+  discrepancy: 'discrepancy',
+  closed: 'closed',
+  closed_with_discrepancy: 'closed_disc',
+  merged: 'merged',
+};

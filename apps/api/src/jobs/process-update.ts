@@ -9,7 +9,12 @@ import type { UpdateJob } from '../webhook/ingest.ts';
 import type { NormalizedUpdate } from '../max/update.ts';
 import type { JobContext } from './context.ts';
 
-export type UpdateHandler = (update: NormalizedUpdate, ctx: JobContext) => Promise<void>;
+/** Метаданные события: ключ дедупликации — основа ключей идемпотентности исходящих. */
+export interface UpdateMeta {
+  dedupeKey: string;
+}
+
+export type UpdateHandler = (update: NormalizedUpdate, ctx: JobContext, meta: UpdateMeta) => Promise<void>;
 export type UpdateHandlers = Partial<Record<string, UpdateHandler[]>>;
 
 /** Пользователь начал диалог — боту можно писать в личку. */
@@ -47,8 +52,9 @@ export function mergeHandlers(...sets: UpdateHandlers[]): UpdateHandlers {
 
 export async function processUpdate(job: UpdateJob, handlers: UpdateHandlers, ctx: JobContext): Promise<void> {
   const list = handlers[job.update.type] ?? [];
+  const meta: UpdateMeta = { dedupeKey: job.dedupeKey };
   try {
-    for (const handler of list) await handler(job.update, ctx);
+    for (const handler of list) await handler(job.update, ctx, meta);
     await ctx.db
       .update(inboundUpdate)
       .set({ processedAt: ctx.clock.now(), error: null })

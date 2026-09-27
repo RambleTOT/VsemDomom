@@ -19,6 +19,17 @@
 	handle /ready {
 		reverse_proxy api:3000
 	}
+	# Политика обработки данных — ссылка из согласия в боте
+	handle /privacy {
+		root * /srv/privacy
+		rewrite * /index.html
+		file_server
+		header {
+			X-Content-Type-Options nosniff
+			Referrer-Policy no-referrer
+			-Server
+		}
+	}
 	# Симулятор чата (только MAX_MODE=simulator; иначе api отвечает 404)
 	handle /dev/* {
 		reverse_proxy api:3000

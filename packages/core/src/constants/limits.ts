@@ -5,3 +5,6 @@ export const MAX_MONTHLY_CHARGE_RUBLES = 10_000_000;
 
 /** Ширина номера месяца в ключе YYYY-MM. */
 export const MONTH_DIGITS = 2;
+
+/** Копейки в записи суммы: «7,20 ₽». */
+export const KOPECK_DIGITS = 2;

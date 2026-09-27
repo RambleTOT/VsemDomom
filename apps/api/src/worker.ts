@@ -6,11 +6,11 @@ import { writeFile } from 'node:fs/promises';
 import { keywordMatcher } from '@vsemdomom/core';
 import { ruTranslator } from '@vsemdomom/shared';
 import { sql } from 'drizzle-orm';
+import { botJobHandlers, botUpdateHandlers } from './bot/index.ts';
 import { ConfigError, loadConfig } from './config/env.ts';
 import { KEYWORD_PHRASES } from './config/params.ts';
 import { createDb } from './db/client.ts';
 import type { JobContext } from './jobs/context.ts';
-import { baseHandlers } from './jobs/process-update.ts';
 import { createBoss, ensureQueues, PgBossQueue } from './jobs/queue.ts';
 import { startWorkers } from './jobs/runtime.ts';
 import { createLogger } from './logger.ts';
@@ -34,7 +34,7 @@ async function main(): Promise<void> {
   const max = createMaxApi(config, { db: handle.db, log, clock: systemClock });
   const ctx: JobContext = { config, db: handle.db, queue, max, log, clock: systemClock, i18n: ruTranslator };
 
-  await startWorkers(boss, ctx, baseHandlers);
+  await startWorkers(boss, ctx, botUpdateHandlers, botJobHandlers);
 
   const polling = new AbortController();
   if (config.max.mode === 'polling') {
