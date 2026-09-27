@@ -10,3 +10,5 @@ export * from './deadlines/deadlines.ts';
 export * from './exceed/interruption.ts';
 export * from './exceed/flat-intervals.ts';
 export * from './exceed/recalc.ts';
+export * from './constants/max-limits.ts';
+export * from './render/message.ts';

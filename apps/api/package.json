@@ -15,7 +15,7 @@
     "dev:worker": "node --conditions=source --watch src/worker.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --conditions=source src/migrate.ts",
-    "gen:max-types": "openapi-typescript src/max/schema.yaml -o src/max/schema.gen.ts"
+    "gen:max-types": "openapi-typescript src/max/schema.yaml -o src/max/schema.gen.ts --default-non-nullable false"
   },
   "dependencies": {
     "@date-fns/tz": "1.5.0",
