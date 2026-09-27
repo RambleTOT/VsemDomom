@@ -48,7 +48,7 @@ jobs:
       - name: openapi.yaml совпадает со сгенерированным
         run: pnpm openapi:check
       - name: Лицензии зависимостей
-        run: pnpm licenses
+        run: pnpm license-check
       - name: Уязвимости (high и critical блокируют)
         run: pnpm audit --prod --audit-level=high
 
