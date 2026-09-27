@@ -13,3 +13,4 @@ export * from './api/routes.ts';
 export * from './api/system.ts';
 export * from './api/uk.ts';
 export * from './api/webhook.ts';
+export * from './i18n.ts';

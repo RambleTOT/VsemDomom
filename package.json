@@ -23,7 +23,12 @@
     "openapi:gen": "pnpm --filter @vsemdomom/shared openapi:gen",
     "openapi:check": "pnpm --filter @vsemdomom/shared openapi:check",
     "gen:max-types": "pnpm --filter @vsemdomom/api gen:max-types",
-    "license-check": "license-checker-rseidelsohn --start apps/api --excludePrivatePackages --production --onlyAllow \"MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;0BSD;CC0-1.0;Unlicense;BlueOak-1.0.0;Python-2.0\""
+    "license-check": "license-checker-rseidelsohn --start apps/api --excludePrivatePackages --production --onlyAllow \"MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;0BSD;CC0-1.0;Unlicense;BlueOak-1.0.0;Python-2.0\"",
+    "max:me": "pnpm --filter @vsemdomom/api max:me",
+    "max:subscribe": "pnpm --filter @vsemdomom/api max:subscribe",
+    "max:unsubscribe": "pnpm --filter @vsemdomom/api max:unsubscribe",
+    "max:subscriptions": "pnpm --filter @vsemdomom/api max:subscriptions",
+    "max:commands": "pnpm --filter @vsemdomom/api max:commands"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

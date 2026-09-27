@@ -32,6 +32,11 @@ export interface SendOptions {
   disableLinkPreview?: boolean;
 }
 
+/** Чат, к которому относится вызов: по нему считаются лимиты частоты. */
+export interface ChatScope {
+  chatId?: number | null;
+}
+
 export interface CallbackAnswerInput {
   /** Одноразовое уведомление нажавшему. */
   notification?: string;
@@ -52,9 +57,11 @@ export interface MaxApi {
   subscribe(input: { url: string; updateTypes: string[]; secret: string }): Promise<void>;
   unsubscribe(url: string): Promise<void>;
   sendMessage(target: MaxTarget, message: OutgoingMessage, options?: SendOptions): Promise<{ mid: string }>;
-  editMessage(mid: string, message: OutgoingMessage): Promise<void>;
-  deleteMessage(mid: string): Promise<void>;
-  answerCallback(callbackId: string, answer: CallbackAnswerInput): Promise<void>;
+  /** chatId — для лимита частоты правок в чате. */
+  editMessage(mid: string, message: OutgoingMessage, options?: ChatScope): Promise<void>;
+  deleteMessage(mid: string, options?: ChatScope): Promise<void>;
+  /** chatId — для лимита частоты ответов в чате. */
+  answerCallback(callbackId: string, answer: CallbackAnswerInput, options?: ChatScope): Promise<void>;
   pinMessage(chatId: number, mid: string, options?: { notify?: boolean }): Promise<void>;
   getChat(chatId: number): Promise<MaxChat>;
   /** Членство пользователей в чате (нужны права администратора). */

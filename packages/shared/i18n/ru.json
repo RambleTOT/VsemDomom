@@ -625,5 +625,13 @@
   "bot.c07.heat.cold": "Холодные",
   "bot.c08.l1": "{month} в доме {house}: {count} аварии, {in_norm} устранены в норматив",
   "bot.c08.l2": "В среднем УК отвечала за {minutes} минут",
-  "bot.c08.l3": "{service}: {total} перерывов при норме {limit} (Правила № 354, прил. 1)"
+  "bot.c08.l3": "{service}: {total} перерывов при норме {limit} (Правила № 354, прил. 1)",
+  "bot.cmd.start": "Начать",
+  "bot.cmd.menu": "Главное меню",
+  "bot.cmd.report": "Сообщить об аварии",
+  "bot.cmd.help": "Как пользоваться",
+  "bot.cmd.delete": "Удалить мои данные",
+  "bot.alert.subscription_restored": "Подписка webhook пропала и восстановлена: {url}",
+  "bot.alert.subscription_failed": "Подписка webhook пропала, восстановить не удалось: {error}",
+  "bot.alert.jobs_failed": "Задачи не выполнены после всех попыток: {count} за 10 минут"
 }

@@ -10,6 +10,7 @@ import { toNewMessageBody } from './body.ts';
 import {
   MaxApiError,
   type CallbackAnswerInput,
+  type ChatScope,
   type MaxApi,
   type MaxBotCommand,
   type MaxBotInfo,
@@ -114,8 +115,6 @@ export class FakeMaxApi implements MaxApi {
   readonly messages = new Map<string, StoredMessage>();
   readonly callbacks: { callbackId: string; answer: CallbackAnswerInput }[] = [];
   readonly pins = new Map<number, string>();
-  /** Связь callback_id → чат: нужна для эмуляции лимита ответов по чату. */
-  readonly callbackChats = new Map<string, number>();
   readonly chats = new Map<number, FakeChat>();
   subscriptions: MaxSubscription[] = [];
   commands: MaxBotCommand[] = [];
@@ -221,8 +220,9 @@ export class FakeMaxApi implements MaxApi {
     }, chatId).then((r) => ({ mid: r.message.body.mid }));
   }
 
-  async editMessage(mid: string, message: OutgoingMessage): Promise<void> {
+  async editMessage(mid: string, message: OutgoingMessage, options: ChatScope = {}): Promise<void> {
     const stored = this.messages.get(mid);
+    const chatId = options.chatId ?? stored?.chatId ?? null;
     await this.call('editMessage', 'PUT', '/messages', { message_id: mid }, toNewMessageBody(message, 'edit'), () => {
       this.assertValid(message);
       if (stored?.deleted) throw new MaxApiError('not_found', 'message.not.found', { status: 404, code: 'not.found' });
@@ -231,28 +231,27 @@ export class FakeMaxApi implements MaxApi {
         stored.editedAt = this.clock.now();
       }
       return { success: true };
-    }, stored?.chatId ?? null);
+    }, chatId);
   }
 
-  async deleteMessage(mid: string): Promise<void> {
+  async deleteMessage(mid: string, options: ChatScope = {}): Promise<void> {
     await this.call('deleteMessage', 'DELETE', '/messages', { message_id: mid }, null, () => {
       const stored = this.messages.get(mid);
       if (stored) stored.deleted = true;
       return { success: true };
-    });
+    }, options.chatId ?? null);
   }
 
-  async answerCallback(callbackId: string, answer: CallbackAnswerInput): Promise<void> {
+  async answerCallback(callbackId: string, answer: CallbackAnswerInput, options: ChatScope = {}): Promise<void> {
     const body = {
       ...(answer.notification === undefined ? {} : { notification: answer.notification }),
       ...(answer.message ? { message: toNewMessageBody(answer.message, 'edit') } : {}),
     };
-    const chatId = this.callbackChats.get(callbackId) ?? null;
     await this.call('answerCallback', 'POST', '/answers', { callback_id: callbackId }, body, () => {
       if (answer.message) this.assertValid(answer.message);
       this.callbacks.push({ callbackId, answer });
       return { success: true };
-    }, chatId);
+    }, options.chatId ?? null);
   }
 
   async pinMessage(chatId: number, mid: string, options: { notify?: boolean } = {}): Promise<void> {

@@ -8,5 +8,7 @@ export default defineProject({
     name: 'api',
     include: ['test/**/*.test.ts'],
     environment: 'node',
+    // Интеграционные тесты пересоздают схему общей тестовой базы — файлы идут по очереди.
+    fileParallelism: false,
   },
 });

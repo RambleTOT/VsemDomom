@@ -15,6 +15,11 @@
       "source": "./src/domain/enums.ts",
       "types": "./dist/domain/enums.d.ts",
       "default": "./dist/domain/enums.js"
+    },
+    "./i18n": {
+      "source": "./src/i18n/translator.ts",
+      "types": "./dist/i18n/translator.d.ts",
+      "default": "./dist/i18n/translator.js"
     }
   },
   "files": [

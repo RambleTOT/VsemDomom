@@ -4,6 +4,16 @@
 
 ## Не выпущено
 
+### A3 (часть 2). Клиент MAX, webhook, очередь, режимы работы — 27.09.2026
+- `HttpMaxApi`: только `platform-api2.max.ru`, `Authorization: <token>`, тайм-аут 10 с, до 5 попыток на сеть/429/5xx с джиттером и `Retry-After`, распознавание `success: false`.
+- Лимиты частоты по документации MAX (сверка 27.09): отправка и правка — `MAX_RATE_PER_CHAT` (2) в секунду на чат, ответы на нажатия — `MAX_RATE_ANSWERS_PER_CHAT` (2; `0` — без лимита по чату, как в плане), общий лимит `MAX_RATE_GLOBAL_RPS` (25).
+- Webhook `POST /webhook/max`: секрет за постоянное время, дедупликация `inbound_update`, постановка задачи в той же транзакции, 200 сразу, 503 при недоступной БД; в задачу не попадают имена и тексты группы.
+- Очередь pg-boss в той же БД: очереди с ретраями и dead letter, транзакционная постановка (`fromDrizzle`), расписания сторожа подписки (10 мин) и чистки (раз в сутки).
+- Режимы: `simulator` — FakeMaxApi и демо-чаты домов 1 и 4; `polling` — цикл long polling в worker; `webhook` — боевой.
+- Сторож подписки, алерты в `ALERT_USER_ID`, чистка старых событий и незарегистрированных участников через 30 дней после закрытия.
+- Скрипты `pnpm max:me | max:subscribe | max:unsubscribe | max:subscriptions | max:commands` (на стенде — `node dist/scripts/max.js …`); `/ready` проверяет MAX через `GET /me` с кэшем 60 с.
+- В словарь добавлены ключи `bot.cmd.*` и `bot.alert.*`.
+
 ### A3 (часть 1). Интерфейс MaxApi и симулятор FakeMaxApi — 27.09.2026
 - Официальная `schema.yaml` MAX 0.0.33 в `apps/api/src/max` и типы из неё (`pnpm gen:max-types`).
 - Интерфейс `MaxApi` (сообщения, правки, ответы на нажатия, закреп, чат, участники, подписки, команды, long polling) и ошибка `MaxApiError` с признаком повтора.

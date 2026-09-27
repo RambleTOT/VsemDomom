@@ -90,6 +90,12 @@ const envSchema = z.object({
   MAX_API_BASE: z.url().default('https://platform-api2.max.ru'),
   MAX_BOT_TOKEN: optionalString,
   MAX_BOT_USERNAME: optionalString,
+  /** Общий лимит запросов к MAX: документация говорит о 30 rps, держим запас. */
+  MAX_RATE_GLOBAL_RPS: int(25, 1),
+  /** Отправка и правка сообщений — не больше 2 в секунду в один чат (dev.max.ru). */
+  MAX_RATE_PER_CHAT: int(2, 1),
+  /** Ответы на нажатия (POST /answers) в один чат в секунду; 0 — без лимита по чату. */
+  MAX_RATE_ANSWERS_PER_CHAT: int(2, 0),
   MAX_WEBHOOK_SECRET: optionalString.pipe(
     z
       .string()
@@ -138,6 +144,7 @@ export interface AppConfig {
     botToken: string | undefined;
     botUsername: string;
     webhookSecret: string | undefined;
+    rate: { globalRps: number; perChat: number; answersPerChat: number };
   };
   sessionSecret: string;
   initDataMaxAgeSec: number;
@@ -219,6 +226,11 @@ export function loadConfig(source: Record<string, string | undefined> = process.
       botToken: env.MAX_BOT_TOKEN,
       botUsername: env.MAX_BOT_USERNAME ?? SIMULATOR_BOT_USERNAME,
       webhookSecret: env.MAX_WEBHOOK_SECRET,
+      rate: {
+        globalRps: env.MAX_RATE_GLOBAL_RPS,
+        perChat: env.MAX_RATE_PER_CHAT,
+        answersPerChat: env.MAX_RATE_ANSWERS_PER_CHAT,
+      },
     },
     sessionSecret: env.SESSION_SECRET,
     initDataMaxAgeSec: env.INITDATA_MAX_AGE_SEC,

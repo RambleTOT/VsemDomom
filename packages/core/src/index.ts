@@ -12,3 +12,5 @@ export * from './exceed/flat-intervals.ts';
 export * from './exceed/recalc.ts';
 export * from './constants/max-limits.ts';
 export * from './render/message.ts';
+export * from './antispam/keywords.ts';
+export * from './i18n/translator.ts';
