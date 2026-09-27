@@ -7,3 +7,9 @@ useDefault = true
 [[allowlists]]
 description = "Тестовые значения только для локального запуска (.env.example, compose.yaml); в production сервис их отвергает"
 regexes = ['''local-only-[a-z0-9-]+''', '''DEMO-UK-LOCAL''']
+
+[[allowlists]]
+description = "Пример токена вложения из текста документации в официальной schema.yaml MAX (и сгенерированных по ней типах) — не секрет"
+condition = "AND"
+paths = ['''apps/api/src/max/schema\.(yaml|gen\.ts)$''']
+regexes = ['''_3Rarhcf1PtlMXy8jpgie8Ai_KARnVFYNQTtmIRWNh4''']

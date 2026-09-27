@@ -7,9 +7,11 @@
 id_rsa*
 id_ed25519*
 
-# Claude — локальные настройки
+# Claude — файлы и настройки ИИ-агента (в репозиторий не попадают)
 .claude/
+CLAUDE.md
 CLAUDE.local.md
+.mcp.json
 
 # внутренние документы (остаются только локально)
 docs/TZ.md
@@ -23,4 +25,19 @@ dist/
 coverage/
 playwright-report/
 test-results/
+
+# скрытые файлы ОС и редакторов
 .DS_Store
+._*
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+
+# кэши и журналы инструментов
+.eslintcache
+*.tsbuildinfo
+.pnpm-store/
+.cache/
+*.log

@@ -2,6 +2,7 @@
 .git
 .github
 .claude
+CLAUDE.md
 CLAUDE.local.md
 **/node_modules
 **/dist
