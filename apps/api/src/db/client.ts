@@ -23,3 +23,15 @@ export function createDb(databaseUrl: string, options: { max?: number; applicati
     close: () => pool.end(),
   };
 }
+
+/** Запросы, которые одинаково выполняются в пуле и внутри транзакции. */
+export type Executor = Pick<Db, 'select' | 'insert' | 'update' | 'delete' | 'execute'>;
+
+/** Нарушение уникальности PostgreSQL (23505) по конкретному ограничению; drizzle кладёт ошибку pg в cause. */
+export function isUniqueViolation(err: unknown, constraint: string): boolean {
+  for (let e: unknown = err; e instanceof Error; e = e.cause) {
+    const pgError = e as Error & { code?: string; constraint?: string };
+    if (pgError.code === '23505') return pgError.constraint === constraint;
+  }
+  return false;
+}

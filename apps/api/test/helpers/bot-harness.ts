@@ -29,7 +29,12 @@ export interface Harness {
   clock: ManualClock;
   /** Принять событие как webhook и выполнить задачи до пустой очереди. */
   deliver(raw: object): Promise<'accepted' | 'duplicate'>;
+  /** Выполнить задачи, срок которых наступил (startAfter ≤ часов стенда). */
   drain(): Promise<number>;
+  /** Сдвинуть часы и выполнить наступившие задачи. */
+  advance(ms: number): Promise<number>;
+  /** Задачи, отложенные на будущее. */
+  delayed(): { queue: string; data: object; startAfter: Date }[];
   close(): Promise<void>;
 }
 
@@ -63,11 +68,15 @@ export async function createHarness(url: string, options: { env?: Record<string,
   const queue = new MemoryJobQueue();
   const ctx: JobContext = { config, db: handle.db, queue, max, log, clock, i18n: ruTranslator };
 
+  const due = (job: MemoryJobQueue['sent'][number]) => !job.options?.startAfter || job.options.startAfter.getTime() <= clock.now().getTime();
   const drain = async (): Promise<number> => {
     let done = 0;
-    for (let guard = 0; queue.sent.length > 0; guard += 1) {
+    for (let guard = 0; ; guard += 1) {
       if (guard > 500) throw new Error('очередь не опустела: вероятен цикл задач');
-      const job = queue.sent.shift()!;
+      const index = queue.sent.findIndex(due);
+      if (index < 0) break;
+      const [job] = queue.sent.splice(index, 1);
+      if (!job) break;
       if (job.queue === QUEUES.update) {
         await processUpdate(job.data as UpdateJob, botUpdateHandlers, ctx);
       } else {
@@ -93,6 +102,12 @@ export async function createHarness(url: string, options: { env?: Record<string,
       await drain();
       return result;
     },
+    async advance(ms) {
+      clock.advance(ms);
+      return drain();
+    },
+    delayed: () =>
+      queue.sent.filter((j) => !due(j)).map((j) => ({ queue: j.queue, data: j.data, startAfter: j.options?.startAfter ?? clock.now() })),
     close: () => handle.close(),
   };
 }
@@ -177,4 +192,12 @@ export const cb = (action: CallbackAction, id: string | null = null, arg?: strin
 /** Уведомления, которыми бот ответил на нажатия. */
 export function answers(h: Harness): string[] {
   return h.max.callbacks.map((c) => c.answer.notification ?? '');
+}
+
+/** Регистрация жителя в личке по QR дома: согласие → роль → квартира. */
+export async function registerResident(h: Harness, userId: number, flatNo: number, options: { role?: string; house?: string } = {}): Promise<void> {
+  await h.deliver(updates.botStarted(userId, `h_${options.house ?? 'dom1model1'}`));
+  await h.deliver(updates.callback(userId, callbackPayload(lastDm(h, userId), 'Согласен'), dm(userId)));
+  await h.deliver(updates.callback(userId, callbackPayload(lastDm(h, userId), options.role ?? 'Собственник'), dm(userId)));
+  await h.deliver(updates.dmText(userId, String(flatNo)));
 }

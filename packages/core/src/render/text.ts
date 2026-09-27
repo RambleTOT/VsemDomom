@@ -20,6 +20,11 @@ export function serviceNo(t: Translator, service: ServiceType): string {
   return t.t(`service.no.${SERVICE_I18N_KEY[service]}`);
 }
 
+/** Услуга есть: «горячая вода есть», «канализация работает», «протечки нет». */
+export function serviceOk(t: Translator, service: ServiceType): string {
+  return t.t(`service.ok.${SERVICE_I18N_KEY[service]}`);
+}
+
 /** Родительный падеж: «горячей воды». */
 export function serviceGen(t: Translator, service: ServiceType): string {
   return t.t(`service_gen.${SERVICE_I18N_KEY[service]}`);

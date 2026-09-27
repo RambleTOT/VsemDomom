@@ -212,6 +212,16 @@ export type OutboundKind = (typeof OUTBOUND_KINDS)[number];
 /** Новые сообщения в чат, которые входят в бюджет аварии. */
 export const INCIDENT_BUDGET_KINDS = ['card_create', 'check_question', 'result'] as const satisfies readonly OutboundKind[];
 
+/** Быстрый выбор начала аварии: «сейчас», «1 ч назад», «3 ч назад», «12 ч назад» или своё время. */
+export const STARTED_PRESETS = ['now', '1h', '3h', '12h', 'custom'] as const;
+export type StartedPreset = (typeof STARTED_PRESETS)[number];
+
+/** Сколько часов назад для быстрых вариантов (не норматив — варианты интерфейса). */
+export const STARTED_PRESET_HOURS: Record<Exclude<StartedPreset, 'custom'>, number> = { now: 0, '1h': 1, '3h': 3, '12h': 12 };
+
+/** Суффикс ключей словаря для быстрого выбора начала: since.<key>. */
+export const STARTED_PRESET_I18N_KEY: Record<StartedPreset, string> = { now: 'now', '1h': '1h', '3h': '3h', '12h': '12h', custom: 'custom' };
+
 /** Флаги функций волн 2–3. */
 export const FEATURE_FLAGS = [
   'keywordReply',

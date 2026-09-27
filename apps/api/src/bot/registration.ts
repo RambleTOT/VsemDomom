@@ -167,8 +167,10 @@ export const onMenu: CallbackHandler = async (e, ctx) => {
     await startDialog(ctx, e.userId, null, e.meta);
     return answered(ctx);
   }
+  const state = await currentState(ctx, e.userId);
   await sendMenu(ctx, e.userId, e.meta.dedupeKey);
-  return e.payload.action === 'cancel' ? ctx.i18n.t('bot.dm.cancelled') : answered(ctx);
+  if (e.payload.action !== 'cancel') return answered(ctx);
+  return ctx.i18n.t(state?.flow === 'registration' ? 'bot.dm.cancelled' : 'bot.answer.cancelled');
 };
 
 async function currentState(ctx: JobContext, userId: number): Promise<DialogState | null> {

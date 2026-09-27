@@ -7,8 +7,8 @@ import { trustLevel, type TrustLevel } from '@vsemdomom/core';
 import { and, eq, sql } from 'drizzle-orm';
 import { PARAMS } from '../config/params.ts';
 import { houseChat, residency } from '../db/schema.ts';
+import { panelLater } from '../chat/panel.ts';
 import type { JobContext } from '../jobs/context.ts';
-import { QUEUES } from '../jobs/queue.ts';
 import type { NormalizedUpdate } from '../max/update.ts';
 import { chatOfHouse, houseOfChat, type ResidencyRow } from './queries.ts';
 
@@ -36,10 +36,6 @@ export async function refreshMembership(ctx: JobContext, row: ResidencyRow, opti
   return { trust: next, inChat };
 }
 
-async function panelLater(ctx: JobContext, houseId: number): Promise<void> {
-  await ctx.queue.sendDebounced(QUEUES.panelRender, { houseId }, PARAMS.panelEditWindowSec, `panel:${houseId}`);
-}
-
 /** Участник вошёл в чат дома (в том числе по ссылке). */
 export async function onUserAdded(u: NormalizedUpdate, ctx: JobContext): Promise<void> {
   if (u.chatId === null || u.userId === null || u.isChannel) return;
@@ -53,7 +49,7 @@ export async function onUserAdded(u: NormalizedUpdate, ctx: JobContext): Promise
     .update(residency)
     .set({ trustLevel: 1, membershipCheckedAt: ctx.clock.now(), updatedAt: ctx.clock.now() })
     .where(and(eq(residency.userId, u.userId), eq(residency.houseId, bound.house.id), eq(residency.trustLevel, 0)));
-  await panelLater(ctx, bound.house.id);
+  await panelLater(ctx.queue, bound.house.id);
 }
 
 /** Участник вышел или удалён из чата дома. */
@@ -69,5 +65,5 @@ export async function onUserRemoved(u: NormalizedUpdate, ctx: JobContext): Promi
     .update(residency)
     .set({ trustLevel: 0, membershipCheckedAt: ctx.clock.now(), updatedAt: ctx.clock.now() })
     .where(and(eq(residency.userId, u.userId), eq(residency.houseId, bound.house.id), eq(residency.trustLevel, 1)));
-  await panelLater(ctx, bound.house.id);
+  await panelLater(ctx.queue, bound.house.id);
 }

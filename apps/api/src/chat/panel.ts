@@ -6,10 +6,19 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { OPEN_STATUSES, renderPanel, type BotMessage } from '@vsemdomom/core';
 import { and, asc, desc, eq, inArray, ne, sql } from 'drizzle-orm';
+import { PARAMS } from '../config/params.ts';
 import { house, houseChat, incident, outboundMessage } from '../db/schema.ts';
 import type { JobContext } from '../jobs/context.ts';
 import { enqueueOutbound } from '../jobs/outbound.ts';
+import { QUEUES, type JobQueue, type TxLike } from '../jobs/queue.ts';
 import { MaxApiError } from '../max/types.ts';
+
+/** Правка панели — не чаще раза в окно на дом (F11). */
+export async function panelLater(queue: JobQueue, houseId: number, tx?: TxLike): Promise<void> {
+  const key = `panel:${houseId}`;
+  if (tx) await queue.sendDebounced(QUEUES.panelRender, { houseId }, PARAMS.panelEditWindowSec, key, { tx });
+  else await queue.sendDebounced(QUEUES.panelRender, { houseId }, PARAMS.panelEditWindowSec, key);
+}
 
 export function messageHash(message: Pick<BotMessage, 'text' | 'keyboard'>): string {
   return createHash('sha256').update(JSON.stringify({ text: message.text, keyboard: message.keyboard })).digest('hex');

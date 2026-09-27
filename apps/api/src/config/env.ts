@@ -96,6 +96,7 @@ const envSchema = z.object({
   MAX_RATE_PER_CHAT: int(2, 1),
   /** Ответы на нажатия (POST /answers) в один чат в секунду; 0 — без лимита по чату. */
   MAX_RATE_ANSWERS_PER_CHAT: int(2, 0),
+  MAX_TEL_LINKS: bool(false),
   MAX_WEBHOOK_SECRET: optionalString.pipe(
     z
       .string()
@@ -145,6 +146,8 @@ export interface AppConfig {
     botUsername: string;
     webhookSecret: string | undefined;
     rate: { globalRps: number; perChat: number; answersPerChat: number };
+    /** Кнопка «Позвонить» (link tel:) — включать после проверки 22.15 на живом MAX. */
+    telLinks: boolean;
   };
   sessionSecret: string;
   initDataMaxAgeSec: number;
@@ -231,6 +234,7 @@ export function loadConfig(source: Record<string, string | undefined> = process.
         perChat: env.MAX_RATE_PER_CHAT,
         answersPerChat: env.MAX_RATE_ANSWERS_PER_CHAT,
       },
+      telLinks: env.MAX_TEL_LINKS,
     },
     sessionSecret: env.SESSION_SECRET,
     initDataMaxAgeSec: env.INITDATA_MAX_AGE_SEC,

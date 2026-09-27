@@ -2,7 +2,7 @@ import { decodeStartApp } from '@vsemdomom/core';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { bindChatWithToken, bindingInfo } from '../src/bot/binding.ts';
-import { buildPanel, panelJob } from '../src/bot/panel.ts';
+import { buildPanel, panelJob } from '../src/chat/panel.ts';
 import { houseByPublicId } from '../src/bot/queries.ts';
 import { PARAMS } from '../src/config/params.ts';
 import { chatBindToken, houseChat, outboundMessage, residency } from '../src/db/schema.ts';

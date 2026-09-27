@@ -1,3 +1,4 @@
+import { STARTED_PRESETS } from '@vsemdomom/core/enums';
 import { z } from 'zod';
 import { DateTime, PublicId } from './common.ts';
 import {
@@ -209,7 +210,7 @@ export const IncidentIdParams = z.object({ id: PublicId });
 // ---------- Запросы жителя ----------
 
 export const StartedPresetSchema = z
-  .enum(['now', '1h', '3h', '12h', 'custom'])
+  .enum(STARTED_PRESETS)
   .meta({ id: 'StartedPreset', description: 'Быстрый выбор начала: «сейчас», «1 ч назад», «3 ч назад», «12 ч назад» или своё время' });
 
 export const CreateIncidentRequestSchema = z

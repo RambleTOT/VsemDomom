@@ -8,6 +8,7 @@
  */
 import { INCIDENT_BUDGET_KINDS, type OutboundKind } from '@vsemdomom/core';
 import { and, eq, inArray, sql } from 'drizzle-orm';
+import { PARAMS } from '../config/params.ts';
 import type { Db } from '../db/client.ts';
 import { chatCard, houseChat, maxUser, outboundMessage } from '../db/schema.ts';
 import { MaxApiError, type MaxTarget, type OutgoingMessage } from '../max/types.ts';
@@ -137,6 +138,10 @@ async function afterSend(tx: Pick<Db, 'update' | 'insert'>, ctx: JobContext, act
       return;
     case 'card':
       await tx.update(chatCard).set({ mid, lastEditedAt: ctx.clock.now() }).where(eq(chatCard.incidentId, action.incidentId));
+      // Пока карточка ждала отправки, могли прийти отметки — догоняющая правка.
+      await ctx.queue.sendDebounced(QUEUES.cardRender, { incidentId: action.incidentId }, PARAMS.cardEditWindowSec, `card:${action.incidentId}`, {
+        tx: tx as unknown as TxLike,
+      });
       return;
     case 'check_question':
       await tx.update(chatCard).set({ checkMid: mid }).where(eq(chatCard.incidentId, action.incidentId));
