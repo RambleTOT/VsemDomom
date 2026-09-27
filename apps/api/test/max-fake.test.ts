@@ -81,9 +81,10 @@ describe('FakeMaxApi (симулятор MAX)', () => {
     await expect(max.sendMessage({ userId: 1002 }, { ...card, keyboard: [] })).rejects.toMatchObject({ kind: 'forbidden' });
   });
 
-  it('текст заявления маскируется в журнале симулятора', async () => {
+  it('текст заявления маскируется в журнале симулятора — и в кнопке «Скопировать»', async () => {
     const { max, store } = setup();
-    await max.sendMessage({ userId: 1001 }, { text: 'Заявление. Иванов Иван, +7 900 000-00-00', format: 'markdown', keyboard: [] }, { sensitive: true });
+    const text = 'Заявление. Иванов Иван, +7 900 000-00-00';
+    await max.sendMessage({ userId: 1001 }, { text, format: 'markdown', keyboard: [[{ type: 'clipboard', text: 'Скопировать', payload: text }]] }, { sensitive: true });
     expect(JSON.stringify(store.calls)).not.toMatch(/Иванов|900/);
     expect(JSON.stringify([...max.messages.values()])).not.toMatch(/Иванов/);
   });

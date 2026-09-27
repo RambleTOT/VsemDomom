@@ -42,6 +42,11 @@ export interface RouteResult {
 
 export type RouteHandler<Id extends OperationId> = (input: RouteInput<Id>) => Promise<RouteResult>;
 
+export interface RouteOptions {
+  /** Своя ошибка для неверного тела (по контракту: сумма ≤ 0 или не число → 422 monthly_charge_invalid). */
+  bodyError?: () => ApiError;
+}
+
 export function findRoute<Id extends OperationId>(operationId: Id): RouteOf<Id> {
   const route = apiRoutes.find((r) => r.operationId === operationId);
   if (!route) throw new Error(`в контракте нет операции ${operationId}`);
@@ -68,13 +73,28 @@ function parsePart(schema: z.ZodType | undefined, value: unknown, part: Part): u
   return result.data;
 }
 
+function parseBody(schema: z.ZodType | undefined, value: unknown, options: RouteOptions): unknown {
+  try {
+    return parsePart(schema, value, 'body');
+  } catch (err) {
+    if (options.bodyError && err instanceof ApiError && err.code === 'validation_error') throw options.bodyError();
+    throw err;
+  }
+}
+
 const AUTH_PROBLEM = {
   missing: { code: 'unauthorized', title: 'Нужен вход' },
   invalid: { code: 'unauthorized', title: 'Неверная авторизация' },
   expired: { code: 'session_expired', title: 'Сессия истекла. Откройте приложение заново из чата' },
 } as const;
 
-export function registerApiRoute<Id extends OperationId>(app: FastifyInstance, deps: ApiDeps, operationId: Id, handler: RouteHandler<Id>): void {
+export function registerApiRoute<Id extends OperationId>(
+  app: FastifyInstance,
+  deps: ApiDeps,
+  operationId: Id,
+  handler: RouteHandler<Id>,
+  options: RouteOptions = {},
+): void {
   const route: ApiRoute = findRoute(operationId);
   const rateLimit = route.tags.includes('auth') ? authRateLimit(deps.limits) : undefined;
   app.route({
@@ -95,7 +115,7 @@ export function registerApiRoute<Id extends OperationId>(app: FastifyInstance, d
         params: parsePart(route.params, req.params, 'params'),
         query: parsePart(route.query, req.query, 'query'),
         headers: parsePart(route.headers, req.headers, 'headers'),
-        body: parsePart(route.body, req.body, 'body'),
+        body: parseBody(route.body, req.body, options),
       } as RouteInput<Id>;
       const result = await handler(input);
       const declared = route.responses[result.status];

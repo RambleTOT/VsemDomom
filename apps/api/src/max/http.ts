@@ -51,6 +51,8 @@ interface RequestSpec {
   rateKey?: string | null;
   perSecond?: number;
   timeoutMs?: number;
+  /** Попыток для этого вызова; по умолчанию — из настроек клиента. */
+  maxAttempts?: number;
 }
 
 const RETRY_STATUSES = new Set([429, 500, 502, 503, 504]);
@@ -142,6 +144,7 @@ export class HttpMaxApi implements MaxApi {
       body: toNewMessageBody(message, 'send'),
       rateKey: isChat ? `send:chat:${target.chatId}` : `send:user:${target.userId}`,
       perSecond: this.options.rate.perChat,
+      ...(options.attempts === undefined ? {} : { maxAttempts: options.attempts }),
     });
     return { mid: r.message.body.mid };
   }
@@ -245,7 +248,8 @@ export class HttpMaxApi implements MaxApi {
   }
 
   private async request<T>(spec: RequestSpec): Promise<T> {
-    const { log, maxAttempts } = this.options;
+    const { log } = this.options;
+    const maxAttempts = spec.maxAttempts ?? this.options.maxAttempts;
     let lastError: MaxApiError | null = null;
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       await this.options.limiter.acquire(spec.rateKey ?? null, spec.perSecond ?? 0);

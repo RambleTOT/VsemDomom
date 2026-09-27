@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { renderDeadlineNotice, renderNoWater, renderStatusNotice, validateBotMessage, type BotMessage, type StatusNoticeInput } from '../src/index.ts';
+import {
+  formatRecalcFormula,
+  renderDeadlineNotice,
+  renderNoWater,
+  renderStatement,
+  renderStatusNotice,
+  validateBotMessage,
+  type BotMessage,
+  type StatusNoticeInput,
+} from '../src/index.ts';
 import { t } from './helpers/i18n.ts';
 
 const TZ = 'Europe/Moscow';
@@ -105,5 +114,35 @@ describe('закрытие и «Воды нет — что делать» (F07, 
     const m = renderNoWater({ ...nowater, service: 'heating', actNorms: null, withAct: true }, t);
     expect(m.text.split('\n')).toEqual(['**Нет отопления — что делать**', '1. Повторно сообщите в АДС: \\+7 (000) 000-00-01', 'Модельные данные']);
     expect(m.keyboard.at(-1)?.[0]).toMatchObject({ type: 'open_app', text: 'Как составить акт', payload: 'a_K3f9QpZ2aB' });
+  });
+});
+
+describe('заявление в личку и формула расчёта (F09)', () => {
+  it('заявление: текст как есть (разметка экранирована), пометка про ПДн, «Скопировать»', () => {
+    const text = 'В УК «Модельная» от Иванова И. И., ул. Модельная, 1, кв. 57\nЗаявление *об изменении* размера платы';
+    const m = renderStatement(text, t);
+    expect(validateBotMessage(m)).toEqual([]);
+    expect(m.text).toBe(
+      [
+        'Заявление на перерасчёт — текст ниже. Скопируйте и отправьте в УК',
+        '',
+        'В УК «Модельная» от Иванова И. И., ул. Модельная, 1, кв. 57',
+        'Заявление \\*об изменении\\* размера платы',
+        '',
+        'ФИО и телефон не сохраняются на сервере',
+      ].join('\n'),
+    );
+    expect(m.keyboard).toEqual([[{ type: 'clipboard', text: 'Скопировать', payload: text }]]);
+    // Длинный текст не помещается в кнопку «Скопировать» (1024 символа) — кнопки нет.
+    expect(renderStatement('а'.repeat(1500), t).keyboard).toEqual([]);
+  });
+
+  it('формула: часы × ставка × плата = сумма', () => {
+    // Суммы и проценты — с неразрывными пробелами; для сравнения заменяем их обычными.
+    const plain = (x: string) => x.replace(/\u00a0/g, ' ');
+    expect(plain(formatRecalcFormula({ excessMinutes: 240, ratePercent: '0.15', monthlyChargeKopecks: 120_000, amountKopecks: 720 }, t))).toBe('4 ч × 0,15 % × 1 200 ₽ = 7,20 ₽');
+    expect(plain(formatRecalcFormula({ excessMinutes: 220, ratePercent: '0.15', monthlyChargeKopecks: 125_050, amountKopecks: 688 }, t))).toBe(
+      '3 ч 40 мин × 0,15 % × 1 250,50 ₽ = 6,88 ₽',
+    );
   });
 });

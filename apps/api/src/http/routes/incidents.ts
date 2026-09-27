@@ -2,7 +2,7 @@
  * Аварии со стороны жителя (F01–F03): создание (409 duplicate_incident при открытой аварии того же вида),
  * просмотр, «У меня тоже» с подъездом и этажом, «Не у меня», регистрация в АДС, «Уведомлять меня».
  */
-import { checkStartedAt, flatLocation, isEntranceInRange, isFloorInRange, isOpenStatus, startedAtFromPreset } from '@vsemdomom/core';
+import { botLink, checkStartedAt, flatLocation, isEntranceInRange, isFloorInRange, isOpenStatus, startedAtFromPreset } from '@vsemdomom/core';
 import type { FastifyInstance } from 'fastify';
 import { and, eq } from 'drizzle-orm';
 import { PARAMS } from '../../config/params.ts';
@@ -11,7 +11,9 @@ import type { HouseRow } from '../../db/queries.ts';
 import { observeBrigade } from '../../services/brigade.ts';
 import { answerCheck, rereportAds } from '../../services/check.ts';
 import { incidentDetail, loadIncidentBundle } from '../../services/incident-view.ts';
+import { recalcForFlat } from '../../services/recalc.ts';
 import { resultView } from '../../services/result.ts';
+import { sendStatementToDm } from '../../services/statement.ts';
 import {
   adsNotReached,
   createIncident,
@@ -29,6 +31,7 @@ import { ApiError } from '../problem.ts';
 
 const MS_PER_SECOND = 1000;
 const MS_PER_HOUR = 3_600_000;
+const monthlyChargeInvalid = () => new ApiError(422, 'monthly_charge_invalid', 'Введите сумму из квитанции', 'Сумма должна быть больше нуля');
 const startedChecks = { futureSkewMs: PARAMS.startedAtFutureSkewSec * MS_PER_SECOND, confirmOldAfterMs: PARAMS.oldStartConfirmHours * MS_PER_HOUR };
 
 export function registerIncidentRoutes(app: FastifyInstance, deps: ApiDeps): void {
@@ -202,6 +205,46 @@ export function registerIncidentRoutes(app: FastifyInstance, deps: ApiDeps): voi
     const bundle = await loadIncidentBundle(ctx.db, inc.id);
     if (!bundle) throw notFound('Авария не найдена');
     return { status: 200, body: await resultView(ctx.db, bundle, incidentViewer(viewer, h), ctx.i18n, ctx.clock.now()) };
+  });
+
+  registerApiRoute(
+    app,
+    deps,
+    'recalculate',
+    async ({ principal, params, headers, body }) =>
+      withIdempotency(ctx, principal, `recalculate:${params.id}`, headers['idempotency-key'], async () => {
+        const viewer = await loadViewer(ctx.db, principal);
+        const { inc, house: h } = await load(viewer, params.id);
+        const residency = assertResident(viewer, h);
+        if (inc.status !== 'closed' && inc.status !== 'checking' && inc.status !== 'discrepancy') {
+          throw new ApiError(409, 'incident_not_closed', 'Расчёт — после отметки УК «Устранено»');
+        }
+        const bundle = await loadIncidentBundle(ctx.db, inc.id);
+        if (!bundle) throw notFound('Авария не найдена');
+        const result = await recalcForFlat(ctx.db, bundle, residency, body.monthlyCharge, ctx.i18n, ctx.clock.now());
+        if (result === 'monthly_charge_invalid') throw monthlyChargeInvalid();
+        return { status: 200, body: result };
+      }),
+    { bodyError: monthlyChargeInvalid },
+  );
+
+  registerApiRoute(app, deps, 'sendApplicationToDm', async ({ principal, params, body }) => {
+    const viewer = await loadViewer(ctx.db, principal);
+    const { house: h } = await load(viewer, params.id);
+    assertResident(viewer, h);
+    const result = await sendStatementToDm(ctx, principal.userId, body.text);
+    switch (result) {
+      case 'sent':
+        return { status: 200, body: { sent: true } };
+      case 'dialog_not_started':
+        throw new ApiError(409, 'dialog_not_started', 'Бот пока не может написать вам', 'Откройте бота и нажмите «Старт»', {
+          botLink: botLink(config.max.botUsername),
+        });
+      case 'text_too_long':
+        throw new ApiError(422, 'text_too_long', 'Текст длиннее одного сообщения MAX');
+      case 'max_unavailable':
+        throw new ApiError(502, 'max_unavailable', 'MAX не ответил', 'Скопируйте текст заявления');
+    }
   });
 
   registerApiRoute(app, deps, 'patchParticipation', async ({ principal, params, body }) => {

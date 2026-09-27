@@ -3,7 +3,6 @@
  * с кнопкой open_app c_<токен> → сотрудник УК в мини-приложении выбирает дом → привязка,
  * панель дома публикуется и закрепляется. Запасной путь — /connect <код дома> в чате.
  */
-import { createHash, randomBytes } from 'node:crypto';
 import { renderBotAdded, renderText } from '@vsemdomom/core';
 import { and, eq, or } from 'drizzle-orm';
 import { PARAMS } from '../config/params.ts';
@@ -16,17 +15,11 @@ import type { NormalizedUpdate } from '../max/update.ts';
 import { sendDm } from './dm.ts';
 import { houseByPublicId, houseOfChat, staffOf, userById, type HouseRow } from '../db/queries.ts';
 import type { UpdateMeta } from './types.ts';
+import { hashToken, newToken } from '../util/tokens.ts';
 
-const TOKEN_BYTES = 18;
 const MS_PER_HOUR = 3_600_000;
 
-export function hashToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex');
-}
-
-export function newToken(): string {
-  return randomBytes(TOKEN_BYTES).toString('base64url');
-}
+export { hashToken, newToken };
 
 /** bot_added: приглашение привязать чат (в группе у всех одна клавиатура — список домов не показываем). */
 export async function onBotAdded(u: NormalizedUpdate, ctx: JobContext, meta: UpdateMeta): Promise<void> {

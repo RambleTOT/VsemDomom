@@ -110,6 +110,20 @@ interface StoredMessage {
 const RATE_WINDOW_MS = 1000;
 const SENSITIVE_MASK = '[текст скрыт симулятором: ПДн]';
 
+/**
+ * Сообщение с ПДн (заявление): в журнал и память симулятора не попадают ни текст,
+ * ни данные кнопок («Скопировать» несёт тот же текст).
+ */
+function maskMessage(message: OutgoingMessage): OutgoingMessage {
+  return {
+    ...message,
+    text: SENSITIVE_MASK,
+    keyboard: message.keyboard.map((row) =>
+      row.map((b) => (b.type === 'clipboard' || b.type === 'callback' ? { ...b, payload: SENSITIVE_MASK } : b)),
+    ),
+  };
+}
+
 export class FakeMaxApi implements MaxApi {
   readonly kind = 'fake' as const;
   readonly messages = new Map<string, StoredMessage>();
@@ -191,7 +205,9 @@ export class FakeMaxApi implements MaxApi {
 
   async sendMessage(target: MaxTarget, message: OutgoingMessage, options: SendOptions = {}): Promise<{ mid: string }> {
     const query = 'chatId' in target ? { chat_id: target.chatId } : { user_id: target.userId };
-    const body = this.recordedBody(toNewMessageBody(message, 'send'), options.sensitive === true);
+    const sensitive = options.sensitive === true;
+    const stored = sensitive ? maskMessage(message) : message;
+    const body = toNewMessageBody(stored, 'send');
     const chatId = 'chatId' in target ? target.chatId : null;
     return this.call('sendMessage', 'POST', '/messages', query, body, () => {
       this.assertValid(message);
@@ -205,7 +221,7 @@ export class FakeMaxApi implements MaxApi {
       this.messages.set(mid, {
         target,
         chatId,
-        message: options.sensitive ? { ...message, text: SENSITIVE_MASK } : message,
+        message: stored,
         createdAt: this.clock.now(),
         editedAt: null,
         deleted: false,
@@ -331,9 +347,6 @@ export class FakeMaxApi implements MaxApi {
     }
   }
 
-  private recordedBody<T extends { text?: string | null }>(body: T, sensitive: boolean): T {
-    return sensitive ? { ...body, text: SENSITIVE_MASK } : body;
-  }
 
   private takeFailure(operation: FakeOperation): FakeFailure | null {
     const index = this.failures.findIndex((f) => f.times > 0 && (f.operation === undefined || f.operation === operation));
