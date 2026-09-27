@@ -61,6 +61,20 @@ describe.skipIf(!url)('миграции и сиды (PostgreSQL)', () => {
     expect(r.rows[0]?.minutes).toBe(360);
   });
 
+  it('история: авария в доме 2 — в норматив, в доме 3 — сверх норматива (сроки из справочника)', async () => {
+    const rows = await handle.db.execute<{ public_id: string; overdue: boolean; single: boolean; statuses: string }>(sql`
+      select i.public_id, i.overdue, i.single_limit_exceeded as single,
+             string_agg(d.kind || ':' || d.status, ',' order by d.kind) as statuses
+      from incident i join deadline d on d.incident_id = i.id
+      where i.public_id in ('hist2hvs01', 'hist3gvs11')
+      group by i.public_id, i.overdue, i.single_limit_exceeded
+      order by i.public_id`);
+    expect(rows.rows).toEqual([
+      { public_id: 'hist2hvs01', overdue: false, single: false, statuses: 'answer:met,fix:met,localize:met,single_limit:met' },
+      { public_id: 'hist3gvs11', overdue: true, single: true, statuses: 'answer:breached,fix:met,localize:breached,single_limit:breached' },
+    ]);
+  });
+
   it('частичный уникальный индекс не даёт открыть вторую аварию того же вида в доме', async () => {
     const house = (await handle.db.execute<{ id: number }>(sql`select id from house where public_id = 'dom1model1'`)).rows[0]!.id;
     const insert = (publicId: string, scope: string) =>

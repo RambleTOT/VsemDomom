@@ -7,7 +7,12 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { TZDate } from '@date-fns/tz';
 import {
+  breachFlag,
+  computeDeadlines,
   flatLocation,
+  MS_PER_MINUTE,
+  resolveDeadlineAt,
+  type DeadlineKind,
   NORM_EVENTS,
   NORM_UNITS,
   RESIDENCY_ROLES,
@@ -23,6 +28,7 @@ import type { Logger } from 'pino';
 import { z } from 'zod';
 import { PARAMS } from '../config/params.ts';
 import type { Db } from './client.ts';
+import { loadNorms } from './norms.ts';
 import * as t from './schema.ts';
 
 const ukSeed = z.array(
@@ -220,6 +226,7 @@ export async function runSeeds(db: Db, options: SeedOptions): Promise<SeedSummar
           set: rest,
         });
     }
+    const normRecords = await loadNorms(tx);
 
     // Сотрудники модельной УК (MAX ID команды)
     const modelUk = ukId.get(checkers.ukPublicId);
@@ -282,6 +289,26 @@ export async function runSeeds(db: Db, options: SeedOptions): Promise<SeedSummar
       const at = (minutes: number) => new Date(Math.min(start.getTime() + minutes * 60_000, end.getTime()));
       const reportedAt = at(PARAMS.historyReportDelayMin);
       const closedAt = new Date(Math.min(end.getTime() + PARAMS.historyCheckMin * 60_000, now.getTime() - 60_000));
+      const acceptedAt = at(h.steps.acceptedMin);
+      const localizedAt = at(h.steps.localizedMin);
+      // Сроки по справочнику: выполнен, если шаг УК случился до срока, иначе истёк.
+      const plans = computeDeadlines(
+        { serviceType: h.serviceType, startedAt: start, createdAt: reportedAt, adsRegAt: null },
+        normRecords,
+        { regionCode: home.regionCode, timezone: home.timezone, powerSources: home.powerSources, hotWaterDeadEnd: home.hotWaterDeadEnd },
+        { warnBeforeMs: PARAMS.deadlineWarnMin * MS_PER_MINUTE },
+      );
+      const doneAt: Record<DeadlineKind, Date> = {
+        answer: acceptedAt,
+        localize: localizedAt,
+        clog: end,
+        fix: end,
+        single_limit: end,
+      };
+      const deadlines = plans.map((p) => {
+        const status = resolveDeadlineAt({ kind: p.kind, status: 'pending', dueAt: p.dueAt, warnAt: p.warnAt }, doneAt[p.kind]);
+        return { plan: p, status, resolvedAt: status === 'met' ? doneAt[p.kind] : p.dueAt };
+      });
       const [row] = await tx
         .insert(t.incident)
         .values({
@@ -296,15 +323,30 @@ export async function runSeeds(db: Db, options: SeedOptions): Promise<SeedSummar
           createdAt: reportedAt,
           etaAt: end,
           brigadeOnSiteAt: null,
-          localizedAt: at(h.steps.localizedMin),
+          localizedAt,
           resolvedAtUk: end,
           checkStartedAt: end,
           closedAt,
+          overdue: deadlines.some((d) => breachFlag(d.plan.kind) === 'overdue' && d.status === 'breached'),
+          singleLimitExceeded: deadlines.some((d) => breachFlag(d.plan.kind) === 'single_limit_exceeded' && d.status === 'breached'),
           version: 6,
           isModel: true,
         })
         .returning({ id: t.incident.id });
       if (!row) throw new Error('не удалось создать аварию истории');
+      if (deadlines.length > 0) {
+        await tx.insert(t.deadline).values(
+          deadlines.map((d) => ({
+            incidentId: row.id,
+            normId: d.plan.norm.id,
+            kind: d.plan.kind,
+            dueAt: d.plan.dueAt,
+            warnAt: d.plan.warnAt,
+            status: d.status,
+            resolvedAt: d.resolvedAt,
+          })),
+        );
+      }
 
       const events: { type: IncidentEventType; at: Date; actorType: 'resident' | 'uk' | 'system'; actorId?: number | null; payload?: Record<string, unknown> }[] = [];
       events.push({ type: 'reported', at: reportedAt, actorType: 'resident', payload: { scope: h.scope, service: h.serviceType } });
@@ -351,8 +393,8 @@ export async function runSeeds(db: Db, options: SeedOptions): Promise<SeedSummar
         events.push({ type: 'joined', at: reportedAt, actorType: 'resident', actorId: userId, payload: { entrance: loc.entrance } });
       }
       events.push(
-        { type: 'uk_accepted', at: at(h.steps.acceptedMin), actorType: 'uk', payload: { eta: end.toISOString() } },
-        { type: 'uk_localized', at: at(h.steps.localizedMin), actorType: 'uk' },
+        { type: 'uk_accepted', at: acceptedAt, actorType: 'uk', payload: { eta: end.toISOString() } },
+        { type: 'uk_localized', at: localizedAt, actorType: 'uk' },
         { type: 'uk_resolved', at: end, actorType: 'uk' },
         { type: 'check_asked', at: end, actorType: 'system' },
         { type: 'closed', at: closedAt, actorType: 'system', payload: { reason: 'all_confirmed' } },
