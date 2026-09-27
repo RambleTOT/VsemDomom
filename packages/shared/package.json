@@ -11,11 +11,13 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./i18n/ru.json": "./i18n/ru.json"
+    "./i18n/ru.json": "./i18n/ru.json",
+    "./examples/*": "./examples/*"
   },
   "files": [
     "dist",
-    "i18n"
+    "i18n",
+    "examples"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

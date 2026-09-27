@@ -4,6 +4,13 @@
 
 ## Не выпущено
 
+### A2 (часть 1). Контракт API — 27.09.2026
+- zod-схемы всех эндпоинтов волн 1–3 в `packages/shared/src/api` (50 операций): вход, профиль, дома, нормы, аварии, итог, расчёт, заявление, собственник, экран УК, демо-инструменты, песочница, webhook.
+- `docs/api/openapi.yaml` (OpenAPI 3.1) генерируется из схем; `docs/api/README.md` — соглашения, коды ошибок, payload → экран.
+- Примеры ответов для моков msw — `packages/shared/examples/*.json`, проверяются тестом на соответствие схемам.
+- Словарь `packages/shared/i18n/ru.json` из пакета дизайна.
+- Добавлены эндпоинты, нужные экранам: `POST /auth/dev`, `GET /houses/{id}/summary`, `GET /owner-invites/{token}`, `GET /uk/chat-bindings/{token}`.
+
 ### A1. Монорепо и инфраструктура — 27.09.2026
 - pnpm-воркспейс (`packages/core`, `packages/shared`, `apps/api`), TypeScript 6 со строгими настройками, ESLint 10 + typescript-eslint, dependency-cruiser (границы слоёв), Vitest 5 с проектами по пакетам.
 - Конфигурация из окружения на zod: режимы `simulator` / `polling` / `webhook`, флаги `FEATURE_*`, запрет `DEV_AUTH` в `webhook` и `production`, отказ стартовать с тестовыми секретами из `.env.example` в `production`.

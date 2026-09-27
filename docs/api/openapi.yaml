@@ -2,6 +2,9 @@ openapi: 3.1.0
 info:
   title: Всем домом API
   version: 0.1.0
+  license:
+    name: MIT
+    identifier: MIT
   description: |-
     REST API мини-приложения «Всем домом» и webhook бота MAX.
 
@@ -18,6 +21,26 @@ servers:
 tags:
   - name: system
     description: Проверки и версия
+  - name: auth
+    description: "Вход: initData MAX, dev-вход"
+  - name: me
+    description: Профиль, согласие, проживание
+  - name: houses
+    description: Дома жителя
+  - name: norms
+    description: Справочник нормативов
+  - name: incidents
+    description: "Аварии: сообщить, присоединиться, итог, расчёт"
+  - name: owner
+    description: Подтверждение жильца собственником (флаг trustLevels)
+  - name: uk
+    description: Экран УК
+  - name: demo
+    description: Демо-инструменты для проверяющих (DEMO_MODE)
+  - name: sandbox
+    description: Дом-песочница для проверок DATA-API
+  - name: webhook
+    description: События бота MAX
 components:
   securitySchemes:
     bearerAuth:
@@ -102,6 +125,3431 @@ components:
         - monthlySummary
         - actTemplate
       description: "Флаги функций волн 2–3: что включено в этой версии"
+    SessionResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: "JWT для Authorization: Bearer; срок — 12 часов"
+        expiresAt:
+          $ref: "#/components/schemas/DateTime"
+        user:
+          $ref: "#/components/schemas/Me"
+        startParam:
+          type:
+            - string
+            - "null"
+          description: "Payload запуска: n_, i_, h_, r_, a_, o_, c_"
+        devAuth:
+          type: boolean
+          description: Вход в режиме разработки — показать баннер
+      required:
+        - token
+        - expiresAt
+        - user
+        - startParam
+        - devAuth
+    DateTime:
+      type: string
+      format: date-time
+      description: Дата и время ISO 8601 с часовым поясом
+      example: 2026-09-27T14:40:00Z
+    Me:
+      type: object
+      properties:
+        userId:
+          type: integer
+          description: Идентификатор пользователя MAX
+        consent:
+          type:
+            - object
+            - "null"
+          properties:
+            version:
+              type: string
+            at:
+              $ref: "#/components/schemas/DateTime"
+          required:
+            - version
+            - at
+        consentRequired:
+          type: boolean
+          description: Нужно (заново) дать согласие на обработку ПДн
+        currentConsentVersion:
+          type: string
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppRole"
+          description: resident — житель; uk — сотрудник УК
+        residencies:
+          type: array
+          items:
+            $ref: "#/components/schemas/Residency"
+        staff:
+          $ref: "#/components/schemas/StaffInfo"
+        settings:
+          type: object
+          properties:
+            notifyDefault:
+              type: boolean
+          required:
+            - notifyDefault
+        dialogActive:
+          type: boolean
+          description: Пользователь начал диалог с ботом — бот может писать в личку
+        botLink:
+          type: string
+          format: uri
+          description: "Ссылка на бота: https://max.ru/<бот>"
+        demoMode:
+          type: boolean
+        features:
+          $ref: "#/components/schemas/FeatureFlags"
+      required:
+        - userId
+        - consent
+        - consentRequired
+        - currentConsentVersion
+        - roles
+        - residencies
+        - staff
+        - settings
+        - dialogActive
+        - botLink
+        - demoMode
+        - features
+    AppRole:
+      type: string
+      enum:
+        - resident
+        - uk
+    Residency:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/PublicId"
+        house:
+          $ref: "#/components/schemas/HouseSummary"
+        chat:
+          $ref: "#/components/schemas/HouseChatInfo"
+        flatNo:
+          type: integer
+          exclusiveMinimum: 0
+        role:
+          $ref: "#/components/schemas/ResidencyRole"
+        trustLevel:
+          $ref: "#/components/schemas/TrustLevel"
+        reviewStatus:
+          $ref: "#/components/schemas/ResidencyReviewStatus"
+        inHouseChat:
+          type:
+            - boolean
+            - "null"
+          description: Состоит в чате дома; null — не проверено (бот не админ)
+      required:
+        - id
+        - house
+        - chat
+        - flatNo
+        - role
+        - trustLevel
+        - reviewStatus
+        - inHouseChat
+    PublicId:
+      type: string
+      pattern: ^[A-Za-z0-9]{10}$
+      description: Публичный идентификатор (10 символов A-Za-z0-9)
+      example: K3f9QpZ2aB
+    HouseSummary:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/PublicId"
+        label:
+          type: string
+          description: "Короткое имя для текстов: «Дом {label}»"
+          example: "1"
+        address:
+          type: string
+          example: ул. Модельная, 1
+        city:
+          type: string
+        timezone:
+          type: string
+          description: Часовой пояс IANA; все времена показываются в нём
+          example: Europe/Moscow
+        entrances:
+          type: integer
+          exclusiveMinimum: 0
+        floors:
+          type: integer
+          exclusiveMinimum: 0
+        flatFrom:
+          type: integer
+          exclusiveMinimum: 0
+        flatTo:
+          type: integer
+          exclusiveMinimum: 0
+        isModel:
+          type: boolean
+          description: Модельные данные — показывать плашку
+      required:
+        - id
+        - label
+        - address
+        - city
+        - timezone
+        - entrances
+        - floors
+        - flatFrom
+        - flatTo
+        - isModel
+    HouseChatInfo:
+      type:
+        - object
+        - "null"
+      properties:
+        bound:
+          type: boolean
+          description: Чат дома привязан к сервису
+        title:
+          type:
+            - string
+            - "null"
+        inviteLink:
+          type:
+            - string
+            - "null"
+          description: Ссылка на чат (поле link объекта чата MAX)
+        participantsCount:
+          type:
+            - integer
+            - "null"
+      required:
+        - bound
+        - title
+        - inviteLink
+        - participantsCount
+    ResidencyRole:
+      type: string
+      enum:
+        - owner
+        - social_tenant
+        - renter
+        - family
+      description: "Кто житель в квартире: owner — собственник, social_tenant — соцнаём, renter — снимает, family — член семьи"
+    TrustLevel:
+      anyOf:
+        - type: number
+          enum:
+            - 0
+        - type: number
+          enum:
+            - 1
+        - type: number
+          enum:
+            - 2
+      description: 0 — заявлено, 1 — состоит в чате дома, 2 — подтверждён собственником или УК
+    ResidencyReviewStatus:
+      type: string
+      enum:
+        - pending
+        - confirmed
+        - rejected
+    StaffInfo:
+      type:
+        - object
+        - "null"
+      properties:
+        uk:
+          type: object
+          properties:
+            id:
+              $ref: "#/components/schemas/PublicId"
+            name:
+              type: string
+            isModel:
+              type: boolean
+          required:
+            - id
+            - name
+            - isModel
+        role:
+          $ref: "#/components/schemas/StaffRole"
+        isDemo:
+          type: boolean
+          description: Роль выдана по демо-коду — плашка «Демо-роль»
+        isChecker:
+          type: boolean
+          description: Тестовый пользователь проверяющих (дом-песочница)
+      required:
+        - uk
+        - role
+        - isDemo
+        - isChecker
+    StaffRole:
+      type: string
+      enum:
+        - dispatcher
+        - curator
+        - admin
+    Problem:
+      type: object
+      properties:
+        type:
+          type: string
+          example: urn:vsemdomom:problem:not_found
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+          description: Машинный код ошибки
+          example: not_found
+        traceId:
+          type: string
+          description: Идентификатор запроса (совпадает с X-Request-Id)
+      required:
+        - type
+        - title
+        - status
+        - code
+        - traceId
+      additionalProperties: {}
+      description: Ошибка API (RFC 9457)
+    AuthMaxRequest:
+      type: object
+      properties:
+        initData:
+          type: string
+          minLength: 1
+          description: window.WebApp.initData как есть
+      required:
+        - initData
+    AuthDevRequest:
+      type: object
+      properties:
+        userId:
+          type: integer
+          exclusiveMinimum: 0
+        role:
+          $ref: "#/components/schemas/AppRole"
+        startParam:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{0,512}$
+      required:
+        - userId
+        - role
+      description: Только при DEV_AUTH=true (локально); иначе 404
+    ConsentRequest:
+      type: object
+      properties:
+        version:
+          type: string
+          minLength: 1
+          description: Должна совпадать с currentConsentVersion
+      required:
+        - version
+    ResidencyResponse:
+      type: object
+      properties:
+        residency:
+          $ref: "#/components/schemas/Residency"
+        trustReset:
+          type: boolean
+          description: Квартира сменилась — уровень доверия сброшен
+      required:
+        - residency
+        - trustReset
+    ResidencyRequest:
+      type: object
+      properties:
+        houseId:
+          $ref: "#/components/schemas/PublicId"
+        flatNo:
+          type: integer
+          exclusiveMinimum: 0
+        role:
+          $ref: "#/components/schemas/ResidencyRole"
+      required:
+        - houseId
+        - flatNo
+        - role
+      description: Квартира вне диапазона дома → 422 flat_out_of_range; смена квартиры сбрасывает уровень доверия до 0
+    DemoUkRoleRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 64
+      required:
+        - code
+      description: Только при DEMO_MODE=true; неверный код → 403 demo_code_invalid
+    SettingsResponse:
+      type: object
+      properties:
+        notifyDefault:
+          type: boolean
+      required:
+        - notifyDefault
+    SettingsPatch:
+      type: object
+      properties:
+        notifyDefault:
+          type: boolean
+      required:
+        - notifyDefault
+      description: "«Уведомления» в профиле: значение по умолчанию для новых аварий"
+    HouseSearchResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/HouseSummary"
+      required:
+        - items
+    HouseDetail:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/PublicId"
+        label:
+          type: string
+          description: "Короткое имя для текстов: «Дом {label}»"
+          example: "1"
+        address:
+          type: string
+          example: ул. Модельная, 1
+        city:
+          type: string
+        timezone:
+          type: string
+          description: Часовой пояс IANA; все времена показываются в нём
+          example: Europe/Moscow
+        entrances:
+          type: integer
+          exclusiveMinimum: 0
+        floors:
+          type: integer
+          exclusiveMinimum: 0
+        flatFrom:
+          type: integer
+          exclusiveMinimum: 0
+        flatTo:
+          type: integer
+          exclusiveMinimum: 0
+        isModel:
+          type: boolean
+          description: Модельные данные — показывать плашку
+        uk:
+          type: object
+          properties:
+            name:
+              type: string
+            adsPhone:
+              type: string
+            isModel:
+              type: boolean
+          required:
+            - name
+            - adsPhone
+            - isModel
+        chat:
+          $ref: "#/components/schemas/HouseChatInfo"
+        activeIncidents:
+          type: array
+          items:
+            $ref: "#/components/schemas/IncidentSummary"
+        recentResults:
+          type: array
+          items:
+            $ref: "#/components/schemas/IncidentSummary"
+          description: Последние закрытые аварии (до 3)
+        month:
+          $ref: "#/components/schemas/HouseMonthSummary"
+        myResidency:
+          allOf:
+            - $ref: "#/components/schemas/Residency"
+            - type:
+                - object
+                - "null"
+      required:
+        - id
+        - label
+        - address
+        - city
+        - timezone
+        - entrances
+        - floors
+        - flatFrom
+        - flatTo
+        - isModel
+        - uk
+        - chat
+        - activeIncidents
+        - recentResults
+        - month
+        - myResidency
+    IncidentSummary:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/PublicId"
+        house:
+          $ref: "#/components/schemas/IncidentHouseRef"
+        service:
+          $ref: "#/components/schemas/ServiceType"
+        scope:
+          $ref: "#/components/schemas/IncidentScope"
+        entrance:
+          type:
+            - integer
+            - "null"
+          exclusiveMinimum: 0
+          description: Подъезд для масштаба entrance
+        status:
+          $ref: "#/components/schemas/IncidentStatus"
+        displayStatus:
+          $ref: "#/components/schemas/DisplayStatus"
+        headline:
+          $ref: "#/components/schemas/Headline"
+        startedAt:
+          $ref: "#/components/schemas/DateTime"
+        createdAt:
+          $ref: "#/components/schemas/DateTime"
+        eta:
+          allOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type:
+                - string
+                - "null"
+        overdue:
+          type: boolean
+          description: Истёк хотя бы один срок по нормативу
+        singleLimitExceeded:
+          type: boolean
+        discrepancyUnresolved:
+          type: boolean
+        participantsCount:
+          type: integer
+          minimum: 0
+          description: Отметились «у меня тоже» (жители, включая не подтверждённых)
+        flatsCount:
+          type: integer
+          minimum: 0
+          description: Квартиры зарегистрированных участников
+        byEntrance:
+          type: array
+          items:
+            $ref: "#/components/schemas/EntranceCount"
+        joined:
+          type:
+            - boolean
+            - "null"
+          description: Текущий пользователь отметился; null — для сотрудника УК
+        closedAt:
+          allOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type:
+                - string
+                - "null"
+        isModel:
+          type: boolean
+      required:
+        - id
+        - house
+        - service
+        - scope
+        - entrance
+        - status
+        - displayStatus
+        - headline
+        - startedAt
+        - createdAt
+        - eta
+        - overdue
+        - singleLimitExceeded
+        - discrepancyUnresolved
+        - participantsCount
+        - flatsCount
+        - byEntrance
+        - joined
+        - closedAt
+        - isModel
+    IncidentHouseRef:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/PublicId"
+        label:
+          type: string
+        address:
+          type: string
+        timezone:
+          type: string
+        entrances:
+          type: integer
+          exclusiveMinimum: 0
+        isModel:
+          type: boolean
+      required:
+        - id
+        - label
+        - address
+        - timezone
+        - entrances
+        - isModel
+    ServiceType:
+      type: string
+      enum:
+        - cold_water
+        - hot_water
+        - heating
+        - electricity
+        - sewerage
+        - gas
+        - leak
+      description: "Вид услуги: cold_water — холодная вода, hot_water — горячая вода, heating — отопление, electricity — свет, sewerage — канализация, gas — газ, leak — протечка"
+    IncidentScope:
+      type: string
+      enum:
+        - flat
+        - entrance
+        - house
+      description: "Где: flat — только в моей квартире (в чат не публикуется), entrance — подъезд, house — весь дом"
+    IncidentStatus:
+      type: string
+      enum:
+        - open
+        - accepted
+        - brigade_on_site
+        - localized
+        - checking
+        - discrepancy
+        - closed
+        - merged
+      description: "Статус аварии по машине состояний. Открытые: open…discrepancy; конечные: closed, merged"
+    DisplayStatus:
+      type: string
+      enum:
+        - open
+        - accepted
+        - brigade_on_site
+        - localized
+        - checking
+        - discrepancy
+        - closed
+        - closed_with_discrepancy
+        - merged
+      description: "Статус для показа (девять названий): closed_with_discrepancy — «Закрыта с расхождением» (closed с флагом discrepancyUnresolved)"
+    Headline:
+      type: object
+      properties:
+        displayStatus:
+          $ref: "#/components/schemas/DisplayStatus"
+        eta:
+          type:
+            - string
+            - "null"
+          format: date-time
+          description: Ориентир УК
+          example: 2026-09-27T14:40:00Z
+        nextDeadline:
+          type:
+            - object
+            - "null"
+          properties:
+            kind:
+              $ref: "#/components/schemas/DeadlineKind"
+            title:
+              type: string
+              example: Локализовать аварию
+            state:
+              $ref: "#/components/schemas/DeadlineState"
+            dueAt:
+              $ref: "#/components/schemas/DateTime"
+            warnAt:
+              $ref: "#/components/schemas/DateTime"
+            doneAt:
+              type:
+                - string
+                - "null"
+              format: date-time
+              description: Когда срок выполнен (для met) или истёк (для breached)
+              example: 2026-09-27T14:40:00Z
+            anchor:
+              type: string
+              enum:
+                - ads_registration
+                - service_report
+                - started
+              description: "От чего отсчитан срок: ads_registration — от регистрации в АДС; service_report — от сообщения в сервисе (подпись «от регистрации в сервисе»); started — от начала аварии"
+            norm:
+              $ref: "#/components/schemas/NormBasis"
+          required:
+            - kind
+            - title
+            - state
+            - dueAt
+            - warnAt
+            - doneAt
+            - anchor
+            - norm
+          description: Ближайший невыполненный срок по нормативу
+        statusAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+          description: "Время текущего статуса: бригада на месте, локализована, устранена или закрыта"
+          example: 2026-09-27T14:40:00Z
+        discrepancyFlats:
+          type: integer
+          minimum: 0
+          description: Сколько квартир ответили «Нет» (актуально)
+        unconfirmedRestoreFlats:
+          type: integer
+          minimum: 0
+          description: "Закрыта с расхождением: у скольких квартир восстановление не подтверждено"
+        durationMinutes:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          description: "Для закрытой: длительность по отметке УК"
+      required:
+        - displayStatus
+        - eta
+        - nextDeadline
+        - statusAt
+        - discrepancyFlats
+        - unconfirmedRestoreFlats
+        - durationMinutes
+    DeadlineKind:
+      type: string
+      enum:
+        - answer
+        - localize
+        - clog
+        - fix
+        - single_limit
+      description: answer — УК сообщит сроки работ; localize — локализовать; clog — устранить засор; fix — устранить аварию; single_limit — допустимый перерыв единовременно
+    DeadlineState:
+      type: string
+      enum:
+        - pending
+        - soon
+        - met
+        - breached
+        - cancelled
+      description: pending — срок идёт; soon — до срока меньше 30 минут; met — выполнено; breached — срок истёк; cancelled — отменён
+    NormBasis:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Код нормы в справочнике
+          example: pp416.p13.localize.hot_water
+        title:
+          type: string
+          example: Локализовать аварию
+        doc:
+          type: string
+          example: ПП № 416
+        point:
+          type: string
+          example: п. 13
+        textPlain:
+          type: string
+          description: Формулировка простыми словами
+        quote:
+          type:
+            - string
+            - "null"
+          description: Цитата из первоисточника
+        edition:
+          type: string
+          format: date
+          example: 2026-09-23
+          description: Дата редакции документа
+        validFrom:
+          type: string
+          format: date
+          example: 2026-09-23
+        validTo:
+          type:
+            - string
+            - "null"
+          format: date
+          example: 2026-09-23
+        checkedAt:
+          type:
+            - string
+            - "null"
+          format: date
+          example: 2026-09-23
+          description: Когда норма сверена с первоисточником
+        sourceUrl:
+          type: string
+          format: uri
+      required:
+        - code
+        - title
+        - doc
+        - point
+        - textPlain
+        - quote
+        - edition
+        - validFrom
+        - validTo
+        - checkedAt
+        - sourceUrl
+    EntranceCount:
+      type: object
+      properties:
+        entrance:
+          type: integer
+          exclusiveMinimum: 0
+        count:
+          type: integer
+          minimum: 0
+      required:
+        - entrance
+        - count
+    HouseMonthSummary:
+      type: object
+      properties:
+        month:
+          type: string
+          pattern: ^\d{4}-\d{2}$
+          example: 2026-09
+        scope:
+          type: string
+          enum:
+            - flat
+            - house
+          description: flat — по квартире пользователя, house — по авариям всего дома
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/MonthService"
+          description: Только услуги с перерывами в этом месяце
+      required:
+        - month
+        - scope
+        - services
+    MonthService:
+      type: object
+      properties:
+        service:
+          $ref: "#/components/schemas/ServiceType"
+        totalMinutes:
+          type: integer
+          minimum: 0
+        limitMinutes:
+          type:
+            - integer
+            - "null"
+          description: null — норматив не установлен
+        excessMinutes:
+          type: integer
+          minimum: 0
+        norm:
+          allOf:
+            - $ref: "#/components/schemas/NormBasis"
+            - type:
+                - object
+                - "null"
+      required:
+        - service
+        - totalMinutes
+        - limitMinutes
+        - excessMinutes
+        - norm
+    HouseMonthResponse:
+      type: object
+      properties:
+        month:
+          type: string
+        service:
+          $ref: "#/components/schemas/ServiceType"
+        scope:
+          type: string
+          enum:
+            - flat
+            - house
+        timezone:
+          type: string
+        intervals:
+          type: array
+          items:
+            type: object
+            properties:
+              incidentId:
+                $ref: "#/components/schemas/PublicId"
+              from:
+                $ref: "#/components/schemas/DateTime"
+              to:
+                $ref: "#/components/schemas/DateTime"
+              minutes:
+                type: integer
+                minimum: 0
+              ongoing:
+                type: boolean
+                description: "Авария ещё идёт: конец — «сейчас»"
+            required:
+              - incidentId
+              - from
+              - to
+              - minutes
+              - ongoing
+        totalMinutes:
+          type: integer
+          minimum: 0
+          description: "Объединение интервалов: пересечения не складываются дважды"
+        single:
+          type:
+            - object
+            - "null"
+          properties:
+            limitMinutes:
+              type: integer
+            longestMinutes:
+              type: integer
+            exceeded:
+              type: boolean
+            norm:
+              $ref: "#/components/schemas/NormBasis"
+          required:
+            - limitMinutes
+            - longestMinutes
+            - exceeded
+            - norm
+        monthly:
+          type:
+            - object
+            - "null"
+          properties:
+            limitMinutes:
+              type: integer
+            excessMinutes:
+              type: integer
+              minimum: 0
+            norm:
+              $ref: "#/components/schemas/NormBasis"
+          required:
+            - limitMinutes
+            - excessMinutes
+            - norm
+      required:
+        - month
+        - service
+        - scope
+        - timezone
+        - intervals
+        - totalMinutes
+        - single
+        - monthly
+    NormsResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/Norm"
+    Norm:
+      type: object
+      properties:
+        code:
+          type: string
+        service:
+          type:
+            - string
+            - "null"
+          enum:
+            - cold_water
+            - hot_water
+            - heating
+            - electricity
+            - sewerage
+            - gas
+            - leak
+            - null
+          description: null — норма для любой услуги
+        event:
+          $ref: "#/components/schemas/NormEvent"
+        title:
+          type: string
+        value:
+          type: number
+          description: Значение в единицах unit
+          example: 30
+        unit:
+          $ref: "#/components/schemas/NormUnit"
+        ratePercent:
+          type:
+            - number
+            - "null"
+          description: Снижение платы, % за час сверх нормы
+          example: 0.15
+        calcStrategy:
+          $ref: "#/components/schemas/CalcStrategy"
+        round:
+          type:
+            - string
+            - "null"
+          enum:
+            - ceil
+            - floor
+            - exact
+            - null
+          description: Округление неполного часа
+        regionCode:
+          type:
+            - string
+            - "null"
+          description: null — федеральная норма
+        condition:
+          type:
+            - object
+            - "null"
+          additionalProperties:
+            anyOf:
+              - type: string
+              - type: number
+              - type: boolean
+          description: Условие применения по параметрам дома
+          example:
+            power_sources: 2
+        basis:
+          $ref: "#/components/schemas/NormBasis"
+      required:
+        - code
+        - service
+        - event
+        - title
+        - value
+        - unit
+        - ratePercent
+        - calcStrategy
+        - round
+        - regionCode
+        - condition
+        - basis
+    NormEvent:
+      type: string
+      enum:
+        - ads_answer
+        - uk_eta
+        - localize
+        - clog_clear
+        - fix
+        - inform_causes
+        - check_visit
+        - act_without_executor
+        - act_copy
+        - interruption_single
+        - interruption_monthly
+        - quality_temperature
+    NormUnit:
+      type: string
+      enum:
+        - min
+        - h
+        - day
+        - workday
+        - person
+        - celsius
+    CalcStrategy:
+      type:
+        - string
+        - "null"
+      enum:
+        - monthly_total
+        - max_of_single_and_monthly
+        - null
+    IncidentDetail:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/PublicId"
+        house:
+          $ref: "#/components/schemas/IncidentHouseRef"
+        service:
+          $ref: "#/components/schemas/ServiceType"
+        scope:
+          $ref: "#/components/schemas/IncidentScope"
+        entrance:
+          type:
+            - integer
+            - "null"
+          exclusiveMinimum: 0
+          description: Подъезд для масштаба entrance
+        status:
+          $ref: "#/components/schemas/IncidentStatus"
+        displayStatus:
+          $ref: "#/components/schemas/DisplayStatus"
+        headline:
+          $ref: "#/components/schemas/Headline"
+        startedAt:
+          $ref: "#/components/schemas/DateTime"
+        createdAt:
+          $ref: "#/components/schemas/DateTime"
+        eta:
+          allOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type:
+                - string
+                - "null"
+        overdue:
+          type: boolean
+          description: Истёк хотя бы один срок по нормативу
+        singleLimitExceeded:
+          type: boolean
+        discrepancyUnresolved:
+          type: boolean
+        participantsCount:
+          type: integer
+          minimum: 0
+          description: Отметились «у меня тоже» (жители, включая не подтверждённых)
+        flatsCount:
+          type: integer
+          minimum: 0
+          description: Квартиры зарегистрированных участников
+        byEntrance:
+          type: array
+          items:
+            $ref: "#/components/schemas/EntranceCount"
+        joined:
+          type:
+            - boolean
+            - "null"
+          description: Текущий пользователь отметился; null — для сотрудника УК
+        closedAt:
+          allOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type:
+                - string
+                - "null"
+        isModel:
+          type: boolean
+        version:
+          type: integer
+          exclusiveMinimum: 0
+          description: Версия для If-Match
+        ads:
+          $ref: "#/components/schemas/AdsInfo"
+        deadlines:
+          type: array
+          items:
+            $ref: "#/components/schemas/Deadline"
+        counters:
+          $ref: "#/components/schemas/Counters"
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatusStep"
+          description: Шаги для StatusStepper с пропущенными
+        timeline:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimelineEvent"
+          description: Хронология, новые сверху
+        me:
+          $ref: "#/components/schemas/MyParticipation"
+        check:
+          $ref: "#/components/schemas/CheckInfo"
+        act:
+          type:
+            - object
+            - "null"
+          properties:
+            available:
+              type: boolean
+              description: "Можно готовить акт без исполнителя: проверка не пришла в срок"
+            checkDueAt:
+              type:
+                - string
+                - "null"
+              format: date-time
+              description: Срок проверки по сообщению в АДС (п. 108)
+              example: 2026-09-27T14:40:00Z
+            requiredConsumers:
+              type: integer
+              exclusiveMinimum: 0
+              description: Сколько потребителей нужно (из справочника норм)
+            readyCount:
+              type: integer
+              minimum: 0
+            myReady:
+              type: boolean
+            introOptIn:
+              type: boolean
+            norm:
+              $ref: "#/components/schemas/NormBasis"
+          required:
+            - available
+            - checkDueAt
+            - requiredConsumers
+            - readyCount
+            - myReady
+            - introOptIn
+            - norm
+          description: null, если функция выключена или акт не нужен
+        brigadeOnSiteAt:
+          allOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type:
+                - string
+                - "null"
+        localizedAt:
+          allOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type:
+                - string
+                - "null"
+        resolvedAtUk:
+          allOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type:
+                - string
+                - "null"
+        mergedInto:
+          allOf:
+            - $ref: "#/components/schemas/PublicId"
+            - type:
+                - string
+                - "null"
+        cardInChat:
+          type: boolean
+          description: У аварии есть карточка в чате дома
+      required:
+        - id
+        - house
+        - service
+        - scope
+        - entrance
+        - status
+        - displayStatus
+        - headline
+        - startedAt
+        - createdAt
+        - eta
+        - overdue
+        - singleLimitExceeded
+        - discrepancyUnresolved
+        - participantsCount
+        - flatsCount
+        - byEntrance
+        - joined
+        - closedAt
+        - isModel
+        - version
+        - ads
+        - deadlines
+        - counters
+        - steps
+        - timeline
+        - me
+        - check
+        - act
+        - brigadeOnSiteAt
+        - localizedAt
+        - resolvedAtUk
+        - mergedInto
+        - cardInChat
+    AdsInfo:
+      type: object
+      properties:
+        phone:
+          type: string
+          description: Телефон АДС (модельные данные)
+        registration:
+          type:
+            - object
+            - "null"
+          properties:
+            number:
+              type:
+                - string
+                - "null"
+            at:
+              allOf:
+                - $ref: "#/components/schemas/DateTime"
+                - type:
+                    - string
+                    - "null"
+            notReached:
+              type: boolean
+              description: «Не дозвонился» — записано как попытка
+          required:
+            - number
+            - at
+            - notReached
+        reminderAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+          description: Когда напомнить ввести номер заявки (если пропущен)
+          example: 2026-09-27T14:40:00Z
+      required:
+        - phone
+        - registration
+        - reminderAt
+    Deadline:
+      type: object
+      properties:
+        kind:
+          $ref: "#/components/schemas/DeadlineKind"
+        title:
+          type: string
+          example: Локализовать аварию
+        state:
+          $ref: "#/components/schemas/DeadlineState"
+        dueAt:
+          $ref: "#/components/schemas/DateTime"
+        warnAt:
+          $ref: "#/components/schemas/DateTime"
+        doneAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+          description: Когда срок выполнен (для met) или истёк (для breached)
+          example: 2026-09-27T14:40:00Z
+        anchor:
+          type: string
+          enum:
+            - ads_registration
+            - service_report
+            - started
+          description: "От чего отсчитан срок: ads_registration — от регистрации в АДС; service_report — от сообщения в сервисе (подпись «от регистрации в сервисе»); started — от начала аварии"
+        norm:
+          $ref: "#/components/schemas/NormBasis"
+      required:
+        - kind
+        - title
+        - state
+        - dueAt
+        - warnAt
+        - doneAt
+        - anchor
+        - norm
+    Counters:
+      type: object
+      properties:
+        participants:
+          type: integer
+          minimum: 0
+        flats:
+          type: integer
+          minimum: 0
+        unconfirmed:
+          type: integer
+          minimum: 0
+          description: Уровень доверия 0 или не зарегистрированы
+        byEntrance:
+          type: array
+          items:
+            $ref: "#/components/schemas/EntranceCount"
+        unknownEntrance:
+          type: integer
+          minimum: 0
+          description: «Не знаю подъезд»
+        notMe:
+          type: integer
+          minimum: 0
+          description: Ответили «Не у меня»
+        answers:
+          type: object
+          properties:
+            yes:
+              type: integer
+              minimum: 0
+            no:
+              type: integer
+              minimum: 0
+            weak:
+              type: integer
+              minimum: 0
+          required:
+            - yes
+            - no
+            - weak
+          description: Актуальные ответы на вопрос о восстановлении
+        brigade:
+          type: object
+          properties:
+            confirmed:
+              type: integer
+              minimum: 0
+            absent:
+              type: integer
+              minimum: 0
+          required:
+            - confirmed
+            - absent
+          description: Отметки жителей «Подтверждаю» / «Бригады нет»
+      required:
+        - participants
+        - flats
+        - unconfirmed
+        - byEntrance
+        - unknownEntrance
+        - notMe
+        - answers
+        - brigade
+    StatusStep:
+      type: object
+      properties:
+        step:
+          type: string
+          enum:
+            - reported
+            - accepted
+            - brigade_on_site
+            - localized
+            - resolved
+            - closed
+        state:
+          type: string
+          enum:
+            - done
+            - skipped
+            - current
+            - pending
+        at:
+          allOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type:
+                - string
+                - "null"
+      required:
+        - step
+        - state
+        - at
+    TimelineEvent:
+      type: object
+      properties:
+        type:
+          $ref: "#/components/schemas/IncidentEventType"
+        at:
+          $ref: "#/components/schemas/DateTime"
+        actorType:
+          $ref: "#/components/schemas/ActorType"
+        source:
+          $ref: "#/components/schemas/EventSource"
+        mine:
+          type: boolean
+          description: Событие текущего пользователя
+        payload:
+          type: object
+          additionalProperties: {}
+          description: "Данные события без ПДн: подъезд, ориентир, номер заявки АДС, пропущенные шаги и т. п."
+      required:
+        - type
+        - at
+        - actorType
+        - source
+        - mine
+        - payload
+    IncidentEventType:
+      type: string
+      enum:
+        - reported
+        - joined
+        - left
+        - ads_registered
+        - ads_not_reached
+        - uk_accepted
+        - uk_brigade_on_site
+        - residents_brigade_confirmed
+        - residents_no_brigade
+        - uk_localized
+        - uk_resolved
+        - skipped_steps
+        - check_asked
+        - check_repeated
+        - restored_yes
+        - restored_no
+        - restored_weak
+        - ads_rereported
+        - discrepancy
+        - act_ready
+        - deadline_warned
+        - deadline_met
+        - deadline_breached
+        - closed
+        - merged
+        - demo_time_shift
+        - demo_neighbours_added
+    ActorType:
+      type: string
+      enum:
+        - resident
+        - uk
+        - system
+    EventSource:
+      type: string
+      enum:
+        - bot
+        - miniapp
+        - api
+        - system
+    MyParticipation:
+      type:
+        - object
+        - "null"
+      properties:
+        joined:
+          type: boolean
+        notMe:
+          type: boolean
+          description: Ответил «Не у меня»
+        entrance:
+          type:
+            - integer
+            - "null"
+          exclusiveMinimum: 0
+        floor:
+          type:
+            - integer
+            - "null"
+          exclusiveMinimum: 0
+        notify:
+          type: boolean
+          description: "«Уведомлять меня»: личные сообщения о смене статуса и сроков"
+        restoredAnswer:
+          $ref: "#/components/schemas/RestoredAnswer"
+        restoredAt:
+          allOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type:
+                - string
+                - "null"
+        restoredSource:
+          $ref: "#/components/schemas/RestoredSource"
+        adsRereport:
+          type:
+            - object
+            - "null"
+          properties:
+            number:
+              type:
+                - string
+                - "null"
+            at:
+              $ref: "#/components/schemas/DateTime"
+          required:
+            - number
+            - at
+        readyToSign:
+          type: boolean
+        introOptIn:
+          type: boolean
+        isAuthor:
+          type: boolean
+        trustLevel:
+          anyOf:
+            - type: number
+              enum:
+                - 0
+            - type: number
+              enum:
+                - 1
+            - type: number
+              enum:
+                - 2
+            - type: "null"
+          description: null — не зарегистрирован
+      required:
+        - joined
+        - notMe
+        - entrance
+        - floor
+        - notify
+        - restoredAnswer
+        - restoredAt
+        - restoredSource
+        - adsRereport
+        - readyToSign
+        - introOptIn
+        - isAuthor
+        - trustLevel
+    RestoredAnswer:
+      type:
+        - string
+        - "null"
+      enum:
+        - yes
+        - no
+        - weak
+        - null
+      description: "Ответ на вопрос о восстановлении: yes — есть, no — нет, weak — есть, но плохая (считается восстановлением)"
+    RestoredSource:
+      type:
+        - string
+        - "null"
+      enum:
+        - uk_mark
+        - resident_answer
+        - ads_report
+        - null
+      description: "Откуда время восстановления: uk_mark — отметка УК, resident_answer — ответ жителя, ads_report — сообщение в АДС"
+    CheckInfo:
+      type:
+        - object
+        - "null"
+      properties:
+        askedAt:
+          $ref: "#/components/schemas/DateTime"
+        repeated:
+          type: boolean
+          description: Повторная проверка после повторного «Устранено»
+        windowEndsAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+          description: Когда истечёт окно проверки (закрытие без «Нет»)
+          example: 2026-09-27T14:40:00Z
+        discrepancyDeadlineAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+          description: Предельный срок расхождения
+          example: 2026-09-27T14:40:00Z
+      required:
+        - askedAt
+        - repeated
+        - windowEndsAt
+        - discrepancyDeadlineAt
+    CreateIncidentRequest:
+      type: object
+      properties:
+        houseId:
+          $ref: "#/components/schemas/PublicId"
+        service:
+          $ref: "#/components/schemas/ServiceType"
+        scope:
+          $ref: "#/components/schemas/IncidentScope"
+        entrance:
+          type: integer
+          exclusiveMinimum: 0
+          description: Подъезд автора; обязателен для scope=entrance
+        floor:
+          type: integer
+          exclusiveMinimum: 0
+        startedPreset:
+          type: string
+          enum:
+            - now
+            - 1h
+            - 3h
+            - 12h
+            - custom
+          description: По умолчанию now; для custom нужен startedAt
+        startedAt:
+          $ref: "#/components/schemas/DateTime"
+        confirmOld:
+          type: boolean
+          description: Подтверждение, что начало раньше чем 24 часа назад
+      required:
+        - houseId
+        - service
+        - scope
+    JoinResponse:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/PublicId"
+        house:
+          $ref: "#/components/schemas/IncidentHouseRef"
+        service:
+          $ref: "#/components/schemas/ServiceType"
+        scope:
+          $ref: "#/components/schemas/IncidentScope"
+        entrance:
+          type:
+            - integer
+            - "null"
+          exclusiveMinimum: 0
+          description: Подъезд для масштаба entrance
+        status:
+          $ref: "#/components/schemas/IncidentStatus"
+        displayStatus:
+          $ref: "#/components/schemas/DisplayStatus"
+        headline:
+          $ref: "#/components/schemas/Headline"
+        startedAt:
+          $ref: "#/components/schemas/DateTime"
+        createdAt:
+          $ref: "#/components/schemas/DateTime"
+        eta:
+          allOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type:
+                - string
+                - "null"
+        overdue:
+          type: boolean
+          description: Истёк хотя бы один срок по нормативу
+        singleLimitExceeded:
+          type: boolean
+        discrepancyUnresolved:
+          type: boolean
+        participantsCount:
+          type: integer
+          minimum: 0
+          description: Отметились «у меня тоже» (жители, включая не подтверждённых)
+        flatsCount:
+          type: integer
+          minimum: 0
+          description: Квартиры зарегистрированных участников
+        byEntrance:
+          type: array
+          items:
+            $ref: "#/components/schemas/EntranceCount"
+        joined:
+          type:
+            - boolean
+            - "null"
+          description: Текущий пользователь отметился; null — для сотрудника УК
+        closedAt:
+          allOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type:
+                - string
+                - "null"
+        isModel:
+          type: boolean
+        version:
+          type: integer
+          exclusiveMinimum: 0
+          description: Версия для If-Match
+        ads:
+          $ref: "#/components/schemas/AdsInfo"
+        deadlines:
+          type: array
+          items:
+            $ref: "#/components/schemas/Deadline"
+        counters:
+          $ref: "#/components/schemas/Counters"
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatusStep"
+          description: Шаги для StatusStepper с пропущенными
+        timeline:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimelineEvent"
+          description: Хронология, новые сверху
+        me:
+          $ref: "#/components/schemas/MyParticipation"
+        check:
+          $ref: "#/components/schemas/CheckInfo"
+        act:
+          type:
+            - object
+            - "null"
+          properties:
+            available:
+              type: boolean
+              description: "Можно готовить акт без исполнителя: проверка не пришла в срок"
+            checkDueAt:
+              type:
+                - string
+                - "null"
+              format: date-time
+              description: Срок проверки по сообщению в АДС (п. 108)
+              example: 2026-09-27T14:40:00Z
+            requiredConsumers:
+              type: integer
+              exclusiveMinimum: 0
+              description: Сколько потребителей нужно (из справочника норм)
+            readyCount:
+              type: integer
+              minimum: 0
+            myReady:
+              type: boolean
+            introOptIn:
+              type: boolean
+            norm:
+              $ref: "#/components/schemas/NormBasis"
+          required:
+            - available
+            - checkDueAt
+            - requiredConsumers
+            - readyCount
+            - myReady
+            - introOptIn
+            - norm
+          description: null, если функция выключена или акт не нужен
+        brigadeOnSiteAt:
+          allOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type:
+                - string
+                - "null"
+        localizedAt:
+          allOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type:
+                - string
+                - "null"
+        resolvedAtUk:
+          allOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type:
+                - string
+                - "null"
+        mergedInto:
+          allOf:
+            - $ref: "#/components/schemas/PublicId"
+            - type:
+                - string
+                - "null"
+        cardInChat:
+          type: boolean
+          description: У аварии есть карточка в чате дома
+        joinResult:
+          type: string
+          enum:
+            - joined
+            - already_joined
+            - updated
+          description: already_joined — «Вы уже отметились», счётчики не менялись; updated — изменён подъезд или этаж
+      required:
+        - id
+        - house
+        - service
+        - scope
+        - entrance
+        - status
+        - displayStatus
+        - headline
+        - startedAt
+        - createdAt
+        - eta
+        - overdue
+        - singleLimitExceeded
+        - discrepancyUnresolved
+        - participantsCount
+        - flatsCount
+        - byEntrance
+        - joined
+        - closedAt
+        - isModel
+        - version
+        - ads
+        - deadlines
+        - counters
+        - steps
+        - timeline
+        - me
+        - check
+        - act
+        - brigadeOnSiteAt
+        - localizedAt
+        - resolvedAtUk
+        - mergedInto
+        - cardInChat
+        - joinResult
+    JoinRequest:
+      type: object
+      properties:
+        entrance:
+          type: integer
+          exclusiveMinimum: 0
+        floor:
+          type: integer
+          exclusiveMinimum: 0
+    AdsRegistrationRequest:
+      type: object
+      properties:
+        number:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: Номер заявки АДС
+        registeredAt:
+          type: string
+          format: date-time
+          description: Время регистрации; по умолчанию — сейчас
+          example: 2026-09-27T14:40:00Z
+        notReached:
+          type: boolean
+          description: «Не дозвонился»
+        remindLater:
+          type: boolean
+          description: «Заполню позже» — одно напоминание через 30 минут
+      description: До устранения — регистрация аварии в АДС (дедлайны пересчитываются от её времени). После ответа «Нет» — повторное сообщение в АДС (п. 108, таймер проверки).
+    ObservationRequest:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum:
+            - brigade_confirmed
+            - brigade_absent
+            - restored_yes
+            - restored_no
+            - restored_weak
+          description: brigade_* — «Подтверждаю» / «Бригады нет» (только в статусе brigade_on_site, флаг brigadeConfirm); restored_* — ответ на вопрос о восстановлении (checking, discrepancy), действует последний
+        viaAds:
+          type: object
+          properties:
+            number:
+              type: string
+              minLength: 1
+              maxLength: 64
+            at:
+              $ref: "#/components/schemas/DateTime"
+          description: "Для restored_yes: восстановление подтверждено сообщением в АДС"
+      required:
+        - kind
+    ParticipationResponse:
+      type: object
+      properties:
+        notify:
+          type: boolean
+      required:
+        - notify
+    ParticipationPatch:
+      type: object
+      properties:
+        notify:
+          type: boolean
+      required:
+        - notify
+    IncidentResult:
+      type: object
+      properties:
+        incidentId:
+          $ref: "#/components/schemas/PublicId"
+        service:
+          $ref: "#/components/schemas/ServiceType"
+        house:
+          $ref: "#/components/schemas/IncidentHouseRef"
+        displayStatus:
+          $ref: "#/components/schemas/DisplayStatus"
+        startedAt:
+          $ref: "#/components/schemas/DateTime"
+        uk:
+          type: object
+          properties:
+            resolvedAt:
+              $ref: "#/components/schemas/DateTime"
+            durationMinutes:
+              type: integer
+              minimum: 0
+          required:
+            - resolvedAt
+            - durationMinutes
+          description: По отметке УК «Устранено»
+        my:
+          type:
+            - object
+            - "null"
+          properties:
+            flatNo:
+              type: integer
+              exclusiveMinimum: 0
+            restoredAt:
+              $ref: "#/components/schemas/DateTime"
+            durationMinutes:
+              type: integer
+              minimum: 0
+            source:
+              $ref: "#/components/schemas/RestoredSource"
+          required:
+            - flatNo
+            - restoredAt
+            - durationMinutes
+            - source
+          description: Для квартиры пользователя; null — пользователь не житель этого дома
+        single:
+          type:
+            - object
+            - "null"
+          properties:
+            limitMinutes:
+              type: integer
+            longestMinutes:
+              type: integer
+            exceeded:
+              type: boolean
+            norm:
+              $ref: "#/components/schemas/NormBasis"
+          required:
+            - limitMinutes
+            - longestMinutes
+            - exceeded
+            - norm
+          description: Единовременный лимит — флаг, на сумму не влияет
+        month:
+          type:
+            - object
+            - "null"
+          properties:
+            month:
+              type: string
+            totalMinutes:
+              type: integer
+              minimum: 0
+            limitMinutes:
+              type: integer
+            excessMinutes:
+              type: integer
+              minimum: 0
+            withinNorm:
+              type: boolean
+            norm:
+              $ref: "#/components/schemas/NormBasis"
+          required:
+            - month
+            - totalMinutes
+            - limitMinutes
+            - excessMinutes
+            - withinNorm
+            - norm
+          description: Месячный лимит, от него зависят деньги; null — норматив не установлен
+        flatsCount:
+          type: integer
+          minimum: 0
+        lateFlats:
+          type: object
+          properties:
+            count:
+              type: integer
+              minimum: 0
+            lastRestoredAt:
+              allOf:
+                - $ref: "#/components/schemas/DateTime"
+                - type:
+                    - string
+                    - "null"
+          required:
+            - count
+            - lastRestoredAt
+          description: Квартиры с более поздним восстановлением, чем отметка УК
+        eligibleFlats:
+          type: integer
+          minimum: 0
+          description: Сколько квартир могут оформить перерасчёт (сверх месячной нормы)
+        actCopyNorm:
+          type:
+            - object
+            - "null"
+          properties:
+            code:
+              type: string
+              description: Код нормы в справочнике
+              example: pp416.p13.localize.hot_water
+            title:
+              type: string
+              example: Локализовать аварию
+            doc:
+              type: string
+              example: ПП № 416
+            point:
+              type: string
+              example: п. 13
+            textPlain:
+              type: string
+              description: Формулировка простыми словами
+            quote:
+              type:
+                - string
+                - "null"
+              description: Цитата из первоисточника
+            edition:
+              type: string
+              format: date
+              example: 2026-09-23
+              description: Дата редакции документа
+            validFrom:
+              type: string
+              format: date
+              example: 2026-09-23
+            validTo:
+              type:
+                - string
+                - "null"
+              format: date
+              example: 2026-09-23
+            checkedAt:
+              type:
+                - string
+                - "null"
+              format: date
+              example: 2026-09-23
+              description: Когда норма сверена с первоисточником
+            sourceUrl:
+              type: string
+              format: uri
+          required:
+            - code
+            - title
+            - doc
+            - point
+            - textPlain
+            - quote
+            - edition
+            - validFrom
+            - validTo
+            - checkedAt
+            - sourceUrl
+          description: Копия акта о нарушении качества — ПП № 416, п. 34
+        disclaimer:
+          type: string
+          example: Это расчёт по нормам, итог определяет исполнитель услуги
+      required:
+        - incidentId
+        - service
+        - house
+        - displayStatus
+        - startedAt
+        - uk
+        - my
+        - single
+        - month
+        - flatsCount
+        - lateFlats
+        - eligibleFlats
+        - actCopyNorm
+        - disclaimer
+    RecalculationResponse:
+      type: object
+      properties:
+        incidentId:
+          $ref: "#/components/schemas/PublicId"
+        service:
+          $ref: "#/components/schemas/ServiceType"
+        month:
+          type: string
+          example: 2026-09
+        preliminary:
+          type: boolean
+          description: "Авария ещё не закрыта: расчёт на текущий момент"
+        monthlyCharge:
+          type: number
+        totalMinutes:
+          type: integer
+          minimum: 0
+        limitMinutes:
+          type:
+            - integer
+            - "null"
+        excessMinutes:
+          type: integer
+          minimum: 0
+        excessHours:
+          type: number
+          minimum: 0
+          description: Часы сверх нормы после округления по справочнику
+          example: 4
+        round:
+          $ref: "#/components/schemas/RoundMode"
+        ratePercent:
+          type: number
+          minimum: 0
+          example: 0.15
+        amount:
+          type: number
+          minimum: 0
+          description: Сумма, ₽ (банковское округление до копеек); 0 — перерасчёт не положен
+          example: 7.2
+        withinNorm:
+          type: boolean
+        singleLimitExceeded:
+          type: boolean
+        formula:
+          type: string
+          example: 4 ч × 0,15 % × 1 200 ₽ = 7,20 ₽
+        norm:
+          allOf:
+            - $ref: "#/components/schemas/NormBasis"
+            - type:
+                - object
+                - "null"
+        disclaimer:
+          type: string
+      required:
+        - incidentId
+        - service
+        - month
+        - preliminary
+        - monthlyCharge
+        - totalMinutes
+        - limitMinutes
+        - excessMinutes
+        - excessHours
+        - round
+        - ratePercent
+        - amount
+        - withinNorm
+        - singleLimitExceeded
+        - formula
+        - norm
+        - disclaimer
+    RoundMode:
+      type: string
+      enum:
+        - ceil
+        - floor
+        - exact
+    RecalculationRequest:
+      type: object
+      properties:
+        monthlyCharge:
+          type: number
+          exclusiveMinimum: 0
+          description: Плата за услугу за месяц из квитанции, ₽
+          example: 1200
+      required:
+        - monthlyCharge
+      description: Сумма ≤ 0 или не число → 422 monthly_charge_invalid
+    SendToDmResponse:
+      type: object
+      properties:
+        sent:
+          type: boolean
+          enum:
+            - true
+      required:
+        - sent
+    SendToDmRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 4000
+          description: Текст заявления; на сервере не сохраняется и не логируется
+      required:
+        - text
+    ActInfo:
+      type: object
+      properties:
+        available:
+          type: boolean
+          description: "Можно готовить акт без исполнителя: проверка не пришла в срок"
+        checkDueAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+          description: Срок проверки по сообщению в АДС (п. 108)
+          example: 2026-09-27T14:40:00Z
+        requiredConsumers:
+          type: integer
+          exclusiveMinimum: 0
+          description: Сколько потребителей нужно (из справочника норм)
+        readyCount:
+          type: integer
+          minimum: 0
+        myReady:
+          type: boolean
+        introOptIn:
+          type: boolean
+        norm:
+          $ref: "#/components/schemas/NormBasis"
+      required:
+        - available
+        - checkDueAt
+        - requiredConsumers
+        - readyCount
+        - myReady
+        - introOptIn
+        - norm
+    ActReadyRequest:
+      type: object
+      properties:
+        ready:
+          type: boolean
+          description: «Я готов подписать»
+        introOptIn:
+          type: boolean
+          description: «Познакомить меня с другими, кто готов подписать»
+      required:
+        - ready
+    OwnerInviteCreateResponse:
+      type: object
+      properties:
+        link:
+          type: string
+          format: uri
+          description: https://max.ru/<бот>?startapp=o_<токен>
+        shareText:
+          type: string
+          description: Текст для shareMaxContent и :share
+        expiresAt:
+          $ref: "#/components/schemas/DateTime"
+      required:
+        - link
+        - shareText
+        - expiresAt
+    OwnerInviteCreateRequest:
+      type: object
+      properties:
+        incidentId:
+          $ref: "#/components/schemas/PublicId"
+      required:
+        - incidentId
+      description: «Лицевой счёт не на мне» → ссылка собственнику
+    OwnerInviteView:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - pending
+            - confirmed
+            - rejected
+        flatNo:
+          type: integer
+          description: Квартира жильца; имени нет — сервис его не хранит
+        tenantRole:
+          $ref: "#/components/schemas/ResidencyRole"
+        house:
+          type: object
+          properties:
+            id:
+              $ref: "#/components/schemas/PublicId"
+            label:
+              type: string
+            address:
+              type: string
+          required:
+            - id
+            - label
+            - address
+        result:
+          type:
+            - object
+            - "null"
+          properties:
+            incidentId:
+              $ref: "#/components/schemas/PublicId"
+            service:
+              $ref: "#/components/schemas/ServiceType"
+            house:
+              $ref: "#/components/schemas/IncidentHouseRef"
+            displayStatus:
+              $ref: "#/components/schemas/DisplayStatus"
+            startedAt:
+              $ref: "#/components/schemas/DateTime"
+            uk:
+              type: object
+              properties:
+                resolvedAt:
+                  $ref: "#/components/schemas/DateTime"
+                durationMinutes:
+                  type: integer
+                  minimum: 0
+              required:
+                - resolvedAt
+                - durationMinutes
+              description: По отметке УК «Устранено»
+            my:
+              type:
+                - object
+                - "null"
+              properties:
+                flatNo:
+                  type: integer
+                  exclusiveMinimum: 0
+                restoredAt:
+                  $ref: "#/components/schemas/DateTime"
+                durationMinutes:
+                  type: integer
+                  minimum: 0
+                source:
+                  $ref: "#/components/schemas/RestoredSource"
+              required:
+                - flatNo
+                - restoredAt
+                - durationMinutes
+                - source
+              description: Для квартиры пользователя; null — пользователь не житель этого дома
+            single:
+              type:
+                - object
+                - "null"
+              properties:
+                limitMinutes:
+                  type: integer
+                longestMinutes:
+                  type: integer
+                exceeded:
+                  type: boolean
+                norm:
+                  $ref: "#/components/schemas/NormBasis"
+              required:
+                - limitMinutes
+                - longestMinutes
+                - exceeded
+                - norm
+              description: Единовременный лимит — флаг, на сумму не влияет
+            month:
+              type:
+                - object
+                - "null"
+              properties:
+                month:
+                  type: string
+                totalMinutes:
+                  type: integer
+                  minimum: 0
+                limitMinutes:
+                  type: integer
+                excessMinutes:
+                  type: integer
+                  minimum: 0
+                withinNorm:
+                  type: boolean
+                norm:
+                  $ref: "#/components/schemas/NormBasis"
+              required:
+                - month
+                - totalMinutes
+                - limitMinutes
+                - excessMinutes
+                - withinNorm
+                - norm
+              description: Месячный лимит, от него зависят деньги; null — норматив не установлен
+            flatsCount:
+              type: integer
+              minimum: 0
+            lateFlats:
+              type: object
+              properties:
+                count:
+                  type: integer
+                  minimum: 0
+                lastRestoredAt:
+                  allOf:
+                    - $ref: "#/components/schemas/DateTime"
+                    - type:
+                        - string
+                        - "null"
+              required:
+                - count
+                - lastRestoredAt
+              description: Квартиры с более поздним восстановлением, чем отметка УК
+            eligibleFlats:
+              type: integer
+              minimum: 0
+              description: Сколько квартир могут оформить перерасчёт (сверх месячной нормы)
+            actCopyNorm:
+              type:
+                - object
+                - "null"
+              properties:
+                code:
+                  type: string
+                  description: Код нормы в справочнике
+                  example: pp416.p13.localize.hot_water
+                title:
+                  type: string
+                  example: Локализовать аварию
+                doc:
+                  type: string
+                  example: ПП № 416
+                point:
+                  type: string
+                  example: п. 13
+                textPlain:
+                  type: string
+                  description: Формулировка простыми словами
+                quote:
+                  type:
+                    - string
+                    - "null"
+                  description: Цитата из первоисточника
+                edition:
+                  type: string
+                  format: date
+                  example: 2026-09-23
+                  description: Дата редакции документа
+                validFrom:
+                  type: string
+                  format: date
+                  example: 2026-09-23
+                validTo:
+                  type:
+                    - string
+                    - "null"
+                  format: date
+                  example: 2026-09-23
+                checkedAt:
+                  type:
+                    - string
+                    - "null"
+                  format: date
+                  example: 2026-09-23
+                  description: Когда норма сверена с первоисточником
+                sourceUrl:
+                  type: string
+                  format: uri
+              required:
+                - code
+                - title
+                - doc
+                - point
+                - textPlain
+                - quote
+                - edition
+                - validFrom
+                - validTo
+                - checkedAt
+                - sourceUrl
+              description: Копия акта о нарушении качества — ПП № 416, п. 34
+            disclaimer:
+              type: string
+              example: Это расчёт по нормам, итог определяет исполнитель услуги
+          required:
+            - incidentId
+            - service
+            - house
+            - displayStatus
+            - startedAt
+            - uk
+            - my
+            - single
+            - month
+            - flatsCount
+            - lateFlats
+            - eligibleFlats
+            - actCopyNorm
+            - disclaimer
+          description: Итог аварии для собственника; null, пока авария не закрыта
+        incidentId:
+          $ref: "#/components/schemas/PublicId"
+        expiresAt:
+          $ref: "#/components/schemas/DateTime"
+      required:
+        - status
+        - flatNo
+        - tenantRole
+        - house
+        - result
+        - incidentId
+        - expiresAt
+    OwnerInviteDecisionResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - confirmed
+            - rejected
+        tenantTrustLevel:
+          $ref: "#/components/schemas/TrustLevel"
+        incidentId:
+          $ref: "#/components/schemas/PublicId"
+      required:
+        - status
+        - tenantTrustLevel
+        - incidentId
+    UkIncidentsResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/IncidentSummary"
+          description: "Сортировка: срок истёк → срок подходит → новые → остальные"
+        counts:
+          type: object
+          properties:
+            open:
+              type: integer
+            expired:
+              type: integer
+            closed:
+              type: integer
+          required:
+            - open
+            - expired
+            - closed
+        houses:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                $ref: "#/components/schemas/PublicId"
+              label:
+                type: string
+              address:
+                type: string
+              openCount:
+                type: integer
+                minimum: 0
+            required:
+              - id
+              - label
+              - address
+              - openCount
+      required:
+        - items
+        - counts
+        - houses
+    UkIncidentDetail:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/PublicId"
+        house:
+          $ref: "#/components/schemas/IncidentHouseRef"
+        service:
+          $ref: "#/components/schemas/ServiceType"
+        scope:
+          $ref: "#/components/schemas/IncidentScope"
+        entrance:
+          type:
+            - integer
+            - "null"
+          exclusiveMinimum: 0
+          description: Подъезд для масштаба entrance
+        status:
+          $ref: "#/components/schemas/IncidentStatus"
+        displayStatus:
+          $ref: "#/components/schemas/DisplayStatus"
+        headline:
+          $ref: "#/components/schemas/Headline"
+        startedAt:
+          $ref: "#/components/schemas/DateTime"
+        createdAt:
+          $ref: "#/components/schemas/DateTime"
+        eta:
+          allOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type:
+                - string
+                - "null"
+        overdue:
+          type: boolean
+          description: Истёк хотя бы один срок по нормативу
+        singleLimitExceeded:
+          type: boolean
+        discrepancyUnresolved:
+          type: boolean
+        participantsCount:
+          type: integer
+          minimum: 0
+          description: Отметились «у меня тоже» (жители, включая не подтверждённых)
+        flatsCount:
+          type: integer
+          minimum: 0
+          description: Квартиры зарегистрированных участников
+        byEntrance:
+          type: array
+          items:
+            $ref: "#/components/schemas/EntranceCount"
+        joined:
+          type:
+            - boolean
+            - "null"
+          description: Текущий пользователь отметился; null — для сотрудника УК
+        closedAt:
+          allOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type:
+                - string
+                - "null"
+        isModel:
+          type: boolean
+        version:
+          type: integer
+          exclusiveMinimum: 0
+          description: Версия для If-Match
+        ads:
+          $ref: "#/components/schemas/AdsInfo"
+        deadlines:
+          type: array
+          items:
+            $ref: "#/components/schemas/Deadline"
+        counters:
+          $ref: "#/components/schemas/Counters"
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatusStep"
+          description: Шаги для StatusStepper с пропущенными
+        timeline:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimelineEvent"
+          description: Хронология, новые сверху
+        me:
+          $ref: "#/components/schemas/MyParticipation"
+        check:
+          $ref: "#/components/schemas/CheckInfo"
+        act:
+          type:
+            - object
+            - "null"
+          properties:
+            available:
+              type: boolean
+              description: "Можно готовить акт без исполнителя: проверка не пришла в срок"
+            checkDueAt:
+              type:
+                - string
+                - "null"
+              format: date-time
+              description: Срок проверки по сообщению в АДС (п. 108)
+              example: 2026-09-27T14:40:00Z
+            requiredConsumers:
+              type: integer
+              exclusiveMinimum: 0
+              description: Сколько потребителей нужно (из справочника норм)
+            readyCount:
+              type: integer
+              minimum: 0
+            myReady:
+              type: boolean
+            introOptIn:
+              type: boolean
+            norm:
+              $ref: "#/components/schemas/NormBasis"
+          required:
+            - available
+            - checkDueAt
+            - requiredConsumers
+            - readyCount
+            - myReady
+            - introOptIn
+            - norm
+          description: null, если функция выключена или акт не нужен
+        brigadeOnSiteAt:
+          allOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type:
+                - string
+                - "null"
+        localizedAt:
+          allOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type:
+                - string
+                - "null"
+        resolvedAtUk:
+          allOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type:
+                - string
+                - "null"
+        mergedInto:
+          allOf:
+            - $ref: "#/components/schemas/PublicId"
+            - type:
+                - string
+                - "null"
+        cardInChat:
+          type: boolean
+          description: У аварии есть карточка в чате дома
+        grid:
+          $ref: "#/components/schemas/EntranceFloorGrid"
+        people:
+          type: object
+          properties:
+            total:
+              type: integer
+              minimum: 0
+            confirmed:
+              type: integer
+              minimum: 0
+              description: Уровни доверия 1–2
+            unconfirmed:
+              type: integer
+              minimum: 0
+            notMe:
+              type: integer
+              minimum: 0
+            answers:
+              type: object
+              properties:
+                yes:
+                  type: integer
+                no:
+                  type: integer
+                weak:
+                  type: integer
+              required:
+                - yes
+                - no
+                - weak
+          required:
+            - total
+            - confirmed
+            - unconfirmed
+            - notMe
+            - answers
+        allowedActions:
+          type: array
+          items:
+            $ref: "#/components/schemas/UkAction"
+          description: Допустимые переходы из текущего статуса
+        nextAction:
+          type:
+            - string
+            - "null"
+          enum:
+            - accept
+            - brigade_on_site
+            - localize
+            - resolve
+            - merge
+            - null
+          description: Главная кнопка — следующий шаг
+        mergeCandidates:
+          type: array
+          items:
+            $ref: "#/components/schemas/IncidentSummary"
+          description: Открытые аварии того же вида в доме
+        cardUpdate:
+          type: string
+          enum:
+            - queued
+            - none
+          description: queued — правка карточки в чате поставлена в очередь; none — у аварии нет карточки
+      required:
+        - id
+        - house
+        - service
+        - scope
+        - entrance
+        - status
+        - displayStatus
+        - headline
+        - startedAt
+        - createdAt
+        - eta
+        - overdue
+        - singleLimitExceeded
+        - discrepancyUnresolved
+        - participantsCount
+        - flatsCount
+        - byEntrance
+        - joined
+        - closedAt
+        - isModel
+        - version
+        - ads
+        - deadlines
+        - counters
+        - steps
+        - timeline
+        - me
+        - check
+        - act
+        - brigadeOnSiteAt
+        - localizedAt
+        - resolvedAtUk
+        - mergedInto
+        - cardInChat
+        - grid
+        - people
+        - allowedActions
+        - nextAction
+        - mergeCandidates
+        - cardUpdate
+    EntranceFloorGrid:
+      type: object
+      properties:
+        entrances:
+          type: integer
+          exclusiveMinimum: 0
+        floors:
+          type: integer
+          exclusiveMinimum: 0
+        cells:
+          type: array
+          items:
+            type: object
+            properties:
+              entrance:
+                type: integer
+              floor:
+                type: integer
+              count:
+                type: integer
+                exclusiveMinimum: 0
+            required:
+              - entrance
+              - floor
+              - count
+          description: Только непустые ячейки «подъезд × этаж»
+        unknownFloor:
+          type: array
+          items:
+            type: object
+            properties:
+              entrance:
+                type: integer
+              count:
+                type: integer
+                exclusiveMinimum: 0
+            required:
+              - entrance
+              - count
+        unknownEntrance:
+          type: integer
+          minimum: 0
+      required:
+        - entrances
+        - floors
+        - cells
+        - unknownFloor
+        - unknownEntrance
+    UkAction:
+      type: string
+      enum:
+        - accept
+        - brigade_on_site
+        - localize
+        - resolve
+        - merge
+    UkStatusRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - accepted
+            - brigade_on_site
+            - localized
+            - resolved
+          description: "resolved — «Устранено»: авария переходит в checking (в песочнице — сразу closed)"
+        eta:
+          type: string
+          format: date-time
+          description: Ориентир УК; обязателен для accepted
+          example: 2026-09-27T14:40:00Z
+      required:
+        - status
+    UkMergeRequest:
+      type: object
+      properties:
+        intoId:
+          $ref: "#/components/schemas/PublicId"
+      required:
+        - intoId
+    UkHousesResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/UkHouse"
+      required:
+        - items
+    UkHouse:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/PublicId"
+        label:
+          type: string
+        address:
+          type: string
+        entrances:
+          type: integer
+        floors:
+          type: integer
+        flatFrom:
+          type: integer
+        flatTo:
+          type: integer
+        isModel:
+          type: boolean
+        isSandbox:
+          type: boolean
+          description: "Дом-песочница API: виден только checker-УК"
+        chat:
+          type:
+            - object
+            - "null"
+          properties:
+            bound:
+              type: boolean
+              description: Чат дома привязан к сервису
+            title:
+              type:
+                - string
+                - "null"
+            inviteLink:
+              type:
+                - string
+                - "null"
+              description: Ссылка на чат (поле link объекта чата MAX)
+            participantsCount:
+              type:
+                - integer
+                - "null"
+            botIsAdmin:
+              type: boolean
+          required:
+            - bound
+            - title
+            - inviteLink
+            - participantsCount
+            - botIsAdmin
+        activeIncidents:
+          type: integer
+          minimum: 0
+        pendingResidents:
+          type: integer
+          minimum: 0
+      required:
+        - id
+        - label
+        - address
+        - entrances
+        - floors
+        - flatFrom
+        - flatTo
+        - isModel
+        - isSandbox
+        - chat
+        - activeIncidents
+        - pendingResidents
+    UkHouseDetail:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/PublicId"
+        label:
+          type: string
+        address:
+          type: string
+        entrances:
+          type: integer
+        floors:
+          type: integer
+        flatFrom:
+          type: integer
+        flatTo:
+          type: integer
+        isModel:
+          type: boolean
+        isSandbox:
+          type: boolean
+          description: "Дом-песочница API: виден только checker-УК"
+        chat:
+          type:
+            - object
+            - "null"
+          properties:
+            bound:
+              type: boolean
+              description: Чат дома привязан к сервису
+            title:
+              type:
+                - string
+                - "null"
+            inviteLink:
+              type:
+                - string
+                - "null"
+              description: Ссылка на чат (поле link объекта чата MAX)
+            participantsCount:
+              type:
+                - integer
+                - "null"
+            botIsAdmin:
+              type: boolean
+          required:
+            - bound
+            - title
+            - inviteLink
+            - participantsCount
+            - botIsAdmin
+        activeIncidents:
+          type: integer
+          minimum: 0
+        pendingResidents:
+          type: integer
+          minimum: 0
+        timezone:
+          type: string
+        month:
+          $ref: "#/components/schemas/HouseMonthSummary"
+        monthlySummary:
+          type:
+            - object
+            - "null"
+          properties:
+            month:
+              type: string
+            incidents:
+              type: integer
+              minimum: 0
+            inNorm:
+              type: integer
+              minimum: 0
+              description: Устранено в норматив
+            avgAcceptMinutes:
+              type:
+                - integer
+                - "null"
+              minimum: 0
+              description: Среднее время до «Принято»
+            discrepancies:
+              type: integer
+              minimum: 0
+            services:
+              type: array
+              items:
+                $ref: "#/components/schemas/MonthService"
+          required:
+            - month
+            - incidents
+            - inNorm
+            - avgAcceptMinutes
+            - discrepancies
+            - services
+          description: U06; null при выключенном флаге monthlySummary
+        demo:
+          type:
+            - object
+            - "null"
+          properties:
+            activeIncidentId:
+              allOf:
+                - $ref: "#/components/schemas/PublicId"
+                - type:
+                    - string
+                    - "null"
+          required:
+            - activeIncidentId
+          description: "Блок демо-инструментов: только DEMO_MODE, модельный дом и демо-роль"
+      required:
+        - id
+        - label
+        - address
+        - entrances
+        - floors
+        - flatFrom
+        - flatTo
+        - isModel
+        - isSandbox
+        - chat
+        - activeIncidents
+        - pendingResidents
+        - timezone
+        - month
+        - monthlySummary
+        - demo
+    ChatBindingInfo:
+      type: object
+      properties:
+        chatTitle:
+          type:
+            - string
+            - "null"
+        status:
+          type: string
+          enum:
+            - active
+            - used
+            - expired
+        expiresAt:
+          $ref: "#/components/schemas/DateTime"
+      required:
+        - chatTitle
+        - status
+        - expiresAt
+    ChatBindingResponse:
+      type: object
+      properties:
+        house:
+          $ref: "#/components/schemas/UkHouse"
+        panelPublished:
+          type: boolean
+        pinned:
+          type: boolean
+          description: false — бот не администратор, панель опубликована без закрепа
+      required:
+        - house
+        - panelPublished
+        - pinned
+    ChatBindingRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{16,128}$
+        houseId:
+          $ref: "#/components/schemas/PublicId"
+      required:
+        - token
+        - houseId
+      description: Одноразовый токен из payload c_<токен>
+    HeatMap:
+      type: object
+      properties:
+        houseId:
+          $ref: "#/components/schemas/PublicId"
+        poll:
+          type:
+            - object
+            - "null"
+          properties:
+            startedAt:
+              $ref: "#/components/schemas/DateTime"
+            closedAt:
+              allOf:
+                - $ref: "#/components/schemas/DateTime"
+                - type:
+                    - string
+                    - "null"
+          required:
+            - startedAt
+            - closedAt
+        entrances:
+          type: integer
+        floors:
+          type: integer
+        cells:
+          type: array
+          items:
+            type: object
+            properties:
+              entrance:
+                type: integer
+              floor:
+                type: integer
+              warm:
+                type: integer
+                minimum: 0
+              luke:
+                type: integer
+                minimum: 0
+              cold:
+                type: integer
+                minimum: 0
+            required:
+              - entrance
+              - floor
+              - warm
+              - luke
+              - cold
+        answered:
+          type: integer
+          minimum: 0
+        totalFlats:
+          type: integer
+          minimum: 0
+        norm:
+          type:
+            - object
+            - "null"
+          properties:
+            code:
+              type: string
+              description: Код нормы в справочнике
+              example: pp416.p13.localize.hot_water
+            title:
+              type: string
+              example: Локализовать аварию
+            doc:
+              type: string
+              example: ПП № 416
+            point:
+              type: string
+              example: п. 13
+            textPlain:
+              type: string
+              description: Формулировка простыми словами
+            quote:
+              type:
+                - string
+                - "null"
+              description: Цитата из первоисточника
+            edition:
+              type: string
+              format: date
+              example: 2026-09-23
+              description: Дата редакции документа
+            validFrom:
+              type: string
+              format: date
+              example: 2026-09-23
+            validTo:
+              type:
+                - string
+                - "null"
+              format: date
+              example: 2026-09-23
+            checkedAt:
+              type:
+                - string
+                - "null"
+              format: date
+              example: 2026-09-23
+              description: Когда норма сверена с первоисточником
+            sourceUrl:
+              type: string
+              format: uri
+          required:
+            - code
+            - title
+            - doc
+            - point
+            - textPlain
+            - quote
+            - edition
+            - validFrom
+            - validTo
+            - checkedAt
+            - sourceUrl
+          description: Температура в квартире — прил. 1, п. 15
+      required:
+        - houseId
+        - poll
+        - entrances
+        - floors
+        - cells
+        - answered
+        - totalFlats
+        - norm
+    HeatingPollResponse:
+      type: object
+      properties:
+        startedAt:
+          $ref: "#/components/schemas/DateTime"
+      required:
+        - startedAt
+      description: "202: опрос поставлен в очередь (в тихие часы — отложен)"
+    ResidentsResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResidentRequest"
+      required:
+        - items
+    ResidentRequest:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/PublicId"
+        house:
+          type: object
+          properties:
+            id:
+              $ref: "#/components/schemas/PublicId"
+            label:
+              type: string
+            address:
+              type: string
+          required:
+            - id
+            - label
+            - address
+        flatNo:
+          type: integer
+        role:
+          $ref: "#/components/schemas/ResidencyRole"
+        trustLevel:
+          $ref: "#/components/schemas/TrustLevel"
+        source:
+          $ref: "#/components/schemas/ResidencySource"
+        createdAt:
+          $ref: "#/components/schemas/DateTime"
+      required:
+        - id
+        - house
+        - flatNo
+        - role
+        - trustLevel
+        - source
+        - createdAt
+      description: "Без имён: сервис их не хранит"
+    ResidencySource:
+      type:
+        - string
+        - "null"
+      enum:
+        - chat
+        - qr
+        - dm
+        - miniapp
+        - owner_link
+        - null
+    ResidentDecisionResponse:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/PublicId"
+        trustLevel:
+          $ref: "#/components/schemas/TrustLevel"
+        reviewStatus:
+          type: string
+          enum:
+            - confirmed
+            - rejected
+      required:
+        - id
+        - trustLevel
+        - reviewStatus
+    DemoNeighboursResponse:
+      type: object
+      properties:
+        incidentId:
+          $ref: "#/components/schemas/PublicId"
+        added:
+          type: integer
+          minimum: 0
+      required:
+        - incidentId
+        - added
+    DemoResetResponse:
+      type: object
+      properties:
+        houseId:
+          $ref: "#/components/schemas/PublicId"
+        removedIncidents:
+          type: integer
+          minimum: 0
+      required:
+        - houseId
+        - removedIncidents
+    WebhookAck:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          enum:
+            - true
+      required:
+        - ok
+    MaxUpdate:
+      type: object
+      properties:
+        update_type:
+          type: string
+          example: message_callback
+        timestamp:
+          type: integer
+          description: Unix-время события в миллисекундах
+      required:
+        - update_type
+        - timestamp
+      additionalProperties: {}
+      description: Событие MAX (см. объект Update в документации MAX)
   parameters: {}
 paths:
   /health:
@@ -191,4 +3639,3191 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/VersionResponse"
+  /api/v1/auth/max:
+    post:
+      operationId: authMax
+      summary: Вход по initData MAX
+      description: Подпись initData проверяется по алгоритму MAX (HMAC-SHA256 с ключом WebAppData), auth_date не старше часа. Ответ — сессия JWT на 12 часов.
+      tags:
+        - auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthMaxRequest"
+      responses:
+        "200":
+          description: Сессия
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "429":
+          description: Превышен лимит запросов
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/auth/dev:
+    post:
+      operationId: authDev
+      summary: Вход вне MAX для разработки
+      description: Только при DEV_AUTH=true (локально). На стенде отвечает 404 независимо от клиента.
+      tags:
+        - auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthDevRequest"
+      responses:
+        "200":
+          description: Сессия
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/me:
+    get:
+      operationId: getMe
+      summary: Пользователь, проживание, уровень доверия, роли
+      tags:
+        - me
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Профиль
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    delete:
+      operationId: deleteMe
+      summary: Удалить мои данные
+      description: Удаляется проживание; участие в авариях и события обезличиваются.
+      tags:
+        - me
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Данные удалены
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/me/consent:
+    post:
+      operationId: giveConsent
+      summary: Согласие на обработку ПДн
+      tags:
+        - me
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConsentRequest"
+      responses:
+        "204":
+          description: Согласие сохранено
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "422":
+          description: Ошибка бизнес-валидации
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/me/residency:
+    put:
+      operationId: putResidency
+      summary: Дом, квартира и роль в квартире
+      description: Нужно согласие (403 consent_required). Одна учётная запись MAX — одна квартира в доме; смена квартиры сбрасывает уровень доверия до 0. Квартира вне диапазона → 422 flat_out_of_range.
+      tags:
+        - me
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResidencyRequest"
+      responses:
+        "200":
+          description: Проживание сохранено
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResidencyResponse"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "422":
+          description: Ошибка бизнес-валидации
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/me/demo-uk-role:
+    post:
+      operationId: demoUkRole
+      summary: Демо-код роли УК
+      description: "Только при DEMO_MODE=true: выдаёт роль сотрудника «УК Модельная» с пометкой «Демо-роль»."
+      tags:
+        - me
+        - demo
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DemoUkRoleRequest"
+      responses:
+        "200":
+          description: Роль выдана
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/me/settings:
+    patch:
+      operationId: patchSettings
+      summary: Уведомления по умолчанию
+      tags:
+        - me
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SettingsPatch"
+      responses:
+        "200":
+          description: Настройки
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SettingsResponse"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/houses/search:
+    get:
+      operationId: searchHouses
+      summary: Поиск модельных домов
+      tags:
+        - houses
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            maxLength: 100
+            description: Часть адреса; пусто — все модельные дома
+          required: false
+          description: Часть адреса; пусто — все модельные дома
+          name: q
+          in: query
+      responses:
+        "200":
+          description: Дома
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HouseSearchResponse"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/houses/{houseId}/summary:
+    get:
+      operationId: getHouseSummary
+      summary: Краткие сведения о доме для регистрации
+      description: "Доступно любому вошедшему пользователю: адрес, подъезды, диапазон квартир (S02 по payload n_ или h_)."
+      tags:
+        - houses
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: houseId
+          in: path
+      responses:
+        "200":
+          description: Дом
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HouseSummary"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/houses/{houseId}:
+    get:
+      operationId: getHouse
+      summary: "Дом: активные аварии, итоги, месяц против лимита"
+      tags:
+        - houses
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: houseId
+          in: path
+      responses:
+        "200":
+          description: Дом
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HouseDetail"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/houses/{houseId}/month:
+    get:
+      operationId: getHouseMonth
+      summary: Перерывы услуги за месяц против лимита
+      description: Для жителя — по его квартире, для УК — по авариям масштаба «дом».
+      tags:
+        - houses
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: houseId
+          in: path
+        - schema:
+            $ref: "#/components/schemas/ServiceType"
+          required: true
+          description: "Вид услуги: cold_water — холодная вода, hot_water — горячая вода, heating — отопление, electricity — свет, sewerage — канализация, gas — газ, leak — протечка"
+          name: service
+          in: query
+        - schema:
+            type: string
+            pattern: ^\d{4}-\d{2}$
+            description: Месяц YYYY-MM в часовом поясе дома; по умолчанию текущий
+          required: false
+          description: Месяц YYYY-MM в часовом поясе дома; по умолчанию текущий
+          name: month
+          in: query
+      responses:
+        "200":
+          description: Месяц
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HouseMonthResponse"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/norms:
+    get:
+      operationId: listNorms
+      summary: Справочник нормативов с основаниями
+      tags:
+        - norms
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/ServiceType"
+          required: false
+          description: "Вид услуги: cold_water — холодная вода, hot_water — горячая вода, heating — отопление, electricity — свет, sewerage — канализация, gas — газ, leak — протечка"
+          name: service
+          in: query
+        - schema:
+            type: string
+            description: Код региона; без него — федеральные нормы
+          required: false
+          description: Код региона; без него — федеральные нормы
+          name: region
+          in: query
+      responses:
+        "200":
+          description: Нормы
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormsResponse"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/incidents:
+    post:
+      operationId: createIncident
+      summary: Сообщить об аварии
+      description: |-
+        Авария создаётся после шага «где». Если в доме уже открыта авария того же вида не уровня «квартира» — 409 `duplicate_incident` с `duplicateOf`: клиент предлагает присоединиться (при гонке — присоединяет автоматически).
+
+        Время в будущем → 422 `started_at_in_future`; старше 24 часов без `confirmOld` → 422 `confirm_old_required`.
+      tags:
+        - incidents
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            minLength: 8
+            maxLength: 128
+            description: Повтор с тем же ключом возвращает первый ответ
+          required: false
+          description: Повтор с тем же ключом возвращает первый ответ
+          name: idempotency-key
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateIncidentRequest"
+      responses:
+        "201":
+          description: Авария создана
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentDetail"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Конфликт состояния или версии
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "422":
+          description: Ошибка бизнес-валидации
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/incidents/{id}:
+    get:
+      operationId: getIncident
+      summary: "Авария: сроки, счётчики, хронология"
+      tags:
+        - incidents
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Авария
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentDetail"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/incidents/{id}/join:
+    post:
+      operationId: joinIncident
+      summary: «У меня тоже» (+ подъезд, этаж)
+      description: "Повторное нажатие — `joinResult: already_joined`, счётчики не меняются. Закрытая или объединённая авария → 409."
+      tags:
+        - incidents
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: id
+          in: path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinRequest"
+      responses:
+        "200":
+          description: Отметка сохранена
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JoinResponse"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Конфликт состояния или версии
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "422":
+          description: Ошибка бизнес-валидации
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/incidents/{id}/leave:
+    post:
+      operationId: leaveIncident
+      summary: «Не у меня»
+      tags:
+        - incidents
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Отметка сохранена
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentDetail"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Конфликт состояния или версии
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/incidents/{id}/ads-registration:
+    post:
+      operationId: registerAds
+      summary: Номер и время заявки АДС или «не дозвонился»
+      tags:
+        - incidents
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: id
+          in: path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdsRegistrationRequest"
+      responses:
+        "200":
+          description: Сохранено
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentDetail"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Конфликт состояния или версии
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "422":
+          description: Ошибка бизнес-валидации
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/incidents/{id}/observations:
+    post:
+      operationId: postObservation
+      summary: Бригада видна / нет; услуга есть / нет / плохая
+      tags:
+        - incidents
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: id
+          in: path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ObservationRequest"
+      responses:
+        "200":
+          description: Отметка сохранена
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentDetail"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Конфликт состояния или версии
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/incidents/{id}/participation:
+    patch:
+      operationId: patchParticipation
+      summary: «Уведомлять меня»
+      tags:
+        - incidents
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: id
+          in: path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ParticipationPatch"
+      responses:
+        "200":
+          description: Сохранено
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParticipationResponse"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/incidents/{id}/result:
+    get:
+      operationId: getIncidentResult
+      summary: Итог аварии
+      tags:
+        - incidents
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Итог
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentResult"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Конфликт состояния или версии
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/incidents/{id}/recalculation:
+    post:
+      operationId: recalculate
+      summary: Расчёт перерасчёта по нормам
+      description: |-
+        Считается по квартире пользователя: превышение месячного лимита = объединение перерывов услуги за месяц − допустимые часы; округление — по справочнику.
+
+        Доступно для закрытых аварий и для checking/discrepancy (`preliminary: true`). Превышения нет → 200 с `amount: 0`. Сумма ≤ 0 или не число → 422 `monthly_charge_invalid`.
+
+        Поля `excessHours`, `ratePercent`, `amount`, `disclaimer` присутствуют всегда. Ничего не сохраняется.
+      tags:
+        - incidents
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: id
+          in: path
+        - schema:
+            type: string
+            minLength: 8
+            maxLength: 128
+            description: Повтор с тем же ключом возвращает первый ответ
+          required: false
+          description: Повтор с тем же ключом возвращает первый ответ
+          name: idempotency-key
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecalculationRequest"
+      responses:
+        "200":
+          description: Расчёт
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecalculationResponse"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Конфликт состояния или версии
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "422":
+          description: Ошибка бизнес-валидации
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/incidents/{id}/application/send-to-dm:
+    post:
+      operationId: sendApplicationToDm
+      summary: Бот присылает заявление в личку
+      description: Синхронный вызов MAX (тайм-аут 10 с, одна повторная попытка). Текст не сохраняется и не логируется. Диалог с ботом не начат → 409 `dialog_not_started` с `botLink`; MAX недоступен → 502.
+      tags:
+        - incidents
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: id
+          in: path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendToDmRequest"
+      responses:
+        "200":
+          description: Отправлено
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SendToDmResponse"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Конфликт состояния или версии
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "422":
+          description: Ошибка бизнес-валидации
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "502":
+          description: MAX недоступен
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/incidents/{id}/act/ready:
+    post:
+      operationId: actReady
+      summary: «Я готов подписать» акт без исполнителя
+      description: |-
+        Когда согласившихся на знакомство двое и больше, бот присылает каждому в личку упоминания профилей MAX друг друга; контакты не хранятся.
+
+        Функция за флагом `actTemplate`: при выключенном флаге — 404.
+      tags:
+        - incidents
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: id
+          in: path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActReadyRequest"
+      responses:
+        "200":
+          description: Сохранено
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActInfo"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Конфликт состояния или версии
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/owner-invites:
+    post:
+      operationId: createOwnerInvite
+      summary: Ссылка для собственника
+      description: "Функция за флагом `trustLevels`: при выключенном флаге — 404."
+      tags:
+        - owner
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OwnerInviteCreateRequest"
+      responses:
+        "201":
+          description: Ссылка
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnerInviteCreateResponse"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/owner-invites/{token}:
+    get:
+      operationId: getOwnerInvite
+      summary: Запрос на подтверждение жильца (S10)
+      description: "Функция за флагом `trustLevels`: при выключенном флаге — 404."
+      tags:
+        - owner
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            pattern: ^[A-Za-z0-9_-]{16,128}$
+          required: true
+          name: token
+          in: path
+      responses:
+        "200":
+          description: Запрос
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnerInviteView"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "410":
+          description: Ссылка или токен больше не действуют
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/owner-invites/{token}/confirm:
+    post:
+      operationId: confirmOwnerInvite
+      summary: Подтвердить жильца
+      description: "Функция за флагом `trustLevels`: при выключенном флаге — 404."
+      tags:
+        - owner
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            pattern: ^[A-Za-z0-9_-]{16,128}$
+          required: true
+          name: token
+          in: path
+      responses:
+        "200":
+          description: Жилец подтверждён (уровень 2)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnerInviteDecisionResponse"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "410":
+          description: Ссылка или токен больше не действуют
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/owner-invites/{token}/reject:
+    post:
+      operationId: rejectOwnerInvite
+      summary: «Не знаю этого человека»
+      description: |-
+        Уровень доверия жильца не меняется.
+
+        Функция за флагом `trustLevels`: при выключенном флаге — 404.
+      tags:
+        - owner
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            pattern: ^[A-Za-z0-9_-]{16,128}$
+          required: true
+          name: token
+          in: path
+      responses:
+        "200":
+          description: Отмечено
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnerInviteDecisionResponse"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "410":
+          description: Ссылка или токен больше не действуют
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/uk/incidents:
+    get:
+      operationId: ukListIncidents
+      summary: Аварии всех домов УК
+      tags:
+        - uk
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - open
+              - expired
+              - closed
+            description: open — открытые; expired — открытые с истёкшим сроком; closed — закрытые и объединённые. По умолчанию open
+          required: false
+          description: open — открытые; expired — открытые с истёкшим сроком; closed — закрытые и объединённые. По умолчанию open
+          name: status
+          in: query
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: false
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: houseId
+          in: query
+      responses:
+        "200":
+          description: Аварии
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UkIncidentsResponse"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/uk/incidents/{id}:
+    get:
+      operationId: ukGetIncident
+      summary: "Авария для УК: сетка «подъезд × этаж», жители, действия"
+      tags:
+        - uk
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Авария
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UkIncidentDetail"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/uk/incidents/{id}/status:
+    post:
+      operationId: ukSetStatus
+      summary: Статус и ориентир УК
+      description: |-
+        Каждая смена статуса: событие в хронологии, правка карточки в чате (асинхронно), уведомления присоединившимся. Пропуск шагов разрешён и виден в хронологии.
+
+        Недопустимый переход → 409 `invalid_transition`; устаревший If-Match → 409 `version_conflict` с `currentVersion`. Для accepted без eta → 422 `eta_required`.
+      tags:
+        - uk
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: id
+          in: path
+        - schema:
+            type: string
+            description: Версия аварии (поле version). Устаревшая → 409 version_conflict. Мини-приложение передаёт всегда
+          required: false
+          description: Версия аварии (поле version). Устаревшая → 409 version_conflict. Мини-приложение передаёт всегда
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UkStatusRequest"
+      responses:
+        "200":
+          description: Статус сохранён
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UkIncidentDetail"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Конфликт состояния или версии
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "422":
+          description: Ошибка бизнес-валидации
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/uk/incidents/{id}/merge:
+    post:
+      operationId: ukMerge
+      summary: Объединить дубль с другой аварией
+      tags:
+        - uk
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: id
+          in: path
+        - schema:
+            type: string
+            description: Версия аварии (поле version). Устаревшая → 409 version_conflict. Мини-приложение передаёт всегда
+          required: false
+          description: Версия аварии (поле version). Устаревшая → 409 version_conflict. Мини-приложение передаёт всегда
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UkMergeRequest"
+      responses:
+        "200":
+          description: Актуальная авария после объединения
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UkIncidentDetail"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Конфликт состояния или версии
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/uk/houses:
+    get:
+      operationId: ukListHouses
+      summary: Дома УК, чаты, права бота
+      tags:
+        - uk
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Дома
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UkHousesResponse"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/uk/houses/{id}:
+    get:
+      operationId: ukGetHouse
+      summary: "Дом: параметры, чат, права бота, итог месяца"
+      tags:
+        - uk
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Дом
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UkHouseDetail"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/uk/chat-bindings/{token}:
+    get:
+      operationId: ukGetChatBinding
+      summary: Чат для привязки по токену из payload c_
+      tags:
+        - uk
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            pattern: ^[A-Za-z0-9_-]{16,128}$
+          required: true
+          name: token
+          in: path
+      responses:
+        "200":
+          description: Чат
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatBindingInfo"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "410":
+          description: Ссылка или токен больше не действуют
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/uk/chat-bindings:
+    post:
+      operationId: ukBindChat
+      summary: Привязать чат к дому
+      description: Публикует и закрепляет панель дома (C01). Если бот не администратор — панель без закрепа.
+      tags:
+        - uk
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatBindingRequest"
+      responses:
+        "200":
+          description: Чат привязан
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatBindingResponse"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Конфликт состояния или версии
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "410":
+          description: Ссылка или токен больше не действуют
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/uk/houses/{id}/heatmap:
+    get:
+      operationId: ukHeatmap
+      summary: Тепловая карта по опросу «Тепло ли у вас?»
+      description: "Функция за флагом `polls`: при выключенном флаге — 404."
+      tags:
+        - uk
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Тепловая карта
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeatMap"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/uk/houses/{id}/polls/heating:
+    post:
+      operationId: ukStartHeatingPoll
+      summary: Запустить «Тепло ли у вас?» (раз за сезон)
+      description: "Функция за флагом `polls`: при выключенном флаге — 404."
+      tags:
+        - uk
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: id
+          in: path
+      responses:
+        "202":
+          description: Опрос поставлен в очередь
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeatingPollResponse"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Конфликт состояния или версии
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/uk/residents:
+    get:
+      operationId: ukListResidents
+      summary: Очередь подтверждения жильцов
+      description: "Функция за флагом `trustLevels`: при выключенном флаге — 404."
+      tags:
+        - uk
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - pending
+          required: false
+          name: status
+          in: query
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: false
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: houseId
+          in: query
+      responses:
+        "200":
+          description: Заявки
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResidentsResponse"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/uk/residents/{id}/confirm:
+    post:
+      operationId: ukConfirmResident
+      summary: Подтвердить жильца (уровень 2)
+      description: "Функция за флагом `trustLevels`: при выключенном флаге — 404."
+      tags:
+        - uk
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Подтверждён
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResidentDecisionResponse"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/uk/residents/{id}/reject:
+    post:
+      operationId: ukRejectResident
+      summary: Отклонить заявку (уровень остаётся 0)
+      description: "Функция за флагом `trustLevels`: при выключенном флаге — 404."
+      tags:
+        - uk
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Отклонена
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResidentDecisionResponse"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/uk/houses/{id}/demo/neighbours:
+    post:
+      operationId: demoNeighbours
+      summary: Добавить 5 модельных соседей в активную аварию
+      description: Уровень доверия 1, разные подъезды; через DEMO_NEIGHBOUR_ANSWER_DELAY_SEC после вопроса о восстановлении сами отвечают «Да».
+      tags:
+        - demo
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Соседи добавлены
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoNeighboursResponse"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Конфликт состояния или версии
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/uk/incidents/{id}/demo/time-shift:
+    post:
+      operationId: demoTimeShift
+      summary: Сдвинуть начало аварии на 6 ч назад
+      description: Только модельные дома; пересчитывает сроки и итог, событие demo_time_shift в хронологии.
+      tags:
+        - demo
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Сдвинуто
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UkIncidentDetail"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Конфликт состояния или версии
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/uk/houses/{id}/demo/reset:
+    post:
+      operationId: demoReset
+      summary: Сбросить демо-данные дома
+      tags:
+        - demo
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/PublicId"
+          required: true
+          description: Публичный идентификатор (10 символов A-Za-z0-9)
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Сброшено
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoResetResponse"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api/v1/sandbox/reset:
+    post:
+      operationId: sandboxReset
+      summary: Очистить аварии дома-песочницы
+      description: Только checker-УК при CHECKER_API_ENABLED=true. Сообщений в чаты нет.
+      tags:
+        - sandbox
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Песочница очищена
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Не найдено (в том числе функция выключена флагом)
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /webhook/max:
+    post:
+      operationId: maxWebhook
+      summary: События бота MAX (внутренний)
+      description: |-
+        Секрет сравнивается за постоянное время; событие дедуплицируется и ставится в очередь, ответ — сразу. БД недоступна → 503, MAX повторит доставку.
+
+        Заголовок `X-Max-Bot-Api-Secret` обязателен.
+      tags:
+        - webhook
+      security: []
+      parameters:
+        - schema:
+            type: string
+            description: Секрет подписки (MAX_WEBHOOK_SECRET)
+          required: true
+          description: Секрет подписки (MAX_WEBHOOK_SECRET)
+          name: x-max-bot-api-secret
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MaxUpdate"
+      responses:
+        "200":
+          description: Принято
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookAck"
+        "400":
+          description: Неверный формат запроса
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Нет или неверная авторизация
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "503":
+          description: Сервис временно недоступен
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
 webhooks: {}

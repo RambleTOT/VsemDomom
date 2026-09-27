@@ -80,6 +80,7 @@ export function buildDocument(): string {
     info: {
       title: 'Всем домом API',
       version: '0.1.0',
+      license: { name: 'MIT', identifier: 'MIT' },
       description: [
         'REST API мини-приложения «Всем домом» и webhook бота MAX.',
         '',
@@ -95,6 +96,16 @@ export function buildDocument(): string {
     servers: [{ url: '/', description: 'Тот же хост, что и мини-приложение' }],
     tags: [
       { name: 'system', description: 'Проверки и версия' },
+      { name: 'auth', description: 'Вход: initData MAX, dev-вход' },
+      { name: 'me', description: 'Профиль, согласие, проживание' },
+      { name: 'houses', description: 'Дома жителя' },
+      { name: 'norms', description: 'Справочник нормативов' },
+      { name: 'incidents', description: 'Аварии: сообщить, присоединиться, итог, расчёт' },
+      { name: 'owner', description: 'Подтверждение жильца собственником (флаг trustLevels)' },
+      { name: 'uk', description: 'Экран УК' },
+      { name: 'demo', description: 'Демо-инструменты для проверяющих (DEMO_MODE)' },
+      { name: 'sandbox', description: 'Дом-песочница для проверок DATA-API' },
+      { name: 'webhook', description: 'События бота MAX' },
     ],
   });
   return stringify(doc, { lineWidth: 0, aliasDuplicateObjects: false });

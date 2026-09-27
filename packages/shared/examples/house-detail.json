@@ -1,0 +1,144 @@
+{
+  "id": "dom1model1",
+  "label": "1",
+  "address": "ул. Модельная, 1",
+  "city": "Модельск",
+  "timezone": "Europe/Moscow",
+  "entrances": 4,
+  "floors": 9,
+  "flatFrom": 1,
+  "flatTo": 144,
+  "isModel": true,
+  "uk": {
+    "name": "УК Модельная",
+    "adsPhone": "+7 (000) 000-00-01",
+    "isModel": true
+  },
+  "chat": {
+    "bound": true,
+    "title": "Дом 1 (демо)",
+    "inviteLink": "https://max.ru/join/example",
+    "participantsCount": 312
+  },
+  "activeIncidents": [
+    {
+      "id": "K3f9QpZ2aB",
+      "house": {
+        "id": "dom1model1",
+        "label": "1",
+        "address": "ул. Модельная, 1",
+        "timezone": "Europe/Moscow",
+        "entrances": 4,
+        "isModel": true
+      },
+      "service": "hot_water",
+      "scope": "house",
+      "entrance": null,
+      "status": "open",
+      "displayStatus": "open",
+      "headline": {
+        "displayStatus": "open",
+        "eta": null,
+        "nextDeadline": {
+          "kind": "answer",
+          "title": "УК сообщит сроки работ",
+          "state": "soon",
+          "dueAt": "2026-09-27T15:12:00Z",
+          "warnAt": "2026-09-27T14:42:00Z",
+          "doneAt": null,
+          "anchor": "service_report",
+          "norm": {
+            "code": "pp416.p13.uk_eta",
+            "title": "УК сообщит сроки работ",
+            "doc": "ПП № 416",
+            "point": "п. 13",
+            "textPlain": "Аварийно-диспетчерская служба сообщает заявителю планируемые сроки работ в течение 30 минут с момента регистрации заявки.",
+            "quote": "собственник или пользователь помещения в многоквартирном доме должен быть в течение получаса с момента регистрации заявки проинформирован о планируемых сроках исполнения заявки",
+            "edition": "2026-06-20",
+            "validFrom": "2026-09-01",
+            "validTo": null,
+            "checkedAt": "2026-09-27",
+            "sourceUrl": "https://www.kontur-extern.ru/info/normativ/document/1/506725-postanovlenie-pravitelstva-rf-ot-15-05-2013-n-416"
+          }
+        },
+        "statusAt": null,
+        "discrepancyFlats": 0,
+        "unconfirmedRestoreFlats": 0,
+        "durationMinutes": null
+      },
+      "startedAt": "2026-09-27T14:40:00Z",
+      "createdAt": "2026-09-27T14:42:00Z",
+      "eta": null,
+      "overdue": false,
+      "singleLimitExceeded": false,
+      "discrepancyUnresolved": false,
+      "participantsCount": 11,
+      "flatsCount": 9,
+      "byEntrance": [
+        {
+          "entrance": 2,
+          "count": 6
+        },
+        {
+          "entrance": 3,
+          "count": 5
+        }
+      ],
+      "joined": true,
+      "closedAt": null,
+      "isModel": true
+    }
+  ],
+  "recentResults": [],
+  "month": {
+    "month": "2026-09",
+    "scope": "flat",
+    "services": [
+      {
+        "service": "hot_water",
+        "totalMinutes": 360,
+        "limitMinutes": 480,
+        "excessMinutes": 0,
+        "norm": {
+          "code": "pr354.app1.p4.monthly",
+          "title": "Допустимый перерыв за месяц",
+          "doc": "Правила № 354",
+          "point": "прил. 1, п. 4",
+          "textPlain": "Горячая вода: допустимый перерыв — 8 часов суммарно в течение месяца и 4 часа единовременно. За каждый час сверх допустимого за месяц плата снижается на 0,15 %.",
+          "quote": "за каждый час превышения допустимой продолжительности перерыва подачи горячей воды, исчисленной суммарно за расчетный период, в котором произошло указанное превышение, размер платы за коммунальную услугу за такой расчетный период снижается на 0,15 процента размера платы",
+          "edition": "2025-12-19",
+          "validFrom": "2025-12-19",
+          "validTo": "2027-12-31",
+          "checkedAt": "2026-09-27",
+          "sourceUrl": "https://www.consultant.ru/document/cons_doc_LAW_114247/ffebcb4aeb7857996e07739ff465b72194318553/"
+        }
+      }
+    ]
+  },
+  "myResidency": {
+    "id": "res57model",
+    "house": {
+      "id": "dom1model1",
+      "label": "1",
+      "address": "ул. Модельная, 1",
+      "city": "Модельск",
+      "timezone": "Europe/Moscow",
+      "entrances": 4,
+      "floors": 9,
+      "flatFrom": 1,
+      "flatTo": 144,
+      "isModel": true
+    },
+    "chat": {
+      "bound": true,
+      "title": "Дом 1 (демо)",
+      "inviteLink": "https://max.ru/join/example",
+      "participantsCount": 312
+    },
+    "flatNo": 57,
+    "role": "owner",
+    "trustLevel": 1,
+    "reviewStatus": "pending",
+    "inHouseChat": true
+  }
+}

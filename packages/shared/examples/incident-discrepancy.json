@@ -1,0 +1,324 @@
+{
+  "id": "K3f9QpZ2aB",
+  "house": {
+    "id": "dom1model1",
+    "label": "1",
+    "address": "ул. Модельная, 1",
+    "timezone": "Europe/Moscow",
+    "entrances": 4,
+    "isModel": true
+  },
+  "service": "hot_water",
+  "scope": "house",
+  "entrance": null,
+  "status": "discrepancy",
+  "displayStatus": "discrepancy",
+  "headline": {
+    "displayStatus": "discrepancy",
+    "eta": "2026-09-27T16:00:00Z",
+    "nextDeadline": null,
+    "statusAt": "2026-09-27T16:10:00Z",
+    "discrepancyFlats": 3,
+    "unconfirmedRestoreFlats": 0,
+    "durationMinutes": null
+  },
+  "startedAt": "2026-09-27T14:40:00Z",
+  "createdAt": "2026-09-27T14:42:00Z",
+  "eta": "2026-09-27T16:00:00Z",
+  "overdue": false,
+  "singleLimitExceeded": false,
+  "discrepancyUnresolved": false,
+  "participantsCount": 11,
+  "flatsCount": 9,
+  "byEntrance": [
+    {
+      "entrance": 2,
+      "count": 6
+    },
+    {
+      "entrance": 3,
+      "count": 5
+    }
+  ],
+  "joined": true,
+  "closedAt": null,
+  "isModel": true,
+  "version": 9,
+  "ads": {
+    "phone": "+7 (000) 000-00-01",
+    "registration": null,
+    "reminderAt": "2026-09-27T15:12:00Z"
+  },
+  "deadlines": [
+    {
+      "kind": "answer",
+      "title": "УК сообщит сроки работ",
+      "state": "met",
+      "dueAt": "2026-09-27T15:12:00Z",
+      "warnAt": "2026-09-27T14:42:00Z",
+      "doneAt": "2026-09-27T14:58:00Z",
+      "anchor": "service_report",
+      "norm": {
+        "code": "pp416.p13.uk_eta",
+        "title": "УК сообщит сроки работ",
+        "doc": "ПП № 416",
+        "point": "п. 13",
+        "textPlain": "Аварийно-диспетчерская служба сообщает заявителю планируемые сроки работ в течение 30 минут с момента регистрации заявки.",
+        "quote": "собственник или пользователь помещения в многоквартирном доме должен быть в течение получаса с момента регистрации заявки проинформирован о планируемых сроках исполнения заявки",
+        "edition": "2026-06-20",
+        "validFrom": "2026-09-01",
+        "validTo": null,
+        "checkedAt": "2026-09-27",
+        "sourceUrl": "https://www.kontur-extern.ru/info/normativ/document/1/506725-postanovlenie-pravitelstva-rf-ot-15-05-2013-n-416"
+      }
+    },
+    {
+      "kind": "localize",
+      "title": "Локализовать аварию",
+      "state": "met",
+      "dueAt": "2026-09-27T15:12:00Z",
+      "warnAt": "2026-09-27T14:42:00Z",
+      "doneAt": "2026-09-27T15:20:00Z",
+      "anchor": "service_report",
+      "norm": {
+        "code": "pp416.p13.localize.hot_water",
+        "title": "Локализовать аварию",
+        "doc": "ПП № 416",
+        "point": "п. 13",
+        "textPlain": "Аварию во внутридомовых системах водоснабжения, водоотведения, отопления и электроснабжения локализуют не более чем за 30 минут с момента регистрации заявки.",
+        "quote": "локализацию аварийных повреждений внутридомовых инженерных систем холодного и горячего водоснабжения, водоотведения и внутридомовых систем отопления и электроснабжения не более чем в течение получаса с момента регистрации заявки",
+        "edition": "2026-06-20",
+        "validFrom": "2026-09-01",
+        "validTo": null,
+        "checkedAt": "2026-09-27",
+        "sourceUrl": "https://www.kontur-extern.ru/info/normativ/document/1/506725-postanovlenie-pravitelstva-rf-ot-15-05-2013-n-416"
+      }
+    },
+    {
+      "kind": "fix",
+      "title": "Устранить аварию",
+      "state": "met",
+      "dueAt": "2026-09-30T14:40:00Z",
+      "warnAt": "2026-09-30T14:10:00Z",
+      "doneAt": "2026-09-27T16:10:00Z",
+      "anchor": "started",
+      "norm": {
+        "code": "pp416.p13.fix.hot_water",
+        "title": "Устранить аварию",
+        "doc": "ПП № 416",
+        "point": "п. 13",
+        "textPlain": "Аварию устраняют не более чем за 3 суток с даты повреждения.",
+        "quote": "устранение аварийных повреждений внутридомовых инженерных систем холодного и горячего водоснабжения, водоотведения и внутридомовых систем отопления и электроснабжения в срок не более 3 суток с даты аварийного повреждения",
+        "edition": "2026-06-20",
+        "validFrom": "2026-09-01",
+        "validTo": null,
+        "checkedAt": "2026-09-27",
+        "sourceUrl": "https://www.kontur-extern.ru/info/normativ/document/1/506725-postanovlenie-pravitelstva-rf-ot-15-05-2013-n-416"
+      }
+    },
+    {
+      "kind": "single_limit",
+      "title": "Допустимый перерыв единовременно",
+      "state": "met",
+      "dueAt": "2026-09-27T18:40:00Z",
+      "warnAt": "2026-09-27T18:10:00Z",
+      "doneAt": "2026-09-27T16:10:00Z",
+      "anchor": "started",
+      "norm": {
+        "code": "pr354.app1.p4.single",
+        "title": "Допустимый перерыв единовременно",
+        "doc": "Правила № 354",
+        "point": "прил. 1, п. 4",
+        "textPlain": "Горячая вода: допустимый перерыв — 8 часов суммарно в течение месяца и 4 часа единовременно. За каждый час сверх допустимого за месяц плата снижается на 0,15 %.",
+        "quote": "допустимая продолжительность перерыва подачи горячей воды: 8 часов (суммарно) в течение 1 месяца, 4 часа единовременно, при аварии на тупиковой магистрали - 24 часа подряд",
+        "edition": "2025-12-19",
+        "validFrom": "2025-12-19",
+        "validTo": "2027-12-31",
+        "checkedAt": "2026-09-27",
+        "sourceUrl": "https://www.consultant.ru/document/cons_doc_LAW_114247/ffebcb4aeb7857996e07739ff465b72194318553/"
+      }
+    }
+  ],
+  "counters": {
+    "participants": 11,
+    "flats": 9,
+    "unconfirmed": 2,
+    "byEntrance": [
+      {
+        "entrance": 2,
+        "count": 6
+      },
+      {
+        "entrance": 3,
+        "count": 5
+      }
+    ],
+    "unknownEntrance": 0,
+    "notMe": 1,
+    "answers": {
+      "yes": 6,
+      "no": 3,
+      "weak": 1
+    },
+    "brigade": {
+      "confirmed": 0,
+      "absent": 0
+    }
+  },
+  "steps": [
+    {
+      "step": "reported",
+      "state": "done",
+      "at": "2026-09-27T14:42:00Z"
+    },
+    {
+      "step": "accepted",
+      "state": "done",
+      "at": "2026-09-27T14:58:00Z"
+    },
+    {
+      "step": "brigade_on_site",
+      "state": "skipped",
+      "at": null
+    },
+    {
+      "step": "localized",
+      "state": "done",
+      "at": "2026-09-27T15:20:00Z"
+    },
+    {
+      "step": "resolved",
+      "state": "done",
+      "at": "2026-09-27T16:10:00Z"
+    },
+    {
+      "step": "closed",
+      "state": "pending",
+      "at": null
+    }
+  ],
+  "timeline": [
+    {
+      "type": "discrepancy",
+      "at": "2026-09-27T16:15:00Z",
+      "actorType": "system",
+      "source": "system",
+      "mine": false,
+      "payload": {
+        "flats": 3
+      }
+    },
+    {
+      "type": "restored_no",
+      "at": "2026-09-27T16:14:00Z",
+      "actorType": "resident",
+      "source": "bot",
+      "mine": true,
+      "payload": {}
+    },
+    {
+      "type": "check_asked",
+      "at": "2026-09-27T16:10:00Z",
+      "actorType": "system",
+      "source": "system",
+      "mine": false,
+      "payload": {}
+    },
+    {
+      "type": "skipped_steps",
+      "at": "2026-09-27T16:10:00Z",
+      "actorType": "uk",
+      "source": "miniapp",
+      "mine": false,
+      "payload": {
+        "skipped": [
+          "brigade_on_site"
+        ]
+      }
+    },
+    {
+      "type": "uk_resolved",
+      "at": "2026-09-27T16:10:00Z",
+      "actorType": "uk",
+      "source": "miniapp",
+      "mine": false,
+      "payload": {}
+    },
+    {
+      "type": "uk_localized",
+      "at": "2026-09-27T15:20:00Z",
+      "actorType": "uk",
+      "source": "miniapp",
+      "mine": false,
+      "payload": {}
+    },
+    {
+      "type": "uk_accepted",
+      "at": "2026-09-27T14:58:00Z",
+      "actorType": "uk",
+      "source": "miniapp",
+      "mine": false,
+      "payload": {
+        "eta": "2026-09-27T16:00:00Z"
+      }
+    },
+    {
+      "type": "joined",
+      "at": "2026-09-27T14:50:00Z",
+      "actorType": "resident",
+      "source": "bot",
+      "mine": false,
+      "payload": {
+        "entrance": 3
+      }
+    },
+    {
+      "type": "joined",
+      "at": "2026-09-27T14:45:00Z",
+      "actorType": "resident",
+      "source": "bot",
+      "mine": false,
+      "payload": {
+        "entrance": 2
+      }
+    },
+    {
+      "type": "reported",
+      "at": "2026-09-27T14:42:00Z",
+      "actorType": "resident",
+      "source": "miniapp",
+      "mine": true,
+      "payload": {
+        "scope": "house",
+        "entrance": 2
+      }
+    }
+  ],
+  "me": {
+    "joined": true,
+    "notMe": false,
+    "entrance": 2,
+    "floor": 5,
+    "notify": true,
+    "restoredAnswer": "no",
+    "restoredAt": null,
+    "restoredSource": null,
+    "adsRereport": null,
+    "readyToSign": false,
+    "introOptIn": false,
+    "isAuthor": true,
+    "trustLevel": 1
+  },
+  "check": {
+    "askedAt": "2026-09-27T16:10:00Z",
+    "repeated": false,
+    "windowEndsAt": null,
+    "discrepancyDeadlineAt": "2026-09-30T16:15:00Z"
+  },
+  "act": null,
+  "brigadeOnSiteAt": null,
+  "localizedAt": "2026-09-27T15:20:00Z",
+  "resolvedAtUk": "2026-09-27T16:10:00Z",
+  "mergedInto": null,
+  "cardInChat": true
+}

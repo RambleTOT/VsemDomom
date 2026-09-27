@@ -1,0 +1,90 @@
+{
+  "items": [
+    {
+      "id": "K3f9QpZ2aB",
+      "house": {
+        "id": "dom1model1",
+        "label": "1",
+        "address": "ул. Модельная, 1",
+        "timezone": "Europe/Moscow",
+        "entrances": 4,
+        "isModel": true
+      },
+      "service": "hot_water",
+      "scope": "house",
+      "entrance": null,
+      "status": "open",
+      "displayStatus": "open",
+      "headline": {
+        "displayStatus": "open",
+        "eta": null,
+        "nextDeadline": {
+          "kind": "answer",
+          "title": "УК сообщит сроки работ",
+          "state": "soon",
+          "dueAt": "2026-09-27T15:12:00Z",
+          "warnAt": "2026-09-27T14:42:00Z",
+          "doneAt": null,
+          "anchor": "service_report",
+          "norm": {
+            "code": "pp416.p13.uk_eta",
+            "title": "УК сообщит сроки работ",
+            "doc": "ПП № 416",
+            "point": "п. 13",
+            "textPlain": "Аварийно-диспетчерская служба сообщает заявителю планируемые сроки работ в течение 30 минут с момента регистрации заявки.",
+            "quote": "собственник или пользователь помещения в многоквартирном доме должен быть в течение получаса с момента регистрации заявки проинформирован о планируемых сроках исполнения заявки",
+            "edition": "2026-06-20",
+            "validFrom": "2026-09-01",
+            "validTo": null,
+            "checkedAt": "2026-09-27",
+            "sourceUrl": "https://www.kontur-extern.ru/info/normativ/document/1/506725-postanovlenie-pravitelstva-rf-ot-15-05-2013-n-416"
+          }
+        },
+        "statusAt": null,
+        "discrepancyFlats": 0,
+        "unconfirmedRestoreFlats": 0,
+        "durationMinutes": null
+      },
+      "startedAt": "2026-09-27T14:40:00Z",
+      "createdAt": "2026-09-27T14:42:00Z",
+      "eta": null,
+      "overdue": false,
+      "singleLimitExceeded": false,
+      "discrepancyUnresolved": false,
+      "participantsCount": 11,
+      "flatsCount": 9,
+      "byEntrance": [
+        {
+          "entrance": 2,
+          "count": 6
+        },
+        {
+          "entrance": 3,
+          "count": 5
+        }
+      ],
+      "joined": true,
+      "closedAt": null,
+      "isModel": true
+    }
+  ],
+  "counts": {
+    "open": 1,
+    "expired": 0,
+    "closed": 3
+  },
+  "houses": [
+    {
+      "id": "dom1model1",
+      "label": "1",
+      "address": "ул. Модельная, 1",
+      "openCount": 1
+    },
+    {
+      "id": "dom2model2",
+      "label": "2",
+      "address": "ул. Модельная, 2",
+      "openCount": 0
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "userId": 1001,
+  "consent": {
+    "version": "2026-09-27",
+    "at": "2026-09-27T14:30:00Z"
+  },
+  "consentRequired": false,
+  "currentConsentVersion": "2026-09-27",
+  "roles": [
+    "resident"
+  ],
+  "residencies": [
+    {
+      "id": "res57model",
+      "house": {
+        "id": "dom1model1",
+        "label": "1",
+        "address": "ул. Модельная, 1",
+        "city": "Модельск",
+        "timezone": "Europe/Moscow",
+        "entrances": 4,
+        "floors": 9,
+        "flatFrom": 1,
+        "flatTo": 144,
+        "isModel": true
+      },
+      "chat": {
+        "bound": true,
+        "title": "Дом 1 (демо)",
+        "inviteLink": "https://max.ru/join/example",
+        "participantsCount": 312
+      },
+      "flatNo": 57,
+      "role": "owner",
+      "trustLevel": 1,
+      "reviewStatus": "pending",
+      "inHouseChat": true
+    }
+  ],
+  "staff": null,
+  "settings": {
+    "notifyDefault": true
+  },
+  "dialogActive": true,
+  "botLink": "https://max.ru/vsemdomom_simulator_bot",
+  "demoMode": true,
+  "features": {
+    "keywordReply": false,
+    "brigadeConfirm": true,
+    "trustLevels": true,
+    "joinChat": true,
+    "polls": true,
+    "monthlySummary": true,
+    "actTemplate": true
+  }
+}
