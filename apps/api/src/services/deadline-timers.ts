@@ -8,6 +8,7 @@
 import { breachFlag, isOpenStatus } from '@vsemdomom/core';
 import { eq } from 'drizzle-orm';
 import { cardLater } from '../chat/card.ts';
+import type { Executor } from '../db/client.ts';
 import { deadline, incident, incidentEvent } from '../db/schema.ts';
 import type { JobContext } from '../jobs/context.ts';
 import { QUEUES, type JobQueue, type TxLike } from '../jobs/queue.ts';
@@ -63,15 +64,23 @@ export async function deadlineJob(ctx: JobContext, data: DeadlineJob): Promise<D
       await schedule(ctx.queue, data, d.dueAt, tx);
       return 'rescheduled';
     }
-    await tx.update(deadline).set({ status: 'breached', resolvedAt: d.dueAt }).where(eq(deadline.id, d.id));
-    // Системный флаг не меняет версию: у УК не должно быть конфликта If-Match из-за таймера.
-    await tx
-      .update(incident)
-      .set(breachFlag(d.kind) === 'overdue' ? { overdue: true } : { singleLimitExceeded: true })
-      .where(eq(incident.id, inc.id));
-    await tx.insert(incidentEvent).values({ incidentId: inc.id, type: 'deadline_breached', actorType: 'system', source: 'system', payload: { kind: d.kind, dueAt: d.dueAt.toISOString() }, occurredAt: now });
-    await cardLater(ctx.queue, inc.id, tx);
-    await notifyLater(ctx.queue, { incidentId: inc.id, kind: 'deadline_breach', deadlineId: d.id }, tx);
+    await breachDeadline(ctx, tx, d, now);
     return 'breached';
   });
+}
+
+/**
+ * Срок истёк: статус и флаг аварии (overdue или single_limit_exceeded), событие, правка карточки,
+ * уведомление присоединившимся. Системный флаг не меняет версию: у УК не должно быть конфликта
+ * If-Match из-за таймера.
+ */
+export async function breachDeadline(ctx: JobContext, tx: Executor & TxLike, d: Pick<typeof deadline.$inferSelect, 'id' | 'incidentId' | 'kind' | 'dueAt'>, now: Date): Promise<void> {
+  await tx.update(deadline).set({ status: 'breached', resolvedAt: d.dueAt }).where(eq(deadline.id, d.id));
+  await tx
+    .update(incident)
+    .set(breachFlag(d.kind) === 'overdue' ? { overdue: true } : { singleLimitExceeded: true })
+    .where(eq(incident.id, d.incidentId));
+  await tx.insert(incidentEvent).values({ incidentId: d.incidentId, type: 'deadline_breached', actorType: 'system', source: 'system', payload: { kind: d.kind, dueAt: d.dueAt.toISOString() }, occurredAt: now });
+  await cardLater(ctx.queue, d.incidentId, tx);
+  await notifyLater(ctx.queue, { incidentId: d.incidentId, kind: 'deadline_breach', deadlineId: d.id }, tx);
 }

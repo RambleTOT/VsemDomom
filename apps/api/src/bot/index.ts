@@ -10,6 +10,7 @@ import { QUEUES } from '../jobs/queue.ts';
 import type { JobHandlers } from '../jobs/runtime.ts';
 import { checkTimerJob, type CheckJob } from '../services/check.ts';
 import { deadlineJob, type DeadlineJob } from '../services/deadline-timers.ts';
+import { demoAnswersJob, type DemoAnswersJob } from '../services/demo-answers.ts';
 import { notifyJob, type NotifyJob } from '../services/notify.ts';
 import type { CallbackAnswerJob } from './dm.ts';
 import { onAdsAgain, onCrewNo, onCrewYes, onRestore } from './check.ts';
@@ -59,4 +60,5 @@ export const botJobHandlers: JobHandlers = {
   [QUEUES.deadline]: (data: DeadlineJob, ctx) => deadlineJob(ctx, data),
   [QUEUES.notify]: (data: NotifyJob, ctx) => notifyJob(ctx, data),
   [QUEUES.check]: (data: CheckJob, ctx) => checkTimerJob(ctx, data),
+  [QUEUES.demo]: (data: DemoAnswersJob, ctx) => demoAnswersJob(ctx, data),
 };

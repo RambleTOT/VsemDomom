@@ -12,6 +12,7 @@ import { enqueueOutbound } from '../jobs/outbound.ts';
 import { QUEUES } from '../jobs/queue.ts';
 import { MaxApiError } from '../max/types.ts';
 import type { NormalizedUpdate } from '../max/update.ts';
+import { audit, staffActor } from '../services/audit.ts';
 import { sendDm } from './dm.ts';
 import { houseByPublicId, houseOfChat, staffOf, userById, type HouseRow } from '../db/queries.ts';
 import type { UpdateMeta } from './types.ts';
@@ -123,6 +124,7 @@ async function bind(ctx: JobContext, chatId: number, h: HouseRow, staffUserId: n
       boundBy: staffUserId,
     });
     if (meta.tokenHash) await tx.update(chatBindToken).set({ usedAt: ctx.clock.now() }).where(eq(chatBindToken.tokenHash, meta.tokenHash));
+    await audit(tx, { actor: staffActor(staffUserId), action: 'bind_chat', entity: 'house', entityId: h.publicId, at: ctx.clock.now() });
     await ctx.queue.send(QUEUES.panelRender, { houseId: h.id, pin: true }, { tx });
     const user = await userById(tx, staffUserId);
     if (!botIsAdmin && user?.dialogActive) {

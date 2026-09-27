@@ -2,8 +2,10 @@
  * Доступ (раздел 11 ТЗ): житель — только дом, где у него проживание; УК — только дома своей УК;
  * checker-токены — только дом-песочница (для остальных песочница скрыта).
  */
+import type { EventSource } from '@vsemdomom/core';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import type { Principal } from '../auth/principal.ts';
+import type { AppConfig } from '../config/env.ts';
 import type { Executor } from '../db/client.ts';
 import { houseByPublicId, residenciesOf, staffOf, userById, type HouseRow, type ResidencyRow, type UserRow } from '../db/queries.ts';
 import { house } from '../db/schema.ts';
@@ -79,6 +81,24 @@ export function assertStaffOf(viewer: Viewer, h: HouseRow): void {
   assertStaffAny(viewer);
   if (!sandboxAllowed(viewer, h)) throw notFound('Дом не найден');
   if (!isStaffOf(viewer, h)) throw new ApiError(403, 'not_staff', 'Дом другой УК');
+}
+
+/** Роль сотрудника УК этого дома выдана по демо-коду. */
+export function hasDemoRole(viewer: Viewer, h: Pick<HouseRow, 'ukId'>): boolean {
+  return viewer.staff.some((s) => s.ukId === h.ukId && s.isDemo);
+}
+
+/** Демо-инструменты: DEMO_MODE, демо-роль УК этого дома, модельный дом (не песочница). */
+export function assertDemoStaff(viewer: Viewer, h: HouseRow, config: Pick<AppConfig, 'demo'>): void {
+  if (!config.demo.enabled) throw new ApiError(403, 'forbidden', 'Демо-режим выключен');
+  assertStaffOf(viewer, h);
+  if (!hasDemoRole(viewer, h)) throw new ApiError(403, 'forbidden', 'Доступно демо-роли УК', 'Введите демо-код в профиле: «Я сотрудник УК»');
+  if (!h.isModel || h.isSandbox) throw new ApiError(403, 'forbidden', 'Только для модельных домов');
+}
+
+/** Откуда действие: checker-токен — API, иначе мини-приложение. */
+export function eventSource(viewer: Viewer): EventSource {
+  return viewer.principal.kind === 'checker' ? 'api' : 'miniapp';
 }
 
 /** Дома УК сотрудника, которые ему видны. */

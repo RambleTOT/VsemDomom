@@ -2,19 +2,42 @@
  * Экраны УК (F05, F11): аварии своих домов (срок истёк — сверху), авария с сеткой «подъезд × этаж»,
  * статус и ориентир (If-Match), объединение дублей, дома с чатами и правами бота, привязка чата.
  */
-import { isOpenStatus } from '@vsemdomom/core';
+import { isOpenStatus, OPEN_STATUSES } from '@vsemdomom/core';
 import type { FastifyInstance } from 'fastify';
 import { and, eq, inArray } from 'drizzle-orm';
 import { bindChatWithToken, bindingInfo } from '../../bot/binding.ts';
 import { chatOfHouse } from '../../db/queries.ts';
 import { incident } from '../../db/schema.ts';
 import { incidentSummary, loadIncidentBundle, loadIncidentBundles, type IncidentBundle } from '../../services/incident-view.ts';
+import { activeDemoIncident } from '../../services/demo.ts';
+import { demoAllowed } from '../../services/demo-answers.ts';
 import { incidentByPublicId } from '../../services/incidents.ts';
 import { monthSummary } from '../../services/month.ts';
 import { applyUkStatus, mergeIncident } from '../../services/uk-status.ts';
-import { isExpired, mergeCandidateIds, monthlySummaryView, nextDueAt, ukHouseView, ukIncidentDetail, urgency } from '../../services/uk-view.ts';
+import {
+  isExpired,
+  mergeCandidateIds,
+  monthlySummaryView,
+  nextDueAt,
+  ukHouseView,
+  ukIncidentDetail,
+  urgency,
+  type UkIncidentDetail,
+} from '../../services/uk-view.ts';
 import { iso } from '../../services/views.ts';
-import { assertStaffAny, assertStaffOf, houseById, incidentViewer, loadViewer, notFound, staffHouses, visibleHouse, type Viewer } from '../access.ts';
+import {
+  assertStaffAny,
+  assertStaffOf,
+  eventSource,
+  hasDemoRole,
+  houseById,
+  incidentViewer,
+  loadViewer,
+  notFound,
+  staffHouses,
+  visibleHouse,
+  type Viewer,
+} from '../access.ts';
 import { registerApiRoute, type ApiDeps } from '../api-route.ts';
 import { parseIfMatch } from '../if-match.ts';
 import { ApiError, fromServiceError } from '../problem.ts';
@@ -22,23 +45,25 @@ import { ApiError, fromServiceError } from '../problem.ts';
 /** Закрытые в списке УК: последние. */
 const CLOSED_LIMIT = 50;
 
+/** Авария глазами УК (U02): сетка, сроки, хронология и кандидаты на объединение. */
+export async function ukDetailFor(deps: ApiDeps, viewer: Viewer, incidentId: number): Promise<UkIncidentDetail> {
+  const { ctx, config } = deps;
+  const b = await loadIncidentBundle(ctx.db, incidentId);
+  if (!b) throw notFound('Авария не найдена');
+  const open = await ctx.db
+    .select({ id: incident.id })
+    .from(incident)
+    .where(and(eq(incident.houseId, b.house.id), eq(incident.serviceType, b.incident.serviceType), inArray(incident.status, [...OPEN_STATUSES])));
+  const others = await loadIncidentBundles(ctx.db, open.map((r) => r.id));
+  const iv = incidentViewer(viewer, b.house);
+  const now = ctx.clock.now();
+  const candidates = mergeCandidateIds(others, b).flatMap((id) => others.filter((x) => x.incident.id === id)).map((x) => incidentSummary(x, iv, now));
+  return ukIncidentDetail(b, iv, config, now, candidates);
+}
+
 export function registerUkRoutes(app: FastifyInstance, deps: ApiDeps): void {
   const { ctx, config } = deps;
-  const source = (viewer: Viewer) => (viewer.principal.kind === 'checker' ? ('api' as const) : ('miniapp' as const));
-
-  const detail = async (viewer: Viewer, incidentId: number) => {
-    const b = await loadIncidentBundle(ctx.db, incidentId);
-    if (!b) throw notFound('Авария не найдена');
-    const open = await ctx.db
-      .select({ id: incident.id })
-      .from(incident)
-      .where(and(eq(incident.houseId, b.house.id), eq(incident.serviceType, b.incident.serviceType), inArray(incident.status, ['open', 'accepted', 'brigade_on_site', 'localized', 'checking', 'discrepancy'])));
-    const others = await loadIncidentBundles(ctx.db, open.map((r) => r.id));
-    const iv = incidentViewer(viewer, b.house);
-    const now = ctx.clock.now();
-    const candidates = mergeCandidateIds(others, b).flatMap((id) => others.filter((x) => x.incident.id === id)).map((x) => incidentSummary(x, iv, now));
-    return ukIncidentDetail(b, iv, config, now, candidates);
-  };
+  const detail = (viewer: Viewer, incidentId: number) => ukDetailFor(deps, viewer, incidentId);
 
   const staffIncident = async (viewer: Viewer, publicId: string) => {
     const inc = await incidentByPublicId(ctx.db, publicId);
@@ -91,7 +116,7 @@ export function registerUkRoutes(app: FastifyInstance, deps: ApiDeps): void {
       status: body.status,
       eta: body.eta ? new Date(body.eta) : null,
       expectedVersion,
-      source: source(viewer),
+      source: eventSource(viewer),
     }).catch(fromServiceError);
     return { status: 200, body: await detail(viewer, inc.id) };
   });
@@ -104,7 +129,7 @@ export function registerUkRoutes(app: FastifyInstance, deps: ApiDeps): void {
       intoPublicId: body.intoId,
       staffUserId: principal.userId,
       expectedVersion: parseIfMatch(headers['if-match']),
-      source: source(viewer),
+      source: eventSource(viewer),
     }).catch(fromServiceError);
     return { status: 200, body: await detail(viewer, target.id) };
   });
@@ -123,12 +148,7 @@ export function registerUkRoutes(app: FastifyInstance, deps: ApiDeps): void {
     const h = await visibleHouse(ctx.db, viewer, params.id);
     assertStaffOf(viewer, h);
     const now = ctx.clock.now();
-    const demoRole = viewer.staff.some((s) => s.ukId === h.ukId && s.isDemo);
-    const [active] = await ctx.db
-      .select({ publicId: incident.publicId })
-      .from(incident)
-      .where(and(eq(incident.houseId, h.id), inArray(incident.status, ['open', 'accepted', 'brigade_on_site', 'localized', 'checking', 'discrepancy'])))
-      .limit(1);
+    const demo = demoAllowed(ctx, h) && hasDemoRole(viewer, h) ? { activeIncidentId: (await activeDemoIncident(ctx.db, h.id))?.publicId ?? null } : null;
     return {
       status: 200,
       body: {
@@ -136,7 +156,7 @@ export function registerUkRoutes(app: FastifyInstance, deps: ApiDeps): void {
         timezone: h.timezone,
         month: await monthSummary(ctx.db, h, null, now),
         monthlySummary: config.features.monthlySummary ? await monthlySummaryView(ctx.db, h, now) : null,
-        demo: config.demo.enabled && h.isModel && !h.isSandbox && demoRole ? { activeIncidentId: active?.publicId ?? null } : null,
+        demo,
       },
     };
   });

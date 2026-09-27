@@ -252,7 +252,11 @@ export async function answerCheck(
       actorType: 'resident',
       actorId: input.userId,
       source: input.source,
-      payload: input.viaAds ? { viaAds: true, ...(input.viaAds.number ? { number: input.viaAds.number } : {}) } : {},
+      payload: {
+        ...(input.viaAds ? { viaAds: true, ...(input.viaAds.number ? { number: input.viaAds.number } : {}) } : {}),
+        // Ответы модельных соседей (демо) помечены: в метрики они не входят.
+        ...(p.isModel ? { model: true } : {}),
+      },
       occurredAt: now,
     });
 

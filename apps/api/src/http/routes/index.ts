@@ -2,6 +2,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { ApiDeps, OperationId } from '../api-route.ts';
 import { registerAuthRoutes } from './auth.ts';
+import { registerDemoRoutes } from './demo.ts';
 import { registerHouseRoutes } from './houses.ts';
 import { registerIncidentRoutes } from './incidents.ts';
 import { registerMeRoutes } from './me.ts';
@@ -17,19 +18,16 @@ export function registerApiRoutes(app: FastifyInstance, deps: ApiDeps): void {
   registerIncidentRoutes(app, deps);
   registerUkRoutes(app, deps);
   registerOwnerRoutes(app, deps);
+  registerDemoRoutes(app, deps);
 }
 
 /** Операции контракта, которые ещё не реализованы, и задача, в которой появятся (docs/STREAM_A.md). */
 export const PENDING_OPERATIONS: Partial<Record<OperationId, string>> = {
-  demoUkRole: 'A10',
   actReady: 'A13',
   ukHeatmap: 'A13',
   ukStartHeatingPoll: 'A13',
   ukListResidents: 'A11',
   ukConfirmResident: 'A11',
   ukRejectResident: 'A11',
-  demoNeighbours: 'A10',
-  demoTimeShift: 'A10',
-  demoReset: 'A10',
   sandboxReset: 'A12',
 };

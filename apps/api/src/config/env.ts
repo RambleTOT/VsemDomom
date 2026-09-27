@@ -108,6 +108,8 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   DEMO_MODE: bool(true),
   DEMO_UK_CODE: optionalString,
+  /** Каталог сидов (сброс демо пересоздаёт историю дома); по умолчанию — поиск seeds/ вверх. */
+  SEEDS_DIR: optionalString,
   DEV_AUTH: bool(false),
   CHECKER_API_ENABLED: bool(true),
   CHECKER_TOKEN_RESIDENT: optionalString,
@@ -153,6 +155,7 @@ export interface AppConfig {
   initDataMaxAgeSec: number;
   databaseUrl: string;
   demo: { enabled: boolean; ukCode: string | undefined; checkWindowMin: number; neighbourAnswerDelaySec: number };
+  seedsDir: string | undefined;
   devAuth: boolean;
   checker: {
     enabled: boolean;
@@ -245,6 +248,7 @@ export function loadConfig(source: Record<string, string | undefined> = process.
       checkWindowMin: env.DEMO_CHECK_WINDOW_MIN,
       neighbourAnswerDelaySec: env.DEMO_NEIGHBOUR_ANSWER_DELAY_SEC,
     },
+    seedsDir: env.SEEDS_DIR,
     devAuth: env.DEV_AUTH,
     checker: {
       enabled: env.CHECKER_API_ENABLED,

@@ -34,3 +34,22 @@ export function flatLocation(house: HouseGeometry, flatNo: number): FlatLocation
   if (entrance > house.entrances) return null;
   return { entrance, floor };
 }
+
+/**
+ * Квартиры по всему дому: по одной в каждом подъезде по кругу, в подъездах — на разных этажах;
+ * занятые и несуществующие пропускаются. Для демо-соседей: сетка «подъезд × этаж» заполнена вразброс.
+ */
+export function spreadFlats(house: HouseGeometry, count: number, taken: ReadonlySet<number> = new Set()): number[] {
+  const perEntrance = house.floors * house.flatsPerFloor;
+  const result: number[] = [];
+  // За perEntrance кругов каждый подъезд проходит все пары «этаж, место на этаже» ровно один раз.
+  for (let round = 0; round < perEntrance && result.length < count; round += 1) {
+    for (let entrance = 1; entrance <= house.entrances && result.length < count; entrance += 1) {
+      const floor = ((round + entrance - 1) % house.floors) + 1;
+      const slot = Math.floor(round / house.floors) % house.flatsPerFloor;
+      const flat = house.flatFrom + (entrance - 1) * perEntrance + (floor - 1) * house.flatsPerFloor + slot;
+      if (isFlatInRange(house, flat) && !taken.has(flat) && !result.includes(flat)) result.push(flat);
+    }
+  }
+  return result;
+}

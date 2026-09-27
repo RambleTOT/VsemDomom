@@ -11,7 +11,7 @@ import type { Principal } from '../auth/principal.ts';
 import type { AppConfig } from '../config/env.ts';
 import type { JobContext } from '../jobs/context.ts';
 import { ApiError, sendProblem } from './problem.ts';
-import { authRateLimit, type RateLimits } from './rate-limit.ts';
+import { authRateLimit, codeRateLimit, type RateLimits } from './rate-limit.ts';
 
 type AnyRoute = (typeof apiRoutes)[number];
 export type OperationId = AnyRoute['operationId'];
@@ -45,6 +45,8 @@ export type RouteHandler<Id extends OperationId> = (input: RouteInput<Id>) => Pr
 export interface RouteOptions {
   /** Своя ошибка для неверного тела (по контракту: сумма ≤ 0 или не число → 422 monthly_charge_invalid). */
   bodyError?: () => ApiError;
+  /** Ввод кода: строгий лимит запросов на пользователя (как у входа). */
+  codeInput?: boolean;
 }
 
 export function findRoute<Id extends OperationId>(operationId: Id): RouteOf<Id> {
@@ -96,7 +98,7 @@ export function registerApiRoute<Id extends OperationId>(
   options: RouteOptions = {},
 ): void {
   const route: ApiRoute = findRoute(operationId);
-  const rateLimit = route.tags.includes('auth') ? authRateLimit(deps.limits) : undefined;
+  const rateLimit = route.tags.includes('auth') ? authRateLimit(deps.limits) : options.codeInput ? codeRateLimit(deps.limits) : undefined;
   app.route({
     method: route.method.toUpperCase(),
     url: fastifyPath(route.path),

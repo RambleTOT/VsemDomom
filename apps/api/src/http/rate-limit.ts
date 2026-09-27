@@ -41,3 +41,8 @@ export const ipKey = (req: FastifyRequest): string => `ip:${req.ip}`;
 export function authRateLimit(limits: RateLimits) {
   return { max: limits.authPerMinute, timeWindow: WINDOW, keyGenerator: ipKey };
 }
+
+/** Ввод кодов (демо-код УК): тот же строгий лимит, но на пользователя — против перебора. */
+export function codeRateLimit(limits: RateLimits) {
+  return { max: limits.authPerMinute, timeWindow: WINDOW, keyGenerator: keyOf };
+}

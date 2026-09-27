@@ -22,12 +22,13 @@ import {
   ROUND_MODES,
   INCIDENT_SCOPES,
   type IncidentEventType,
+  type NormRecord,
 } from '@vsemdomom/core';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { Logger } from 'pino';
 import { z } from 'zod';
 import { PARAMS } from '../config/params.ts';
-import type { Db } from './client.ts';
+import type { Db, Executor } from './client.ts';
 import { loadNorms } from './norms.ts';
 import * as t from './schema.ts';
 
@@ -274,144 +275,7 @@ export async function runSeeds(db: Db, options: SeedOptions): Promise<SeedSummar
     }
 
     // История модельных домов: пересоздаётся при каждом запуске
-    const historyIds = history.incidents.map((i) => i.publicId);
-    await tx.delete(t.incident).where(inArray(t.incident.publicId, historyIds));
-    let created = 0;
-    for (const h of history.incidents) {
-      const home = houseByPublicId.get(h.housePublicId);
-      if (!home) throw new Error(`history.json: неизвестный дом ${h.housePublicId}`);
-      const window = historyWindow(h, home.timezone, now);
-      if (!window) {
-        log.warn({ incident: h.publicId }, 'история: в текущем месяце ещё нет места для интервала, пропущено');
-        continue;
-      }
-      const { start, end } = window;
-      const at = (minutes: number) => new Date(Math.min(start.getTime() + minutes * 60_000, end.getTime()));
-      const reportedAt = at(PARAMS.historyReportDelayMin);
-      const closedAt = new Date(Math.min(end.getTime() + PARAMS.historyCheckMin * 60_000, now.getTime() - 60_000));
-      const acceptedAt = at(h.steps.acceptedMin);
-      const localizedAt = at(h.steps.localizedMin);
-      // Сроки по справочнику: выполнен, если шаг УК случился до срока, иначе истёк.
-      const plans = computeDeadlines(
-        { serviceType: h.serviceType, startedAt: start, createdAt: reportedAt, adsRegAt: null },
-        normRecords,
-        { regionCode: home.regionCode, timezone: home.timezone, powerSources: home.powerSources, hotWaterDeadEnd: home.hotWaterDeadEnd },
-        { warnBeforeMs: PARAMS.deadlineWarnMin * MS_PER_MINUTE },
-      );
-      const doneAt: Record<DeadlineKind, Date> = {
-        answer: acceptedAt,
-        localize: localizedAt,
-        clog: end,
-        fix: end,
-        single_limit: end,
-      };
-      const deadlines = plans.map((p) => {
-        const status = resolveDeadlineAt({ kind: p.kind, status: 'pending', dueAt: p.dueAt, warnAt: p.warnAt }, doneAt[p.kind]);
-        return { plan: p, status, resolvedAt: status === 'met' ? doneAt[p.kind] : p.dueAt };
-      });
-      const [row] = await tx
-        .insert(t.incident)
-        .values({
-          publicId: h.publicId,
-          houseId: home.id,
-          serviceType: h.serviceType,
-          scope: h.scope,
-          entrance: h.scope === 'entrance' ? (h.entrance ?? null) : null,
-          status: 'closed',
-          startedAt: start,
-          startedSource: 'custom',
-          createdAt: reportedAt,
-          etaAt: end,
-          brigadeOnSiteAt: null,
-          localizedAt,
-          resolvedAtUk: end,
-          checkStartedAt: end,
-          closedAt,
-          overdue: deadlines.some((d) => breachFlag(d.plan.kind) === 'overdue' && d.status === 'breached'),
-          singleLimitExceeded: deadlines.some((d) => breachFlag(d.plan.kind) === 'single_limit_exceeded' && d.status === 'breached'),
-          version: 6,
-          isModel: true,
-        })
-        .returning({ id: t.incident.id });
-      if (!row) throw new Error('не удалось создать аварию истории');
-      if (deadlines.length > 0) {
-        await tx.insert(t.deadline).values(
-          deadlines.map((d) => ({
-            incidentId: row.id,
-            normId: d.plan.norm.id,
-            kind: d.plan.kind,
-            dueAt: d.plan.dueAt,
-            warnAt: d.plan.warnAt,
-            status: d.status,
-            resolvedAt: d.resolvedAt,
-          })),
-        );
-      }
-
-      const events: { type: IncidentEventType; at: Date; actorType: 'resident' | 'uk' | 'system'; actorId?: number | null; payload?: Record<string, unknown> }[] = [];
-      events.push({ type: 'reported', at: reportedAt, actorType: 'resident', payload: { scope: h.scope, service: h.serviceType } });
-
-      for (const flatNo of h.participantFlats) {
-        const loc = flatLocation(home, flatNo);
-        if (!loc) throw new Error(`history.json: квартира ${flatNo} вне дома ${home.label}`);
-        const userId = modelUserId(home.label, flatNo);
-        await tx
-          .insert(t.maxUser)
-          .values({ id: userId, consentVersion: PARAMS.consentVersion, consentAt: start, isModel: true })
-          .onConflictDoNothing();
-        const [res] = await tx
-          .insert(t.residency)
-          .values({
-            userId,
-            houseId: home.id,
-            flatNo,
-            role: 'owner',
-            trustLevel: 1,
-            reviewStatus: 'confirmed',
-            source: 'chat',
-            isModel: true,
-          })
-          .onConflictDoUpdate({
-            target: [t.residency.userId, t.residency.houseId],
-            set: { flatNo, trustLevel: 1 },
-          })
-          .returning({ id: t.residency.id });
-        await tx.insert(t.incidentParticipant).values({
-          incidentId: row.id,
-          userId,
-          residencyId: res?.id ?? null,
-          entrance: loc.entrance,
-          floor: loc.floor,
-          trustLevelAtJoin: 1,
-          restoredAnswer: 'yes',
-          restoredAnswerAt: at(h.steps.resolvedMin + PARAMS.historyAnswerDelayMin),
-          restoredAt: end,
-          restoredSource: 'uk_mark',
-          joinedAt: reportedAt,
-          isModel: true,
-        });
-        events.push({ type: 'joined', at: reportedAt, actorType: 'resident', actorId: userId, payload: { entrance: loc.entrance } });
-      }
-      events.push(
-        { type: 'uk_accepted', at: acceptedAt, actorType: 'uk', payload: { eta: end.toISOString() } },
-        { type: 'uk_localized', at: localizedAt, actorType: 'uk' },
-        { type: 'uk_resolved', at: end, actorType: 'uk' },
-        { type: 'check_asked', at: end, actorType: 'system' },
-        { type: 'closed', at: closedAt, actorType: 'system', payload: { reason: 'all_confirmed' } },
-      );
-      await tx.insert(t.incidentEvent).values(
-        events.map((e) => ({
-          incidentId: row.id,
-          type: e.type,
-          actorType: e.actorType,
-          actorId: e.actorId ?? null,
-          source: e.actorType === 'uk' ? ('miniapp' as const) : e.actorType === 'system' ? ('system' as const) : ('bot' as const),
-          payload: { ...e.payload, model: true },
-          occurredAt: e.at,
-        })),
-      );
-      created += 1;
-    }
+    const created = await seedHistory(tx, { history: history.incidents, houses: houseByPublicId, norms: normRecords, now, log });
 
     const staffCount = await tx
       .select({ n: sql<number>`count(*)::int` })
@@ -429,6 +293,167 @@ export async function runSeeds(db: Db, options: SeedOptions): Promise<SeedSummar
     log.info(summary, 'сиды применены');
     return summary;
   });
+}
+
+type HistoryIncident = z.infer<typeof historySeed>['incidents'][number];
+
+/**
+ * История модельных домов (закрытые аварии с участниками и хронологией) в текущем месяце часового
+ * пояса дома. Прежние аварии истории с теми же publicId удаляются и создаются заново.
+ */
+async function seedHistory(
+  tx: Executor,
+  input: { history: HistoryIncident[]; houses: Map<string, typeof t.house.$inferSelect>; norms: NormRecord[]; now: Date; log: Logger },
+): Promise<number> {
+  const historyIds = input.history.map((i) => i.publicId);
+  if (historyIds.length > 0) await tx.delete(t.incident).where(inArray(t.incident.publicId, historyIds));
+  let created = 0;
+  for (const h of input.history) {
+    const home = input.houses.get(h.housePublicId);
+    if (!home) throw new Error(`history.json: неизвестный дом ${h.housePublicId}`);
+    const window = historyWindow(h, home.timezone, input.now);
+    if (!window) {
+      input.log.warn({ incident: h.publicId }, 'история: в текущем месяце ещё нет места для интервала, пропущено');
+      continue;
+    }
+    const { start, end } = window;
+    const at = (minutes: number) => new Date(Math.min(start.getTime() + minutes * 60_000, end.getTime()));
+    const reportedAt = at(PARAMS.historyReportDelayMin);
+    const closedAt = new Date(Math.min(end.getTime() + PARAMS.historyCheckMin * 60_000, input.now.getTime() - 60_000));
+    const acceptedAt = at(h.steps.acceptedMin);
+    const localizedAt = at(h.steps.localizedMin);
+    // Сроки по справочнику: выполнен, если шаг УК случился до срока, иначе истёк.
+    const plans = computeDeadlines(
+      { serviceType: h.serviceType, startedAt: start, createdAt: reportedAt, adsRegAt: null },
+      input.norms,
+      { regionCode: home.regionCode, timezone: home.timezone, powerSources: home.powerSources, hotWaterDeadEnd: home.hotWaterDeadEnd },
+      { warnBeforeMs: PARAMS.deadlineWarnMin * MS_PER_MINUTE },
+    );
+    const doneAt: Record<DeadlineKind, Date> = {
+      answer: acceptedAt,
+      localize: localizedAt,
+      clog: end,
+      fix: end,
+      single_limit: end,
+    };
+    const deadlines = plans.map((p) => {
+      const status = resolveDeadlineAt({ kind: p.kind, status: 'pending', dueAt: p.dueAt, warnAt: p.warnAt }, doneAt[p.kind]);
+      return { plan: p, status, resolvedAt: status === 'met' ? doneAt[p.kind] : p.dueAt };
+    });
+    const [row] = await tx
+      .insert(t.incident)
+      .values({
+        publicId: h.publicId,
+        houseId: home.id,
+        serviceType: h.serviceType,
+        scope: h.scope,
+        entrance: h.scope === 'entrance' ? (h.entrance ?? null) : null,
+        status: 'closed',
+        startedAt: start,
+        startedSource: 'custom',
+        createdAt: reportedAt,
+        etaAt: end,
+        brigadeOnSiteAt: null,
+        localizedAt,
+        resolvedAtUk: end,
+        checkStartedAt: end,
+        closedAt,
+        overdue: deadlines.some((d) => breachFlag(d.plan.kind) === 'overdue' && d.status === 'breached'),
+        singleLimitExceeded: deadlines.some((d) => breachFlag(d.plan.kind) === 'single_limit_exceeded' && d.status === 'breached'),
+        version: 6,
+        isModel: true,
+      })
+      .returning({ id: t.incident.id });
+    if (!row) throw new Error('не удалось создать аварию истории');
+    if (deadlines.length > 0) {
+      await tx.insert(t.deadline).values(
+        deadlines.map((d) => ({
+          incidentId: row.id,
+          normId: d.plan.norm.id,
+          kind: d.plan.kind,
+          dueAt: d.plan.dueAt,
+          warnAt: d.plan.warnAt,
+          status: d.status,
+          resolvedAt: d.resolvedAt,
+        })),
+      );
+    }
+
+    const events: { type: IncidentEventType; at: Date; actorType: 'resident' | 'uk' | 'system'; actorId?: number | null; payload?: Record<string, unknown> }[] = [];
+    events.push({ type: 'reported', at: reportedAt, actorType: 'resident', payload: { scope: h.scope, service: h.serviceType } });
+
+    for (const flatNo of h.participantFlats) {
+      const loc = flatLocation(home, flatNo);
+      if (!loc) throw new Error(`history.json: квартира ${flatNo} вне дома ${home.label}`);
+      const userId = modelUserId(home.label, flatNo);
+      await tx
+        .insert(t.maxUser)
+        .values({ id: userId, consentVersion: PARAMS.consentVersion, consentAt: start, isModel: true })
+        .onConflictDoNothing();
+      const [res] = await tx
+        .insert(t.residency)
+        .values({
+          userId,
+          houseId: home.id,
+          flatNo,
+          role: 'owner',
+          trustLevel: 1,
+          reviewStatus: 'confirmed',
+          source: 'chat',
+          isModel: true,
+        })
+        .onConflictDoUpdate({
+          target: [t.residency.userId, t.residency.houseId],
+          set: { flatNo, trustLevel: 1 },
+        })
+        .returning({ id: t.residency.id });
+      await tx.insert(t.incidentParticipant).values({
+        incidentId: row.id,
+        userId,
+        residencyId: res?.id ?? null,
+        entrance: loc.entrance,
+        floor: loc.floor,
+        trustLevelAtJoin: 1,
+        restoredAnswer: 'yes',
+        restoredAnswerAt: at(h.steps.resolvedMin + PARAMS.historyAnswerDelayMin),
+        restoredAt: end,
+        restoredSource: 'uk_mark',
+        joinedAt: reportedAt,
+        isModel: true,
+      });
+      events.push({ type: 'joined', at: reportedAt, actorType: 'resident', actorId: userId, payload: { entrance: loc.entrance } });
+    }
+    events.push(
+      { type: 'uk_accepted', at: acceptedAt, actorType: 'uk', payload: { eta: end.toISOString() } },
+      { type: 'uk_localized', at: localizedAt, actorType: 'uk' },
+      { type: 'uk_resolved', at: end, actorType: 'uk' },
+      { type: 'check_asked', at: end, actorType: 'system' },
+      { type: 'closed', at: closedAt, actorType: 'system', payload: { reason: 'all_confirmed' } },
+    );
+    await tx.insert(t.incidentEvent).values(
+      events.map((e) => ({
+        incidentId: row.id,
+        type: e.type,
+        actorType: e.actorType,
+        actorId: e.actorId ?? null,
+        source: e.actorType === 'uk' ? ('miniapp' as const) : e.actorType === 'system' ? ('system' as const) : ('bot' as const),
+        payload: { ...e.payload, model: true },
+        occurredAt: e.at,
+      })),
+    );
+    created += 1;
+  }
+  return created;
+}
+
+/** Сброс демо: история одного модельного дома — как после сидов (в текущем месяце). */
+export async function reseedHouseHistory(
+  tx: Executor,
+  input: { seedsDir: string; house: typeof t.house.$inferSelect; now: Date; log: Logger },
+): Promise<number> {
+  const history = await readSeed(input.seedsDir, 'history.json', historySeed);
+  const own = history.incidents.filter((i) => i.housePublicId === input.house.publicId);
+  return seedHistory(tx, { history: own, houses: new Map([[input.house.publicId, input.house]]), norms: await loadNorms(tx), now: input.now, log: input.log });
 }
 
 /**

@@ -15,7 +15,7 @@ import { monthSummary } from './month.ts';
 import { chatInfo } from './views.ts';
 
 type Reader = Pick<Executor, 'select'>;
-type UkIncidentDetail = z.infer<typeof UkIncidentDetailSchema>;
+export type UkIncidentDetail = z.infer<typeof UkIncidentDetailSchema>;
 type UkHouse = z.infer<typeof UkHouseSchema>;
 type MonthlySummary = z.infer<typeof MonthlySummarySchema>;
 

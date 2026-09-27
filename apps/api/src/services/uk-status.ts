@@ -23,8 +23,10 @@ import { chatCard, deadline, house, incident, incidentEvent, incidentParticipant
 import type { JobContext } from '../jobs/context.ts';
 import { enqueueOutbound } from '../jobs/outbound.ts';
 import type { TxLike } from '../jobs/queue.ts';
-import { ServiceError } from './errors.ts';
+import { audit, staffActor } from './audit.ts';
 import { scheduleCheckJob } from './check.ts';
+import { scheduleDemoAnswers } from './demo-answers.ts';
+import { ServiceError } from './errors.ts';
 import { notifyLater } from './notify.ts';
 import { checkWindowMs } from './policy.ts';
 
@@ -160,8 +162,14 @@ export async function applyUkStatus(ctx: JobContext, input: UkStatusInput): Prom
           break;
         case 'start_check':
           update.checkStartedAt = now;
-          // Окно проверки: без «Нет» по его истечении авария закроется (правило F07 (б)).
-          if (h) after.push((x) => scheduleCheckJob(ctx.queue, inc.id, new Date(now.getTime() + checkWindowMs(ctx.config, h)), x));
+          if (h) {
+            // Окно проверки: без «Нет» по его истечении авария закроется (правило F07 (б)).
+            after.push((x) => scheduleCheckJob(ctx.queue, inc.id, new Date(now.getTime() + checkWindowMs(ctx.config, h)), x));
+            // Демо: модельные соседи ответят «Да» через заданную задержку после вопроса.
+            after.push(async (x) => {
+              await scheduleDemoAnswers(ctx, x, { incidentId: inc.id, house: h, checkStartedAt: now, from: now });
+            });
+          }
           break;
         case 'post_check_question':
           after.push((x) => postCheckQuestion(x, ctx, inc, now));
@@ -208,6 +216,7 @@ export async function applyUkStatus(ctx: JobContext, input: UkStatusInput): Prom
     );
     for (const run of after) await run(tx);
     if (t.to === 'closed') await panelLater(ctx.queue, inc.houseId, tx);
+    await audit(tx, { actor: staffActor(input.staffUserId), action: `uk_status:${input.status}`, entity: 'incident', entityId: inc.publicId, at: now });
     const [saved] = await tx.select().from(incident).where(eq(incident.id, inc.id));
     if (!saved) throw new ServiceError('not_found', 'Авария не найдена');
     return saved;
@@ -254,6 +263,7 @@ export async function mergeIncident(ctx: JobContext, input: MergeInput): Promise
     await cardLater(ctx.queue, src.id, tx);
     await cardLater(ctx.queue, target.id, tx);
     await panelLater(ctx.queue, src.houseId, tx);
+    await audit(tx, { actor: staffActor(input.staffUserId), action: 'uk_merge', entity: 'incident', entityId: src.publicId, at: now });
     const [saved] = await tx.select().from(incident).where(eq(incident.id, target.id));
     if (!saved) throw new ServiceError('not_found', 'Авария не найдена');
     return saved;
