@@ -13,6 +13,8 @@ import type { JobContext } from '../jobs/context.ts';
 import { enqueueOutbound } from '../jobs/outbound.ts';
 import { QUEUES, type JobQueue, type TxLike } from '../jobs/queue.ts';
 import { MaxApiError, type OutgoingMessage } from '../max/types.ts';
+import { loadIncidentBundle } from '../services/incident-view.ts';
+import { computeResult } from '../services/result.ts';
 import { messageHash } from './panel.ts';
 
 type Reader = Pick<Executor, 'select'>;
@@ -59,6 +61,14 @@ export async function loadCardInput(db: Reader, ctx: JobContext, incidentId: num
   );
   const discrepancyFlats = new Set(saidNo.map((p) => (p.flatNo === null ? `u${p.userId ?? ''}` : `f${p.flatNo}`))).size;
 
+  // Закрытая: у скольких квартир перерывы за месяц сверх нормы (итог F08).
+  let overNorm: CardInput['overNorm'] = null;
+  if (inc.status === 'closed') {
+    const bundle = await loadIncidentBundle(db, inc.id);
+    const result = bundle ? await computeResult(db, bundle, ctx.clock.now()) : null;
+    overNorm = result?.eligible ? { flats: result.eligible.flats, durationMs: result.eligible.maxTotalMs } : null;
+  }
+
   return {
     incident: {
       publicId: inc.publicId,
@@ -75,7 +85,7 @@ export async function loadCardInput(db: Reader, ctx: JobContext, incidentId: num
     counts: participantCounts(participants.map((p) => ({ entrance: p.entrance, affected: p.affected, trustLevel: p.trust ?? 0 }))),
     deadlines,
     discrepancyFlats,
-    overNorm: null,
+    overNorm,
     unconfirmedRestoreFlats: inc.discrepancyUnresolved ? discrepancyFlats : 0,
     mergedIntoPublicId: merged?.publicId ?? null,
     brigadeConfirm: ctx.config.features.brigadeConfirm,

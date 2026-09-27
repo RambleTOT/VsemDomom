@@ -333,6 +333,11 @@ describe('C04 — итог', () => {
     expect(m.keyboard).toEqual([[{ type: 'open_app', text: 'Оформить перерасчёт', webApp: 'vsemdomom_bot', payload: 'r_K3f9QpZ2aB' }]]);
   });
 
+  it('одна квартира сверх нормы — единственное число', () => {
+    const m = renderResult({ ...base, late: { flats: 1, lastAt: at('23:20') }, overNorm: { flats: 1, month: 9, totalMs: 10 * 3_600_000, limitMs: 8 * 3_600_000 } }, t);
+    expect(m.text.split('\n').slice(3, 5)).toEqual(['У 1 квартиры за сентябрь 10 ч перерывов при норме 8 ч', 'Её жители могут подать заявление на перерасчёт']);
+  });
+
   it('без превышения — «перерасчёт не положен»; другая услуга — без слова «вода»', () => {
     const m = renderResult({ ...base, service: 'electricity', late: { flats: 1, lastAt: at('20:00') }, overNorm: null }, t);
     assertGroupSafe(m);

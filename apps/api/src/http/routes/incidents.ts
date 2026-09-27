@@ -8,7 +8,10 @@ import { and, eq } from 'drizzle-orm';
 import { PARAMS } from '../../config/params.ts';
 import { incidentParticipant } from '../../db/schema.ts';
 import type { HouseRow } from '../../db/queries.ts';
+import { observeBrigade } from '../../services/brigade.ts';
+import { answerCheck, rereportAds } from '../../services/check.ts';
 import { incidentDetail, loadIncidentBundle } from '../../services/incident-view.ts';
+import { resultView } from '../../services/result.ts';
 import {
   adsNotReached,
   createIncident,
@@ -137,6 +140,18 @@ export function registerIncidentRoutes(app: FastifyInstance, deps: ApiDeps): voi
     assertResident(viewer, h);
     assertOpen(inc);
     const source = principal.kind === 'checker' ? 'api' : 'miniapp';
+    if (inc.status === 'checking' || inc.status === 'discrepancy') {
+      // После «Устранено» — повторное сообщение в АДС (п. 108): номер и время у участника.
+      if (body.number === undefined) {
+        throw new ApiError(400, 'validation_error', 'Неверный формат запроса', 'После «Устранено» нужен номер повторного сообщения в АДС');
+      }
+      const now = ctx.clock.now();
+      const at = body.registeredAt ? new Date(body.registeredAt) : now;
+      if (checkStartedAt(at, now, startedChecks) === 'future') throw new ApiError(422, 'registered_at_in_future', 'Время регистрации ещё не наступило');
+      const saved = await rereportAds(ctx, { incidentId: inc.id, userId: principal.userId, number: body.number, at, source });
+      if (saved === 'not_checking') throw new ApiError(409, 'invalid_transition', 'Сначала ответьте на вопрос о восстановлении');
+      return { status: 200, body: await detail(viewer, inc.id) };
+    }
     if (body.number === undefined && body.notReached !== true && body.remindLater !== true) {
       throw new ApiError(400, 'validation_error', 'Неверный формат запроса', 'Нужен number, notReached или remindLater');
     }
@@ -156,6 +171,37 @@ export function registerIncidentRoutes(app: FastifyInstance, deps: ApiDeps): voi
       await scheduleAdsReminder(ctx, inc.id, principal.userId);
     }
     return { status: 200, body: await detail(viewer, inc.id) };
+  });
+
+  registerApiRoute(app, deps, 'postObservation', async ({ principal, params, body }) => {
+    const viewer = await loadViewer(ctx.db, principal);
+    const { inc, house: h } = await load(viewer, params.id);
+    assertResident(viewer, h);
+    const source = principal.kind === 'checker' ? 'api' : 'miniapp';
+    if (body.kind === 'brigade_confirmed' || body.kind === 'brigade_absent') {
+      const saved = await observeBrigade(ctx, { incidentId: inc.id, userId: principal.userId, seen: body.kind === 'brigade_confirmed', source });
+      if (saved === 'not_applicable') throw new ApiError(409, 'invalid_transition', 'Отметка о бригаде — только в статусе «Бригада на месте»');
+    } else {
+      const answer = body.kind === 'restored_yes' ? 'yes' : body.kind === 'restored_no' ? 'no' : 'weak';
+      if (body.viaAds && answer !== 'yes') {
+        throw new ApiError(400, 'validation_error', 'Неверный формат запроса', 'viaAds — только для restored_yes');
+      }
+      const viaAds = body.viaAds
+        ? { ...(body.viaAds.number ? { number: body.viaAds.number } : {}), ...(body.viaAds.at ? { at: new Date(body.viaAds.at) } : {}) }
+        : undefined;
+      const saved = await answerCheck(ctx, { incidentId: inc.id, userId: principal.userId, answer, ...(viaAds ? { viaAds } : {}), source, fromHouseChat: false });
+      if (saved.status === 'not_checking') throw new ApiError(409, 'invalid_transition', 'Проверка ещё не началась или уже завершена');
+    }
+    return { status: 200, body: await detail(viewer, inc.id) };
+  });
+
+  registerApiRoute(app, deps, 'getIncidentResult', async ({ principal, params }) => {
+    const viewer = await loadViewer(ctx.db, principal);
+    const { inc, house: h } = await load(viewer, params.id);
+    if (inc.status !== 'closed') throw new ApiError(409, 'incident_not_closed', 'Итог будет после закрытия аварии');
+    const bundle = await loadIncidentBundle(ctx.db, inc.id);
+    if (!bundle) throw notFound('Авария не найдена');
+    return { status: 200, body: await resultView(ctx.db, bundle, incidentViewer(viewer, h), ctx.i18n, ctx.clock.now()) };
   });
 
   registerApiRoute(app, deps, 'patchParticipation', async ({ principal, params, body }) => {

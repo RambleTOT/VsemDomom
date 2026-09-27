@@ -60,7 +60,7 @@ export function parseMonth(value: string | undefined, now: Date, timezone: strin
 }
 
 /** Аварии дома с участниками, которые могут задевать месяц (начались до его конца). */
-async function loadIntervalIncidents(db: Reader, h: HouseRow, month: MonthRef, services: readonly ServiceType[]): Promise<IntervalIncident[]> {
+export async function loadIntervalIncidents(db: Reader, h: HouseRow, month: MonthRef, services: readonly ServiceType[]): Promise<IntervalIncident[]> {
   const bounds = monthBounds(month, h.timezone);
   const rows = await db
     .select()
@@ -86,7 +86,7 @@ async function loadIntervalIncidents(db: Reader, h: HouseRow, month: MonthRef, s
   }));
 }
 
-function limits(norms: readonly NormRecord[], h: HouseRow, service: ServiceType, at: Date) {
+export function limits(norms: readonly NormRecord[], h: HouseRow, service: ServiceType, at: Date) {
   const ctx = { regionCode: h.regionCode, timezone: h.timezone, powerSources: h.powerSources, hotWaterDeadEnd: h.hotWaterDeadEnd };
   const single = selectNorm(norms, { service, event: 'interruption_single', house: ctx, at });
   const monthly = selectNorm(norms, { service, event: 'interruption_monthly', house: ctx, at });

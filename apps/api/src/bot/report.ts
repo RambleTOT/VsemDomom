@@ -30,6 +30,7 @@ import {
 import { eq } from 'drizzle-orm';
 import { PARAMS } from '../config/params.ts';
 import { house, incident, managementCompany } from '../db/schema.ts';
+import { rereportAds } from '../services/check.ts';
 import type { JobContext } from '../jobs/context.ts';
 import {
   adsNotReached,
@@ -254,7 +255,7 @@ const ADS_INPUT = /^\s*([0-9A-Za-zА-Яа-яЁё/-]{1,32})(?:[\s,]+(.+?))?\s*$/;
 
 export async function onAdsNumberInput(ctx: JobContext, userId: number, text: string, meta: UpdateMeta): Promise<boolean> {
   const s = await state(ctx, userId);
-  if (s?.flow !== 'ads' || s.kind !== 'register') return false;
+  if (s?.flow !== 'ads') return false;
   const inc = await incidentByPublicId(ctx.db, s.incidentId);
   if (!inc) return false;
   const [h] = await ctx.db.select().from(house).where(eq(house.id, inc.houseId));
@@ -268,10 +269,17 @@ export async function onAdsNumberInput(ctx: JobContext, userId: number, text: st
     await ctx.db.transaction(async (tx) => sendDm(tx, ctx, userId, renderAdsNumberError(future ? 'future' : 'format', ctx.i18n), meta.dedupeKey));
     return true;
   }
-  const result = await registerAds(ctx, { incident: inc, userId, number, registeredAt: at, source: 'bot' });
+  let key: string;
+  if (s.kind === 'rereport') {
+    const saved = await rereportAds(ctx, { incidentId: inc.id, userId, number, at, source: 'bot' });
+    key = saved === 'saved' ? 'bot.dm.ads.rereport_saved' : 'bot.answer.check_closed';
+  } else {
+    const result = await registerAds(ctx, { incident: inc, userId, number, registeredAt: at, source: 'bot' });
+    key = result === 'too_late' ? 'bot.dm.ads.too_late' : 'report.ads.saved';
+  }
   await ctx.db.transaction(async (tx) => {
     await setDialogState(tx, ctx, userId, null);
-    await sendDm(tx, ctx, userId, renderText(result === 'too_late' ? 'bot.dm.ads.too_late' : 'report.ads.saved', ctx.i18n), meta.dedupeKey);
+    await sendDm(tx, ctx, userId, renderText(key, ctx.i18n), meta.dedupeKey);
   });
   return true;
 }

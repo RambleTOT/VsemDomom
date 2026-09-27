@@ -532,7 +532,7 @@
   "bot.dm.timer.expired": "Срок по нормативу истёк в {time}: {what}",
   "bot.dm.nowater.title": "Воды нет — что делать",
   "bot.dm.nowater.1": "1. Повторно сообщите в АДС: {phone}",
-  "bot.dm.nowater.2": "2. Если через 2 часа проверки нет, акт могут составить 2 соседа и председатель совета (Правила № 354, пп. 108, 110(1))",
+  "bot.dm.nowater.2": "2. Если через {hours} проверки нет, акт могут составить {persons} и председатель совета (Правила № 354, пп. 108, 110(1))",
   "bot.dm.btn.ads_again": "Я сообщил в АДС",
   "bot.dm.btn.act": "Как составить акт",
   "bot.dm.statement": "Заявление на перерасчёт — текст ниже. Скопируйте и отправьте в УК",
@@ -713,5 +713,18 @@
   "bot.dm.status.l2.plain": "{service}, Дом {house}",
   "bot.dm.status.l2.resolved": "{service}, Дом {house}. {restore_question} Ответьте в чате дома или в «Подробнее»",
   "bot.dm.timer.l2": "{service}, Дом {house}",
-  "bot.answer.muted": "Больше не пришлём уведомлений по этой аварии"
+  "bot.answer.muted": "Больше не пришлём уведомлений по этой аварии",
+  "bot.dm.nowater.title.other": "{service_no} — что делать",
+  "plural.neighbours.one": "сосед",
+  "plural.neighbours.few": "соседа",
+  "plural.neighbours.many": "соседей",
+  "bot.dm.status.closed": "{marker} Авария закрыта · {service_ok}",
+  "bot.dm.status.closed_disc": "{marker} Авария закрыта, восстановление подтвердили не все",
+  "bot.dm.status.l2.closed": "{service}, Дом {house}. Итог и перерасчёт — в «Подробнее»",
+  "restore.answer.no_saved.no_dialog": "Ответ «Нет» сохранён. Что делать — в «Подробнее и сроки» на карточке аварии",
+  "bot.answer.check_closed": "Проверка уже завершена",
+  "bot.dm.ads.rereport.ask": "Напишите номер заявки повторного сообщения в АДС, например 4130. Можно добавить время: 4130 19:40",
+  "bot.dm.ads.rereport_saved": "Записали повторное сообщение в АДС — оно видно в хронологии",
+  "bot.result.month.one": "У 1 квартиры за {month} {total} перерывов при норме {limit}",
+  "bot.result.can_apply.one": "Её жители могут подать заявление на перерасчёт"
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { renderDeadlineNotice, renderStatusNotice, validateBotMessage, type BotMessage, type StatusNoticeInput } from '../src/index.ts';
+import { renderDeadlineNotice, renderNoWater, renderStatusNotice, validateBotMessage, type BotMessage, type StatusNoticeInput } from '../src/index.ts';
 import { t } from './helpers/i18n.ts';
 
 const TZ = 'Europe/Moscow';
@@ -65,5 +65,45 @@ describe('личные уведомления присоединившимся (
     expect(expired.text).not.toMatch(/наруш|виноват|УК не/i);
     const answer = renderDeadlineNotice({ ...input, kind: 'breach', title: 'УК сообщит сроки работ', now: at('18:11') }, t);
     expect(answer.text.split('\n')[0]).toBe('Срок по нормативу истёк в 18:10: УК сообщит сроки работ');
+  });
+});
+
+describe('закрытие и «Воды нет — что делать» (F07, F08)', () => {
+  it('уведомление о закрытии: ссылка на итог; с расхождением — своя строка', () => {
+    const closed = renderStatusNotice({ ...base, status: 'closed', statusAt: at('19:40') }, t);
+    expect(closed.text).toBe('✅ Авария закрыта · горячая вода есть\nГорячая вода, Дом 1. Итог и перерасчёт — в «Подробнее»\nМодельные данные');
+    expect(closed.keyboard[0]?.[0]).toMatchObject({ type: 'open_app', payload: 'r_K3f9QpZ2aB' });
+    const disc = renderStatusNotice({ ...base, status: 'closed', unresolved: true }, t);
+    expect(disc.text.split('\n')[0]).toBe('⚠️ Авария закрыта, восстановление подтвердили не все');
+  });
+
+  const nowater = {
+    incidentPublicId: 'K3f9QpZ2aB',
+    service: 'hot_water' as const,
+    adsPhone: '+7 (000) 000-00-01',
+    actNorms: { checkVisitMs: 2 * 3_600_000, actPersons: 2 },
+    withAct: false,
+    telLinks: false,
+    isModel: true,
+    botUsername: 'vsemdomom_bot',
+  };
+
+  it('инструкция ответившему «Нет»: АДС и акт, числа — из справочника норм', () => {
+    const m = renderNoWater(nowater, t);
+    expect(validateBotMessage(m)).toEqual([]);
+    expect(m.text).toMatchInlineSnapshot(`
+      "**Воды нет — что делать**
+      1. Повторно сообщите в АДС: \\+7 (000) 000-00-01
+      2. Если через 2 ч проверки нет, акт могут составить 2 соседа и председатель совета (Правила № 354, пп. 108, 110(1))
+      Модельные данные"
+    `);
+    expect(m.keyboard.map((r) => r.map((b) => `${b.type}:${b.text}`))).toEqual([['callback:Я сообщил в АДС'], ['clipboard:Скопировать номер АДС']]);
+    expect(m.keyboard[0]?.[0]).toMatchObject({ payload: 'v1:ads_again:K3f9QpZ2aB' });
+  });
+
+  it('другая услуга, без норм акта, с кнопкой акта при готовой функции', () => {
+    const m = renderNoWater({ ...nowater, service: 'heating', actNorms: null, withAct: true }, t);
+    expect(m.text.split('\n')).toEqual(['**Нет отопления — что делать**', '1. Повторно сообщите в АДС: \\+7 (000) 000-00-01', 'Модельные данные']);
+    expect(m.keyboard.at(-1)?.[0]).toMatchObject({ type: 'open_app', text: 'Как составить акт', payload: 'a_K3f9QpZ2aB' });
   });
 });

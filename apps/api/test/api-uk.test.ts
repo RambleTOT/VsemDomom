@@ -174,30 +174,34 @@ describe.skipIf(!url)('экраны и действия УК (A7, PostgreSQL + �
   });
 
   it('объединение: «только квартира» переносится в общую аварию того же вида', async () => {
+    // Авария горячей воды уже закрыта по окну проверки (A8) — целью служит открытая авария отопления.
+    expect((await card(hot.id)).inc.status).toBe('closed');
+    const target = (await api.call<UkList>('GET', '/api/v1/uk/incidents', { token: uk })).body.items[0]!;
     const dave = await api.resident(8004, 'dom1model1', 5);
-    const flat = await api.call<IncidentDetail>('POST', '/api/v1/incidents', { token: dave, body: { houseId: 'dom1model1', service: 'hot_water', scope: 'flat' } });
+    const flat = await api.call<IncidentDetail>('POST', '/api/v1/incidents', { token: dave, body: { houseId: 'dom1model1', service: 'heating', scope: 'flat' } });
     expect(flat.status).toBe(201);
     const view = await api.call<UkDetail>('GET', `/api/v1/uk/incidents/${flat.body.id}`, { token: uk });
-    expect(view.body.mergeCandidates.map((c) => c.id)).toEqual([hot.id]);
+    expect(view.body.mergeCandidates.map((c) => c.id)).toEqual([target.id]);
     const merged = await api.call<UkDetail>('POST', `/api/v1/uk/incidents/${flat.body.id}/merge`, {
       token: uk,
-      body: { intoId: hot.id },
+      body: { intoId: target.id },
       headers: { 'if-match': String(flat.body.version) },
     });
     expect(merged.status).toBe(200);
-    expect(merged.body.id).toBe(hot.id);
-    expect(merged.body.participantsCount).toBe(3);
+    expect(merged.body.id).toBe(target.id);
+    expect(merged.body.participantsCount).toBe(2);
     expect(merged.body.timeline[0]).toMatchObject({ type: 'merged', payload: { from: flat.body.id, moved: 1 } });
     const src = await api.call<IncidentDetail>('GET', `/api/v1/incidents/${flat.body.id}`, { token: dave });
-    expect(src.body).toMatchObject({ status: 'merged', displayStatus: 'merged', mergedInto: hot.id });
-    const again = await api.call<Problem>('POST', `/api/v1/uk/incidents/${flat.body.id}/merge`, { token: uk, body: { intoId: hot.id } });
+    expect(src.body).toMatchObject({ status: 'merged', displayStatus: 'merged', mergedInto: target.id });
+    const again = await api.call<Problem>('POST', `/api/v1/uk/incidents/${flat.body.id}/merge`, { token: uk, body: { intoId: target.id } });
     expect(again.body.code).toBe('invalid_transition');
   });
 
   it('дома УК: чат и права бота, итог месяца; демо-блок — только демо-роли', async () => {
     const list = await api.call<{ items: { id: string; chat: { botIsAdmin: boolean } | null; activeIncidents: number }[] }>('GET', '/api/v1/uk/houses', { token: uk });
     expect(list.body.items.map((h) => h.id)).toEqual(['dom1model1', 'dom2model2', 'dom3model3', 'dom4model4']);
-    expect(list.body.items[0]).toMatchObject({ chat: { botIsAdmin: true }, activeIncidents: 2 });
+    // Горячая вода закрыта по окну проверки; открыта авария отопления.
+    expect(list.body.items[0]).toMatchObject({ chat: { botIsAdmin: true }, activeIncidents: 1 });
     const detail = await api.call<{ monthlySummary: { incidents: number } | null; demo: unknown; month: { scope: string } }>('GET', '/api/v1/uk/houses/dom1model1', { token: uk });
     expect(detail.status).toBe(200);
     expect(detail.body.month.scope).toBe('house');

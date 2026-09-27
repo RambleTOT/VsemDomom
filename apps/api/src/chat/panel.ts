@@ -12,6 +12,8 @@ import type { JobContext } from '../jobs/context.ts';
 import { enqueueOutbound } from '../jobs/outbound.ts';
 import { QUEUES, type JobQueue, type TxLike } from '../jobs/queue.ts';
 import { MaxApiError } from '../max/types.ts';
+import { loadIncidentBundle } from '../services/incident-view.ts';
+import { computeResult } from '../services/result.ts';
 
 /** Правка панели — не чаще раза в окно на дом (F11). */
 export async function panelLater(queue: JobQueue, houseId: number, tx?: TxLike): Promise<void> {
@@ -33,17 +35,23 @@ export async function buildPanel(ctx: JobContext, houseId: number): Promise<BotM
     .where(and(eq(incident.houseId, houseId), inArray(incident.status, [...OPEN_STATUSES]), ne(incident.scope, 'flat')))
     .orderBy(asc(incident.startedAt));
   const [last] = await ctx.db
-    .select({ serviceType: incident.serviceType, closedAt: incident.closedAt, overdue: incident.overdue })
+    .select({ id: incident.id, serviceType: incident.serviceType, closedAt: incident.closedAt, overdue: incident.overdue, single: incident.singleLimitExceeded })
     .from(incident)
     .where(and(eq(incident.houseId, houseId), eq(incident.status, 'closed'), ne(incident.scope, 'flat')))
     .orderBy(desc(incident.closedAt))
     .limit(1);
   const first = active[0];
+  // «Устранено в норматив» — как в карточке и итоге: сроки УК, единовременный лимит и месячная норма квартир.
+  let inNorm = false;
+  if (last) {
+    const bundle = last.overdue || last.single ? null : await loadIncidentBundle(ctx.db, last.id);
+    inNorm = bundle !== null && (await computeResult(ctx.db, bundle, ctx.clock.now())).eligible === null;
+  }
   return renderPanel(
     {
       house: { publicId: row.house.publicId, label: row.house.label, address: row.house.address, timezone: row.house.timezone, isModel: row.house.isModel },
       active: first ? { service: first.serviceType, startedAt: first.startedAt, count: active.length } : null,
-      lastResult: last?.closedAt ? { closedAt: last.closedAt, service: last.serviceType, inNorm: !last.overdue } : null,
+      lastResult: last?.closedAt ? { closedAt: last.closedAt, service: last.serviceType, inNorm } : null,
       membersCount: row.chat.participantsCount,
       botUsername: ctx.config.max.botUsername,
       now: ctx.clock.now(),

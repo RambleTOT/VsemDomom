@@ -20,8 +20,6 @@ export function registerApiRoutes(app: FastifyInstance, deps: ApiDeps): void {
 /** Операции контракта, которые ещё не реализованы, и задача, в которой появятся (docs/STREAM_A.md). */
 export const PENDING_OPERATIONS: Partial<Record<OperationId, string>> = {
   demoUkRole: 'A10',
-  postObservation: 'A8',
-  getIncidentResult: 'A8',
   recalculate: 'A9',
   sendApplicationToDm: 'A9',
   actReady: 'A13',

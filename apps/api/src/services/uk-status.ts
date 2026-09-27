@@ -24,7 +24,9 @@ import type { JobContext } from '../jobs/context.ts';
 import { enqueueOutbound } from '../jobs/outbound.ts';
 import type { TxLike } from '../jobs/queue.ts';
 import { ServiceError } from './errors.ts';
+import { scheduleCheckJob } from './check.ts';
 import { notifyLater } from './notify.ts';
+import { checkWindowMs } from './policy.ts';
 
 type Tx = Executor & TxLike;
 type IncidentRow = typeof incident.$inferSelect;
@@ -158,6 +160,8 @@ export async function applyUkStatus(ctx: JobContext, input: UkStatusInput): Prom
           break;
         case 'start_check':
           update.checkStartedAt = now;
+          // Окно проверки: без «Нет» по его истечении авария закроется (правило F07 (б)).
+          if (h) after.push((x) => scheduleCheckJob(ctx.queue, inc.id, new Date(now.getTime() + checkWindowMs(ctx.config, h)), x));
           break;
         case 'post_check_question':
           after.push((x) => postCheckQuestion(x, ctx, inc, now));

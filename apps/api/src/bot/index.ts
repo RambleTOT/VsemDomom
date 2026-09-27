@@ -8,9 +8,11 @@ import { sendOutbound } from '../jobs/outbound.ts';
 import { baseHandlers, mergeHandlers, type UpdateHandlers } from '../jobs/process-update.ts';
 import { QUEUES } from '../jobs/queue.ts';
 import type { JobHandlers } from '../jobs/runtime.ts';
+import { checkTimerJob, type CheckJob } from '../services/check.ts';
 import { deadlineJob, type DeadlineJob } from '../services/deadline-timers.ts';
 import { notifyJob, type NotifyJob } from '../services/notify.ts';
 import type { CallbackAnswerJob } from './dm.ts';
+import { onAdsAgain, onCrewNo, onCrewYes, onRestore } from './check.ts';
 import { onJoin, onMute, onNotMe } from './incident.ts';
 import {
   adsReminderJob,
@@ -31,6 +33,10 @@ export const botRouting: BotRouting = {
     join: onJoin,
     notme: onNotMe,
     mute: onMute,
+    restore: onRestore,
+    crew_yes: onCrewYes,
+    crew_no: onCrewNo,
+    ads_again: onAdsAgain,
     rep_service: onReportService,
     rep_when: onReportWhen,
     rep_where: onReportWhere,
@@ -52,4 +58,5 @@ export const botJobHandlers: JobHandlers = {
   [QUEUES.adsReminder]: (data: { incidentId: number; userId: number }, ctx) => adsReminderJob(ctx, data),
   [QUEUES.deadline]: (data: DeadlineJob, ctx) => deadlineJob(ctx, data),
   [QUEUES.notify]: (data: NotifyJob, ctx) => notifyJob(ctx, data),
+  [QUEUES.check]: (data: CheckJob, ctx) => checkTimerJob(ctx, data),
 };
