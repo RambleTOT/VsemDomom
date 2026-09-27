@@ -15,7 +15,8 @@ export type AuditAction =
   | 'demo_time_shift'
   | 'demo_reset'
   | 'resident_confirm'
-  | 'resident_reject';
+  | 'resident_reject'
+  | 'sandbox_reset';
 
 export interface AuditEntry {
   /** staff:<userId> — сотрудник УК (в том числе демо-роль и checker-УК); user:<userId> — пользователь. */

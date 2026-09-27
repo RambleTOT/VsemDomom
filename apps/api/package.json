@@ -20,7 +20,8 @@
     "max:subscribe": "node --conditions=source src/scripts/max.ts subscribe",
     "max:unsubscribe": "node --conditions=source src/scripts/max.ts unsubscribe",
     "max:subscriptions": "node --conditions=source src/scripts/max.ts subscriptions",
-    "max:commands": "node --conditions=source src/scripts/max.ts commands"
+    "max:commands": "node --conditions=source src/scripts/max.ts commands",
+    "data-api:run": "node --conditions=source src/scripts/data-api.ts"
   },
   "dependencies": {
     "@date-fns/tz": "1.5.0",
@@ -36,6 +37,7 @@
     "pg": "8.23.0",
     "pg-boss": "12.34.0",
     "pino": "10.3.1",
+    "yaml": "2.9.1",
     "zod": "4.6.5"
   },
   "devDependencies": {

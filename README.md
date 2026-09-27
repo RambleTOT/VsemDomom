@@ -61,7 +61,8 @@ DATABASE_URL=postgres://localhost:5432/vsemdomom_dev pnpm db:migrate
 | `db/migrations`, `seeds` | Миграции drizzle и модельные данные |
 | `infra` | Caddy, override для стенда, сертификаты Минцифры |
 | `design/handoff` | Пакет дизайна |
-| `docs` | Контракт API, проверки MAX, задачи потоков |
+| `docs` | Контракт API (`docs/api/openapi.yaml`), проверки DATA-API (`docs/api/DATA-API.yaml`), данные, проверки MAX, задачи потоков |
+| `tools/data-api` | Валидатор DATA-API организаторов (запускается в CI) |
 
 ## Лицензия
 

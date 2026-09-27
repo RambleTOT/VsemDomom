@@ -22,12 +22,13 @@ import { PARAMS } from '../config/params.ts';
 import type { Executor } from '../db/client.ts';
 import { loadNorms } from '../db/norms.ts';
 import type { HouseRow } from '../db/queries.ts';
-import { deadline, house, incident, incidentEvent, incidentParticipant, managementCompany, maxUser, outboundMessage, residency, staff } from '../db/schema.ts';
+import { deadline, house, incident, incidentEvent, incidentParticipant, managementCompany, maxUser, residency, staff } from '../db/schema.ts';
 import { modelUserId, reseedHouseHistory } from '../db/seed.ts';
 import type { JobContext } from '../jobs/context.ts';
 import { audit, staffActor, userActor } from './audit.ts';
 import { breachDeadline, scheduleDeadlineJobs } from './deadline-timers.ts';
 import { scheduleDemoAnswers } from './demo-answers.ts';
+import { removeIncidents } from './incident-removal.ts';
 
 type Reader = Pick<Executor, 'select'>;
 type IncidentRow = typeof incident.$inferSelect;
@@ -214,14 +215,7 @@ export async function resetDemoHouse(ctx: JobContext, input: { house: HouseRow; 
   return ctx.db.transaction(async (tx) => {
     const rows = await tx.select({ id: incident.id }).from(incident).where(and(eq(incident.houseId, h.id), eq(incident.isModel, false)));
     const ids = rows.map((r) => r.id);
-    if (ids.length > 0) {
-      await tx
-        .update(outboundMessage)
-        .set({ status: 'skipped', payload: null })
-        .where(and(inArray(outboundMessage.incidentId, ids), eq(outboundMessage.status, 'pending')));
-      // Одним запросом: объединённые аварии ссылаются друг на друга.
-      await tx.delete(incident).where(inArray(incident.id, ids));
-    }
+    await removeIncidents(tx, ids);
     const history = await reseedHouseHistory(tx, { seedsDir: input.seedsDir, house: h, now, log: ctx.log });
     await panelLater(ctx.queue, h.id, tx);
     await audit(tx, { actor: staffActor(input.staffUserId), action: 'demo_reset', entity: 'house', entityId: h.publicId, at: now });

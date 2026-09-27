@@ -1,0 +1,29 @@
+{
+  "note": "Дом-песочница и роли проверок DATA-API — те же значения, что в seeds/houses.json и seeds/checker.json (сверяет тест). Токены ролей — секреты окружения, здесь только имена переменных.",
+  "house": {
+    "publicId": "dom5sandbx",
+    "label": "5",
+    "address": "ул. Модельная, 5 (песочница API)",
+    "entrances": 4,
+    "floors": 9,
+    "flatsPerFloor": 4,
+    "flatFrom": 1,
+    "flatTo": 144
+  },
+  "roles": {
+    "resident": {
+      "tokenEnv": "CHECKER_TOKEN_RESIDENT",
+      "flatNo": 1,
+      "role": "owner"
+    },
+    "resident2": {
+      "tokenEnv": "CHECKER_TOKEN_RESIDENT_2",
+      "flatNo": 5,
+      "role": "renter"
+    },
+    "uk": {
+      "tokenEnv": "CHECKER_TOKEN_UK",
+      "staffRole": "dispatcher"
+    }
+  }
+}

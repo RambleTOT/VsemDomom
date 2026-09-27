@@ -41,3 +41,4 @@ Thumbs.db
 .pnpm-store/
 .cache/
 *.log
+.venv*/

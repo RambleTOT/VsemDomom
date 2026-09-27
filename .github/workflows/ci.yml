@@ -47,6 +47,11 @@ jobs:
       - run: pnpm test
       - name: openapi.yaml совпадает со сгенерированным
         run: pnpm openapi:check
+      - name: DATA-API (валидатор организаторов)
+        run: |
+          python3 -m venv "$RUNNER_TEMP/data-api"
+          "$RUNNER_TEMP/data-api/bin/pip" install --quiet -r tools/data-api/requirements.lock.txt
+          "$RUNNER_TEMP/data-api/bin/python" tools/data-api/validate_data_api.py docs/api/DATA-API.yaml
       - name: Лицензии зависимостей
         run: pnpm license-check
       - name: Уязвимости (high и critical блокируют)

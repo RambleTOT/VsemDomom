@@ -1,0 +1,280 @@
+# DATA-API 1.0 — обязательные проверки API «Всем домом».
+# Секретов здесь нет: токены ролей передаются проверяющим отдельно (служебный слайд).
+# Роли: resident — CHECKER_TOKEN_RESIDENT, resident2 — CHECKER_TOKEN_RESIDENT_2, uk — CHECKER_TOKEN_UK;
+# заголовок Authorization: Bearer <токен>. Токены работают только с домом-песочницей dom5sandbx:
+# в ней «Устранено» сразу закрывает аварию, чата и сообщений нет, поэтому цепочку можно
+# повторять сколько угодно раз. Тестовые данные — docs/api/test-data/.
+# baseUrl — адрес стенда без /api/v1 (заменяется при развёртывании стенда).
+
+schemaVersion: "1.0"
+
+solution:
+  name: "Всем домом"
+
+api:
+  baseUrl: "https://app.vsemdomom.example"
+  openapi: "./openapi.yaml"
+  defaultHeaders:
+    Accept: "application/json"
+
+checks:
+  - id: "sandbox-reset"
+    name: "Чистая песочница перед цепочкой"
+    description: "Удаляет аварии дома-песочницы, если прошлый прогон оборвался посередине"
+    method: "POST"
+    path: "/api/v1/sandbox/reset"
+    role: "uk"
+    expected:
+      statusCodes: [204]
+    timeoutMs: 5000
+    repeatable: true
+
+  - id: "health"
+    name: "API доступен"
+    method: "GET"
+    path: "/api/v1/health"
+    role: "public"
+    expected:
+      statusCodes: [200]
+      contentType: "application/json"
+      requiredFields: ["status"]
+    timeoutMs: 5000
+    repeatable: true
+
+  - id: "norms-hot-water"
+    name: "Нормативы горячей воды с основаниями"
+    method: "GET"
+    path: "/api/v1/norms"
+    role: "resident"
+    request:
+      query:
+        service: "hot_water"
+    expected:
+      statusCodes: [200]
+      contentType: "application/json"
+      bodySchema:
+        type: "array"
+        minItems: 1
+        items:
+          type: "object"
+          required: ["code", "value", "unit", "basis"]
+    timeoutMs: 5000
+    repeatable: true
+
+  - id: "incident-create-unauthorized"
+    name: "Сообщить об аварии без входа — 401"
+    method: "POST"
+    path: "/api/v1/incidents"
+    role: "public"
+    request:
+      headers:
+        Content-Type: "application/json"
+      body:
+        houseId: "dom5sandbx"
+        service: "hot_water"
+        scope: "house"
+        startedPreset: "now"
+    expected:
+      statusCodes: [401]
+      contentType: "application/problem+json"
+      requiredFields: ["type", "title", "status", "code"]
+    timeoutMs: 5000
+    repeatable: true
+
+  - id: "incident-create"
+    name: "Житель сообщает об аварии"
+    method: "POST"
+    path: "/api/v1/incidents"
+    role: "resident"
+    dependsOn: ["sandbox-reset"]
+    request:
+      headers:
+        Content-Type: "application/json"
+      body:
+        houseId: "dom5sandbx"
+        service: "hot_water"
+        scope: "house"
+        startedPreset: "now"
+    expected:
+      statusCodes: [201]
+      contentType: "application/json"
+      requiredFields: ["id", "status", "deadlines"]
+      bodySchema:
+        type: "object"
+        required: ["id", "status", "deadlines"]
+        properties:
+          status:
+            const: "open"
+          deadlines:
+            type: "array"
+            minItems: 1
+    timeoutMs: 5000
+    repeatable: false
+    extract:
+      incidentId: "$.id"
+
+  - id: "incident-join"
+    name: "Второй житель: «У меня тоже»"
+    method: "POST"
+    path: "/api/v1/incidents/{id}/join"
+    role: "resident2"
+    dependsOn: ["incident-create"]
+    request:
+      path:
+        id: "${incidentId}"
+      headers:
+        Content-Type: "application/json"
+      body: {}
+    expected:
+      statusCodes: [200]
+      contentType: "application/json"
+      requiredFields: ["participantsCount", "joinResult"]
+      bodySchema:
+        type: "object"
+        required: ["participantsCount"]
+        properties:
+          participantsCount:
+            type: "integer"
+            minimum: 2
+    timeoutMs: 5000
+    repeatable: true
+
+  - id: "uk-status-by-resident"
+    name: "Житель не может менять статус УК — 403"
+    method: "POST"
+    path: "/api/v1/uk/incidents/{id}/status"
+    role: "resident"
+    dependsOn: ["incident-create"]
+    request:
+      path:
+        id: "${incidentId}"
+      headers:
+        Content-Type: "application/json"
+      body:
+        status: "accepted"
+        eta: "2030-01-01T09:00:00Z"
+    expected:
+      statusCodes: [403]
+      contentType: "application/problem+json"
+      requiredFields: ["code"]
+    timeoutMs: 5000
+    repeatable: true
+
+  - id: "uk-accept"
+    name: "УК: «Принято» с ориентиром"
+    method: "POST"
+    path: "/api/v1/uk/incidents/{id}/status"
+    role: "uk"
+    dependsOn: ["incident-create"]
+    request:
+      path:
+        id: "${incidentId}"
+      headers:
+        Content-Type: "application/json"
+      body:
+        status: "accepted"
+        eta: "2030-01-01T09:00:00Z"
+    expected:
+      statusCodes: [200]
+      contentType: "application/json"
+      requiredFields: ["id", "status", "version"]
+      bodySchema:
+        type: "object"
+        required: ["status"]
+        properties:
+          status:
+            const: "accepted"
+    timeoutMs: 5000
+    repeatable: false
+
+  - id: "uk-resolve"
+    name: "УК: «Устранено» (в песочнице авария сразу закрывается)"
+    method: "POST"
+    path: "/api/v1/uk/incidents/{id}/status"
+    role: "uk"
+    dependsOn: ["uk-accept"]
+    request:
+      path:
+        id: "${incidentId}"
+      headers:
+        Content-Type: "application/json"
+      body:
+        status: "resolved"
+    expected:
+      statusCodes: [200]
+      contentType: "application/json"
+      requiredFields: ["id", "status"]
+      bodySchema:
+        type: "object"
+        required: ["status"]
+        properties:
+          status:
+            enum: ["checking", "closed"]
+    timeoutMs: 5000
+    repeatable: false
+
+  - id: "incident-read"
+    name: "Житель видит статус и хронологию"
+    method: "GET"
+    path: "/api/v1/incidents/{id}"
+    role: "resident"
+    dependsOn: ["uk-resolve"]
+    request:
+      path:
+        id: "${incidentId}"
+    expected:
+      statusCodes: [200]
+      contentType: "application/json"
+      requiredFields: ["id", "status", "timeline", "deadlines"]
+      bodySchema:
+        type: "object"
+        required: ["status", "timeline"]
+        properties:
+          status:
+            enum: ["checking", "closed"]
+          timeline:
+            type: "array"
+            contains:
+              type: "object"
+              required: ["type"]
+              properties:
+                type:
+                  const: "uk_accepted"
+    timeoutMs: 5000
+    repeatable: true
+
+  - id: "recalculation"
+    name: "Расчёт перерасчёта по нормам"
+    method: "POST"
+    path: "/api/v1/incidents/{id}/recalculation"
+    role: "resident"
+    dependsOn: ["uk-resolve"]
+    request:
+      path:
+        id: "${incidentId}"
+      headers:
+        Content-Type: "application/json"
+      body:
+        monthlyCharge: 1200
+    expected:
+      statusCodes: [200]
+      contentType: "application/json"
+      requiredFields: ["excessHours", "ratePercent", "amount", "disclaimer"]
+      bodySchema:
+        type: "object"
+        required: ["excessHours", "ratePercent", "amount", "disclaimer"]
+        properties:
+          amount:
+            type: "number"
+            minimum: 0
+    timeoutMs: 5000
+    repeatable: true
+
+cleanup:
+  - id: "sandbox-cleanup"
+    method: "POST"
+    path: "/api/v1/sandbox/reset"
+    role: "uk"
+    expected:
+      statusCodes: [204]
+    timeoutMs: 5000

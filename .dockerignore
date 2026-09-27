@@ -9,6 +9,7 @@ CLAUDE.local.md
 **/coverage
 docs
 design
+tools
 apps/miniapp/e2e
 playwright-report
 test-results
