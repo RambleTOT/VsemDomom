@@ -2,7 +2,7 @@
  * Доступ (раздел 11 ТЗ): житель — только дом, где у него проживание; УК — только дома своей УК;
  * checker-токены — только дом-песочница (для остальных песочница скрыта).
  */
-import { and, eq } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import type { Principal } from '../auth/principal.ts';
 import type { Executor } from '../db/client.ts';
 import { houseByPublicId, residenciesOf, staffOf, userById, type HouseRow, type ResidencyRow, type UserRow } from '../db/queries.ts';
@@ -18,11 +18,19 @@ export interface Viewer {
   user: UserRow | null;
   residencies: { residency: ResidencyRow; house: HouseRow }[];
   staffUkIds: number[];
+  staff: { ukId: number; isDemo: boolean; isChecker: boolean }[];
 }
 
 export async function loadViewer(db: Reader, principal: Principal): Promise<Viewer> {
   const [user, residencies, staff] = await Promise.all([userById(db, principal.userId), residenciesOf(db, principal.userId), staffOf(db, principal.userId)]);
-  return { principal, userId: principal.userId, user, residencies, staffUkIds: staff.map((s) => s.uk.id) };
+  return {
+    principal,
+    userId: principal.userId,
+    user,
+    residencies,
+    staffUkIds: staff.map((s) => s.uk.id),
+    staff: staff.map((s) => ({ ukId: s.uk.id, isDemo: s.staff.isDemo, isChecker: s.staff.isChecker })),
+  };
 }
 
 export function residencyIn(viewer: Viewer, houseId: number): ResidencyRow | null {
@@ -59,6 +67,25 @@ export function assertResident(viewer: Viewer, h: HouseRow): ResidencyRow {
   const res = residencyIn(viewer, h.id);
   if (!res) throw new ApiError(403, 'not_resident', 'Действие доступно жителям дома', 'Укажите дом и квартиру в профиле');
   return res;
+}
+
+/** Экраны УК: нужна роль сотрудника. */
+export function assertStaffAny(viewer: Viewer): void {
+  if (viewer.staffUkIds.length === 0) throw new ApiError(403, 'not_staff', 'Доступно сотрудникам УК');
+}
+
+/** Дом своей УК (песочница — только проверяющим). */
+export function assertStaffOf(viewer: Viewer, h: HouseRow): void {
+  assertStaffAny(viewer);
+  if (!sandboxAllowed(viewer, h)) throw notFound('Дом не найден');
+  if (!isStaffOf(viewer, h)) throw new ApiError(403, 'not_staff', 'Дом другой УК');
+}
+
+/** Дома УК сотрудника, которые ему видны. */
+export async function staffHouses(db: Reader, viewer: Viewer): Promise<HouseRow[]> {
+  if (viewer.staffUkIds.length === 0) return [];
+  const rows = await db.select().from(house).where(inArray(house.ukId, viewer.staffUkIds)).orderBy(asc(house.label));
+  return rows.filter((h) => sandboxAllowed(viewer, h));
 }
 
 export function incidentViewer(viewer: Viewer, h: HouseRow): IncidentViewer {

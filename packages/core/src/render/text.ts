@@ -30,8 +30,12 @@ export function serviceGen(t: Translator, service: ServiceType): string {
   return t.t(`service_gen.${SERVICE_I18N_KEY[service]}`);
 }
 
+/** «Нет горячей воды» → «нет горячей воды»; аббревиатуры («УК сообщит…») не меняются. */
 export function lowerFirst(text: string): string {
-  return text.length === 0 ? text : `${text[0]?.toLowerCase() ?? ''}${text.slice(1)}`;
+  const [first, second] = text;
+  if (first === undefined) return text;
+  if (second !== undefined && second !== second.toLowerCase()) return text;
+  return `${first.toLowerCase()}${text.slice(1)}`;
 }
 
 /** Строки сообщения: пустые (необязательные) пропускаются. */

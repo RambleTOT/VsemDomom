@@ -28,6 +28,7 @@ import type { JobContext } from '../jobs/context.ts';
 import { enqueueOutbound } from '../jobs/outbound.ts';
 import { QUEUES } from '../jobs/queue.ts';
 import { newPublicId } from '../util/ids.ts';
+import { scheduleDeadlineJobs } from './deadline-timers.ts';
 
 export type IncidentRow = typeof incident.$inferSelect;
 type HouseRow = typeof house.$inferSelect;
@@ -129,6 +130,7 @@ export async function createIncident(ctx: JobContext, input: CreateIncidentInput
         })
         .returning();
       if (!row) throw new Error('авария не создана');
+      const [author] = await tx.select({ notifyDefault: maxUser.notifyDefault }).from(maxUser).where(eq(maxUser.id, input.reporter.userId));
       await tx.insert(incidentParticipant).values({
         incidentId: row.id,
         userId: input.reporter.userId,
@@ -136,6 +138,7 @@ export async function createIncident(ctx: JobContext, input: CreateIncidentInput
         entrance: loc.entrance,
         floor: loc.floor,
         trustLevelAtJoin: input.reporter.residency?.trustLevel ?? 0,
+        notify: author?.notifyDefault ?? true,
         joinedAt: now,
       });
       await tx.insert(incidentEvent).values({
@@ -153,7 +156,10 @@ export async function createIncident(ctx: JobContext, input: CreateIncidentInput
         houseContext(h),
         { warnBeforeMs: PARAMS.deadlineWarnMin * MS_PER_MINUTE },
       );
-      if (plans.length > 0) await tx.insert(deadline).values(deadlineRows(row.id, plans));
+      if (plans.length > 0) {
+        const rows = await tx.insert(deadline).values(deadlineRows(row.id, plans)).returning();
+        await scheduleDeadlineJobs(ctx.queue, rows, now, tx);
+      }
 
       // Карточка в чат дома: не для «только квартира» и не для песочницы.
       const [chat] = input.scope === 'flat' || h.isSandbox ? [] : await tx.select().from(houseChat).where(eq(houseChat.houseId, h.id));
@@ -221,7 +227,7 @@ export async function joinIncident(ctx: JobContext, input: JoinInput): Promise<J
       trust = 1;
     }
     const loc = locate(h, res ?? null, { entrance: input.entrance, floor: input.floor ?? null, preferExplicit: input.preferExplicit ?? false });
-    const [user] = await tx.select({ dialogActive: maxUser.dialogActive }).from(maxUser).where(eq(maxUser.id, input.userId));
+    const [user] = await tx.select({ dialogActive: maxUser.dialogActive, notifyDefault: maxUser.notifyDefault }).from(maxUser).where(eq(maxUser.id, input.userId));
     const base = { registered: Boolean(res), dialogActive: user?.dialogActive ?? false };
 
     const [existing] = await tx
@@ -240,6 +246,7 @@ export async function joinIncident(ctx: JobContext, input: JoinInput): Promise<J
           entrance: loc.entrance,
           floor: loc.floor,
           trustLevelAtJoin: trust,
+          notify: user?.notifyDefault ?? true,
           joinedAt: now,
         })
         .onConflictDoNothing()
@@ -351,10 +358,13 @@ export async function registerAds(
         );
         // Пересчитываются только невыполненные сроки, отсчитанные от сообщения.
         for (const p of plans.filter((plan) => plan.anchor === 'ads_registration')) {
-          await tx
+          const moved = await tx
             .update(deadline)
-            .set({ dueAt: p.dueAt, warnAt: p.warnAt })
-            .where(and(eq(deadline.incidentId, current.id), eq(deadline.kind, p.kind), eq(deadline.status, 'pending')));
+            .set({ dueAt: p.dueAt, warnAt: p.warnAt, warnedAt: null })
+            .where(and(eq(deadline.incidentId, current.id), eq(deadline.kind, p.kind), eq(deadline.status, 'pending')))
+            .returning();
+          // Старые задачи сверятся со сроком сами; новые — на пересчитанные времена.
+          await scheduleDeadlineJobs(ctx.queue, moved, now, tx);
         }
       }
     }

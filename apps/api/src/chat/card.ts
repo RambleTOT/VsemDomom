@@ -4,7 +4,7 @@
  * при изменении текста или кнопок. Пропавшая карточка публикуется заново (вне бюджета трёх сообщений).
  */
 import { randomUUID } from 'node:crypto';
-import { isActualAnswer, participantCounts, renderCard, type CardInput } from '@vsemdomom/core';
+import { isActualAnswer, participantCounts, renderCard, renderCheckQuestion, type CardInput } from '@vsemdomom/core';
 import { and, eq, sql } from 'drizzle-orm';
 import { PARAMS } from '../config/params.ts';
 import type { Executor } from '../db/client.ts';
@@ -95,8 +95,44 @@ export async function renderCardFor(db: Reader, ctx: JobContext, incidentId: num
 
 export type CardJobResult = 'edited' | 'unchanged' | 'skipped' | 'replaced';
 
+/**
+ * Вопрос о восстановлении (C03) правится, а не пишется заново: при повторном «Устранено»
+ * вторая строка — «Повторная проверка, УК: …». Правка — только при изменении.
+ */
+async function checkQuestionJob(ctx: JobContext, card: typeof chatCard.$inferSelect): Promise<void> {
+  if (!card.checkMid) return;
+  const [row] = await ctx.db.select({ incident, house }).from(incident).innerJoin(house, eq(house.id, incident.houseId)).where(eq(incident.id, card.incidentId));
+  if (!row?.incident.resolvedAtUk) return;
+  const [repeat] = await ctx.db
+    .select({ id: incidentEvent.id })
+    .from(incidentEvent)
+    .where(and(eq(incidentEvent.incidentId, card.incidentId), eq(incidentEvent.type, 'check_repeated')))
+    .limit(1);
+  const message = renderCheckQuestion(
+    {
+      incidentPublicId: row.incident.publicId,
+      service: row.incident.serviceType,
+      resolvedAt: row.incident.resolvedAtUk,
+      recheck: repeat !== undefined,
+      house: { timezone: row.house.timezone, isModel: row.house.isModel },
+      now: ctx.clock.now(),
+    },
+    ctx.i18n,
+  );
+  const hash = messageHash(message);
+  if (hash === card.checkRenderHash) return;
+  try {
+    await ctx.max.editMessage(card.checkMid, message, { chatId: card.chatId });
+    await ctx.db.update(chatCard).set({ checkRenderHash: hash }).where(eq(chatCard.incidentId, card.incidentId));
+  } catch (err) {
+    if (!(err instanceof MaxApiError) || err.retryable) throw err;
+    ctx.log.warn({ incidentId: card.incidentId, kind: err.kind }, 'вопрос о восстановлении не обновлён');
+  }
+}
+
 export async function cardJob(ctx: JobContext, data: { incidentId: number }): Promise<CardJobResult> {
   const [card] = await ctx.db.select().from(chatCard).where(eq(chatCard.incidentId, data.incidentId));
+  if (card) await checkQuestionJob(ctx, card);
   // Нет карточки или публикация ещё в очереди: после отправки задача поставится снова.
   if (!card?.mid) return 'skipped';
   const built = await renderCardFor(ctx.db, ctx, data.incidentId);

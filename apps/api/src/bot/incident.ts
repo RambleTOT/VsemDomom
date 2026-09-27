@@ -4,6 +4,8 @@
  * начинал ли он диалог с ботом.
  */
 import { botLink, isOpenStatus, serviceOk } from '@vsemdomom/core';
+import { and, eq } from 'drizzle-orm';
+import { incidentParticipant } from '../db/schema.ts';
 import { joinIncident, incidentByPublicId, markNotAffected } from '../services/incidents.ts';
 import { chatOfHouse } from '../db/queries.ts';
 import type { CallbackHandler } from './types.ts';
@@ -30,4 +32,15 @@ export const onNotMe: CallbackHandler = async (e, ctx) => {
   if (!isOpenStatus(inc.status)) return ctx.i18n.t('bot.answer.closed');
   await markNotAffected(ctx, { incident: inc, userId: e.userId, source: 'bot' });
   return ctx.i18n.t('bot.answer.not_me', { service_ok: serviceOk(ctx.i18n, inc.serviceType) });
+};
+
+/** «Не присылать» в личном уведомлении: выключить «Уведомлять меня» по этой аварии. */
+export const onMute: CallbackHandler = async (e, ctx) => {
+  const inc = e.payload.id ? await incidentByPublicId(ctx.db, e.payload.id) : null;
+  if (!inc) return ctx.i18n.t('bot.answer.expired');
+  await ctx.db
+    .update(incidentParticipant)
+    .set({ notify: false })
+    .where(and(eq(incidentParticipant.incidentId, inc.id), eq(incidentParticipant.userId, e.userId)));
+  return ctx.i18n.t('bot.answer.muted');
 };

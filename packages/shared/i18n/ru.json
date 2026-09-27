@@ -704,5 +704,14 @@
   "plural.flats_gen.few": "квартир",
   "plural.flats_gen.many": "квартир",
   "bot.dm.ads.too_late": "УК уже отметила устранение. Если услуги нет — ответьте «Нет» на вопрос в чате дома",
-  "bot.answer.cancelled": "Отменили"
+  "bot.answer.cancelled": "Отменили",
+  "bot.dm.status.accepted_no_eta": "{marker} УК приняла аварию",
+  "bot.dm.status.brigade": "{marker} Бригада УК на месте с {time}",
+  "bot.dm.status.localized": "{marker} Авария локализована в {time}",
+  "bot.dm.status.resolved": "{marker} УК отметила устранение в {time}",
+  "bot.dm.status.l2.eta": "{service}, Дом {house}. Ориентир УК {eta}",
+  "bot.dm.status.l2.plain": "{service}, Дом {house}",
+  "bot.dm.status.l2.resolved": "{service}, Дом {house}. {restore_question} Ответьте в чате дома или в «Подробнее»",
+  "bot.dm.timer.l2": "{service}, Дом {house}",
+  "bot.answer.muted": "Больше не пришлём уведомлений по этой аварии"
 }

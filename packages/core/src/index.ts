@@ -24,5 +24,6 @@ export * from './render/card.ts';
 export * from './render/check.ts';
 export * from './render/result.ts';
 export * from './render/report.ts';
+export * from './render/notify.ts';
 export * from './incident/counts.ts';
 export * from './incident/started.ts';

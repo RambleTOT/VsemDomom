@@ -8,8 +8,10 @@ import { sendOutbound } from '../jobs/outbound.ts';
 import { baseHandlers, mergeHandlers, type UpdateHandlers } from '../jobs/process-update.ts';
 import { QUEUES } from '../jobs/queue.ts';
 import type { JobHandlers } from '../jobs/runtime.ts';
+import { deadlineJob, type DeadlineJob } from '../services/deadline-timers.ts';
+import { notifyJob, type NotifyJob } from '../services/notify.ts';
 import type { CallbackAnswerJob } from './dm.ts';
-import { onJoin, onNotMe } from './incident.ts';
+import { onJoin, onMute, onNotMe } from './incident.ts';
 import {
   adsReminderJob,
   onAdsFail,
@@ -28,6 +30,7 @@ export const botRouting: BotRouting = {
     ...registrationCallbacks,
     join: onJoin,
     notme: onNotMe,
+    mute: onMute,
     rep_service: onReportService,
     rep_when: onReportWhen,
     rep_where: onReportWhere,
@@ -47,4 +50,6 @@ export const botJobHandlers: JobHandlers = {
   [QUEUES.panelRender]: (data: PanelJob, ctx) => panelJob(ctx, data),
   [QUEUES.cardRender]: (data: { incidentId: number }, ctx) => cardJob(ctx, data),
   [QUEUES.adsReminder]: (data: { incidentId: number; userId: number }, ctx) => adsReminderJob(ctx, data),
+  [QUEUES.deadline]: (data: DeadlineJob, ctx) => deadlineJob(ctx, data),
+  [QUEUES.notify]: (data: NotifyJob, ctx) => notifyJob(ctx, data),
 };

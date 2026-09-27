@@ -6,6 +6,7 @@ import { registerHouseRoutes } from './houses.ts';
 import { registerIncidentRoutes } from './incidents.ts';
 import { registerMeRoutes } from './me.ts';
 import { registerNormRoutes } from './norms.ts';
+import { registerUkRoutes } from './uk.ts';
 
 export function registerApiRoutes(app: FastifyInstance, deps: ApiDeps): void {
   registerAuthRoutes(app, deps);
@@ -13,6 +14,7 @@ export function registerApiRoutes(app: FastifyInstance, deps: ApiDeps): void {
   registerHouseRoutes(app, deps);
   registerNormRoutes(app, deps);
   registerIncidentRoutes(app, deps);
+  registerUkRoutes(app, deps);
 }
 
 /** Операции контракта, которые ещё не реализованы, и задача, в которой появятся (docs/STREAM_A.md). */
@@ -27,14 +29,6 @@ export const PENDING_OPERATIONS: Partial<Record<OperationId, string>> = {
   getOwnerInvite: 'A11',
   confirmOwnerInvite: 'A11',
   rejectOwnerInvite: 'A11',
-  ukListIncidents: 'A7',
-  ukGetIncident: 'A7',
-  ukSetStatus: 'A7',
-  ukMerge: 'A7',
-  ukListHouses: 'A7',
-  ukGetHouse: 'A7',
-  ukGetChatBinding: 'A7',
-  ukBindChat: 'A7',
   ukHeatmap: 'A13',
   ukStartHeatingPoll: 'A13',
   ukListResidents: 'A11',

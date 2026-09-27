@@ -105,7 +105,13 @@ describe.skipIf(!url)('авария: личка, живая карточка, о
     expect(done.text).toContain('Телефон: \\+7 (000) 000-00-01');
     expect(done.text).toContain('«ул. Модельная, 1, кв. 57»');
     expect(button(done, 'Скопировать номер АДС')).toMatchObject({ type: 'clipboard', payload: '+7 (000) 000-00-01' });
-    expect(h.delayed()).toEqual([{ queue: QUEUES.adsReminder, data: { incidentId: hotId, userId: A }, startAfter: msk('12:30') }]);
+    expect(h.delayed().filter((j) => j.queue === QUEUES.adsReminder)).toEqual([
+      { queue: QUEUES.adsReminder, data: { incidentId: hotId, userId: A }, startAfter: msk('12:30') },
+    ]);
+    // Таймеры сроков (A7): «срок истёк» для каждого срока, «до срока 30 минут» — для сроков длиннее окна.
+    const timers = h.delayed().filter((j) => j.queue === QUEUES.deadline);
+    expect(timers.filter((j) => (j.data as { kind: string }).kind === 'breach')).toHaveLength(4);
+    expect(timers.filter((j) => (j.data as { kind: string }).kind === 'warn')).toHaveLength(2);
   });
 
   it('незарегистрированный сосед жмёт подъезд: участие с уровнем «не подтверждён», ссылка на бота, карточка правится', async () => {
@@ -233,7 +239,8 @@ describe.skipIf(!url)('авария: личка, живая карточка, о
     const dBefore = dmMessages(h, D).length;
     await h.advance(31 * MIN);
     // У A номер введён — напоминания нет; у D — одно, хотя задачи было две (после создания и после «Не дозвонился»).
-    expect(dmMessages(h, A)).toHaveLength(aBefore);
+    // (Уведомления «срок истёк» от таймеров A7 — отдельная тема, здесь не считаются.)
+    expect(dmMessages(h, A).slice(aBefore).filter((m) => m.text.startsWith('Вы сообщили'))).toHaveLength(0);
     await h.advance(31 * MIN);
     const reminders = dmMessages(h, D)
       .slice(dBefore)
@@ -250,7 +257,10 @@ describe.skipIf(!url)('авария: личка, живая карточка, о
     const { row: after, message } = await cardOf(hotId);
     expect(after?.mid).not.toBe(row?.mid);
     expect(message?.message.text).toContain('подъезд 1 — 2');
-    const kinds = (await h.handle.db.select().from(outboundMessage).where(eq(outboundMessage.incidentId, hotId))).map((o) => o.kind).sort();
+    const kinds = (await h.handle.db.select().from(outboundMessage).where(eq(outboundMessage.incidentId, hotId)))
+      .map((o) => o.kind)
+      .filter((k) => k !== 'dm')
+      .sort();
     expect(kinds).toEqual(['card_create', 'card_replace']);
   });
 

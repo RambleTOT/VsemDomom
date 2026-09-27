@@ -1,4 +1,5 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
+import { ServiceError } from '../services/errors.ts';
 
 /** Ошибки API в формате application/problem+json (RFC 9457). */
 export interface ProblemBody {
@@ -63,4 +64,24 @@ export function sendProblem(
     .status(status)
     .type('application/problem+json')
     .send(buildProblem(req, status, code, title, detail, extra));
+}
+
+/** Ошибка сервиса → problem+json. */
+export function fromServiceError(err: unknown): never {
+  if (err instanceof ServiceError) {
+    switch (err.code) {
+      case 'version_conflict':
+        throw new ApiError(409, 'version_conflict', 'Авария изменилась', 'Обновите экран и повторите', err.extra);
+      case 'invalid_transition':
+      case 'merge_target_invalid':
+        throw new ApiError(409, 'invalid_transition', 'Такой переход недоступен', err.message, err.extra);
+      case 'eta_required':
+        throw new ApiError(422, 'eta_required', 'Укажите ориентир');
+      case 'eta_in_past':
+        throw new ApiError(422, 'eta_in_past', 'Ориентир уже прошёл');
+      case 'not_found':
+        throw new ApiError(404, 'not_found', 'Не найдено');
+    }
+  }
+  throw err;
 }
