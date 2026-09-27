@@ -5,7 +5,7 @@
  */
 import { botLink, isOpenStatus, serviceOk } from '@vsemdomom/core';
 import { joinIncident, incidentByPublicId, markNotAffected } from '../services/incidents.ts';
-import { chatOfHouse } from './queries.ts';
+import { chatOfHouse } from '../db/queries.ts';
 import type { CallbackHandler } from './types.ts';
 
 const ENTRANCE_ARG = /^[1-9]\d{0,2}$/;

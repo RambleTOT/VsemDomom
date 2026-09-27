@@ -1,8 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import helmet from '@fastify/helmet';
 import Fastify, { type FastifyBaseLogger, type FastifyError, type FastifyInstance } from 'fastify';
-import { ApiError, sendProblem } from './problem.ts';
 import { registerWebhookRoute } from '../webhook/route.ts';
+import { registerAuth } from './auth.ts';
+import { ApiError, sendProblem } from './problem.ts';
+import { DEFAULT_RATE_LIMITS, registerRateLimit } from './rate-limit.ts';
+import { registerApiRoutes } from './routes/index.ts';
 import { registerSystemRoutes } from './routes/system.ts';
 import type { AppDeps } from './types.ts';
 
@@ -48,7 +51,13 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   app.setNotFoundHandler((req, reply) => sendProblem(req, reply, 404, 'not_found', 'Не найдено'));
 
+  const limits = deps.rateLimits ?? DEFAULT_RATE_LIMITS;
+  if (deps.api) {
+    registerAuth(app, deps.config, deps.api.clock);
+    await registerRateLimit(app, limits);
+  }
   registerSystemRoutes(app, deps);
   if (deps.webhook) registerWebhookRoute(app, deps.config, deps.webhook);
+  if (deps.api) registerApiRoutes(app, { config: deps.config, ctx: deps.api, limits });
   return app;
 }

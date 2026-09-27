@@ -1,0 +1,2 @@
+ALTER TABLE "residency" ADD COLUMN "public_id" text DEFAULT substr(md5(random()::text || clock_timestamp()::text), 1, 10) NOT NULL;--> statement-breakpoint
+ALTER TABLE "residency" ADD CONSTRAINT "residency_public_id_unique" UNIQUE("public_id");

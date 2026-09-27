@@ -25,15 +25,21 @@
 
 | HTTP | code | Когда |
 |---|---|---|
-| 400 | `validation_error` | Неверный формат запроса |
+| 400 | `validation_error` (+`errors[]`: `path`, `message`) | Неверный формат запроса |
 | 401 | `unauthorized`, `session_expired`, `invalid_init_data` | Нет сессии, сессия истекла, подпись initData не сошлась или она старше часа |
-| 403 | `forbidden`, `not_resident`, `not_staff`, `consent_required`, `demo_code_invalid` | Нет прав |
+| 403 | `forbidden`, `not_resident`, `not_staff`, `consent_required`, `demo_code_invalid` | Нет прав (`not_resident` — нет проживания в доме; `consent_required` — сначала `POST /me/consent`) |
 | 404 | `not_found`, `feature_disabled` | Нет объекта или функция выключена флагом |
 | 409 | `duplicate_incident` (+`duplicateOf`), `version_conflict` (+`currentVersion`), `invalid_transition`, `incident_not_open` (+`mergedInto`), `incident_not_closed`, `dialog_not_started` (+`botLink`), `already_bound` | Конфликт состояния |
 | 410 | `token_expired`, `token_used` | Ссылка собственнику или токен привязки чата больше не действуют |
-| 422 | `started_at_in_future`, `confirm_old_required`, `entrance_required`, `entrance_out_of_range`, `floor_out_of_range`, `flat_out_of_range`, `eta_required`, `eta_in_past`, `monthly_charge_invalid`, `text_too_long` | Бизнес-валидация |
+| 422 | `started_at_in_future`, `confirm_old_required`, `entrance_required`, `entrance_out_of_range`, `floor_out_of_range`, `flat_out_of_range` (+`flatFrom`, `flatTo`), `registered_at_in_future`, `consent_version_mismatch`, `eta_required`, `eta_in_past`, `monthly_charge_invalid`, `text_too_long` | Бизнес-валидация |
 | 429 | `rate_limited` | Лимит запросов |
 | 502 | `max_unavailable` | MAX не ответил (например, при отправке заявления в личку) |
+
+## Статус реализации
+
+Реализованы (A6): вход (`auth/max`, `auth/dev`), профиль (`me`, согласие, проживание, удаление, настройки), дома (поиск, краткие сведения, главная, месяц), нормы, аварии жителя (создание, просмотр, «У меня тоже», «Не у меня», АДС, «Уведомлять меня»). Остальные операции появятся в задачах потока A (A7 — экраны УК и статусы, A8 — ответы о восстановлении и итог, A9 — перерасчёт и заявление, A10 — демо-инструменты, A11 — уровень 2 и собственник, A12 — песочница, A13 — опросы и акт); до этого на них отвечает 404 `not_found`. Список ведёт `apps/api/src/http/routes/index.ts` (`PENDING_OPERATIONS`), тест сверяет его с контрактом.
+
+Вне production каждый ответ API проверяется zod-схемой контракта: расхождение — ошибка 500 в тестах.
 
 ## Payload запуска → экран
 

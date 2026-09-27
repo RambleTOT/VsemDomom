@@ -14,7 +14,7 @@ import { QUEUES } from '../jobs/queue.ts';
 import { MaxApiError } from '../max/types.ts';
 import type { NormalizedUpdate } from '../max/update.ts';
 import { sendDm } from './dm.ts';
-import { houseByPublicId, houseOfChat, staffOf, userById, type HouseRow } from './queries.ts';
+import { houseByPublicId, houseOfChat, staffOf, userById, type HouseRow } from '../db/queries.ts';
 import type { UpdateMeta } from './types.ts';
 
 const TOKEN_BYTES = 18;

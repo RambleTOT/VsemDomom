@@ -1,7 +1,7 @@
 /** Запросы, общие для бота и API. */
 import { and, asc, eq } from 'drizzle-orm';
-import type { Db } from '../db/client.ts';
-import { house, houseChat, managementCompany, maxUser, residency, staff } from '../db/schema.ts';
+import type { Db } from './client.ts';
+import { house, houseChat, managementCompany, maxUser, residency, staff } from './schema.ts';
 
 type Reader = Pick<Db, 'select'>;
 

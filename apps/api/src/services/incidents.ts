@@ -7,6 +7,7 @@ import {
   computeDeadlines,
   flatLocation,
   isEntranceInRange,
+  isFloorInRange,
   OPEN_STATUSES,
   type DeadlinePlan,
   type EventSource,
@@ -58,11 +59,23 @@ export async function openIncidentOf(db: Pick<Executor, 'select'>, houseId: numb
   return row ?? null;
 }
 
-/** Подъезд и этаж участника: у зарегистрированного — по квартире, иначе — выбранный подъезд. */
-function locate(h: HouseRow, res: ResidencyRow | null, entrance: number | null): { entrance: number | null; floor: number | null } {
+/**
+ * Подъезд и этаж участника. В чате у зарегистрированного — по квартире; в мини-приложении
+ * выбранные в форме подъезд и этаж важнее (preferExplicit).
+ */
+function locate(
+  h: HouseRow,
+  res: ResidencyRow | null,
+  pick: { entrance: number | null; floor?: number | null; preferExplicit?: boolean },
+): { entrance: number | null; floor: number | null } {
   const byFlat = res ? flatLocation(h, res.flatNo) : null;
+  const entrance = pick.entrance !== null && isEntranceInRange(h, pick.entrance) ? pick.entrance : null;
+  const floor = pick.floor !== undefined && pick.floor !== null && isFloorInRange(h, pick.floor) ? pick.floor : null;
+  if (pick.preferExplicit && entrance !== null) {
+    return { entrance, floor: floor ?? (byFlat?.entrance === entrance ? byFlat.floor : null) };
+  }
   if (byFlat) return byFlat;
-  return { entrance: entrance !== null && isEntranceInRange(h, entrance) ? entrance : null, floor: null };
+  return { entrance, floor };
 }
 
 function deadlineRows(incidentId: number, plans: DeadlinePlan[]) {
@@ -73,8 +86,9 @@ export interface CreateIncidentInput {
   house: HouseRow;
   service: ServiceType;
   scope: IncidentScope;
-  /** Подъезд для scope=entrance (у зарегистрированного — по квартире). */
+  /** Подъезд и этаж из формы; null — по квартире автора. */
   entrance: number | null;
+  floor?: number | null;
   startedAt: Date;
   startedSource: StartedPreset;
   reporter: { userId: number; residency: ResidencyRow | null };
@@ -95,7 +109,7 @@ export async function createIncident(ctx: JobContext, input: CreateIncidentInput
   }
   const norms: NormRecord[] = await loadNorms(ctx.db);
   const now = ctx.clock.now();
-  const loc = locate(h, input.reporter.residency, input.entrance);
+  const loc = locate(h, input.reporter.residency, { entrance: input.entrance, floor: input.floor ?? null, preferExplicit: true });
   try {
     const created = await ctx.db.transaction(async (tx) => {
       const [row] = await tx
@@ -175,6 +189,9 @@ export interface JoinInput {
   userId: number;
   /** Нажатый подъезд; null — «Не знаю подъезд». */
   entrance: number | null;
+  floor?: number | null;
+  /** Мини-приложение: выбранные подъезд и этаж важнее вычисленных по квартире. */
+  preferExplicit?: boolean;
   source: EventSource;
   /** Нажатие пришло из чата этого дома — членство в чате подтверждено (уровень 1). */
   fromHouseChat: boolean;
@@ -203,7 +220,7 @@ export async function joinIncident(ctx: JobContext, input: JoinInput): Promise<J
         .where(and(eq(residency.id, res.id), eq(residency.trustLevel, 0)));
       trust = 1;
     }
-    const loc = locate(h, res ?? null, input.entrance);
+    const loc = locate(h, res ?? null, { entrance: input.entrance, floor: input.floor ?? null, preferExplicit: input.preferExplicit ?? false });
     const [user] = await tx.select({ dialogActive: maxUser.dialogActive }).from(maxUser).where(eq(maxUser.id, input.userId));
     const base = { registered: Boolean(res), dialogActive: user?.dialogActive ?? false };
 
@@ -236,7 +253,10 @@ export async function joinIncident(ctx: JobContext, input: JoinInput): Promise<J
         .set({ affected: true, entrance: loc.entrance ?? existing.entrance, floor: loc.floor ?? existing.floor, residencyId: res?.id ?? existing.residencyId })
         .where(eq(incidentParticipant.id, existing.id));
       result = 'joined';
-    } else if (existing.entrance === null && loc.entrance !== null) {
+    } else if (
+      loc.entrance !== null &&
+      (existing.entrance === null || (input.preferExplicit === true && (existing.entrance !== loc.entrance || (loc.floor !== null && existing.floor !== loc.floor))))
+    ) {
       await tx.update(incidentParticipant).set({ entrance: loc.entrance, floor: loc.floor }).where(eq(incidentParticipant.id, existing.id));
       result = 'updated';
     } else {
@@ -281,7 +301,7 @@ export async function markNotAffected(ctx: JobContext, input: { incident: Incide
     }
     const [res] = await tx.select().from(residency).where(and(eq(residency.userId, input.userId), eq(residency.houseId, input.incident.houseId)));
     const [h] = await tx.select().from(house).where(eq(house.id, input.incident.houseId));
-    const loc = h ? locate(h, res ?? null, null) : { entrance: null, floor: null };
+    const loc = h ? locate(h, res ?? null, { entrance: null }) : { entrance: null, floor: null };
     await tx
       .insert(incidentParticipant)
       .values({

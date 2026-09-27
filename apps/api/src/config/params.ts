@@ -51,6 +51,16 @@ export const PARAMS = {
   historyReserveMin: 5,
 } as const;
 
+/**
+ * Пользователи проверяющих (checker-токены) — те же ID, что в seeds/checker.json
+ * (совпадение проверяет тест). Работают только с домом-песочницей.
+ */
+export const CHECKER_USERS = {
+  resident: -1001,
+  resident2: -1002,
+  uk: -1003,
+} as const;
+
 /** Словарь ключевых слов F13 (сообщения группы, без LLM). */
 export const KEYWORD_PHRASES = [
   'нет воды',

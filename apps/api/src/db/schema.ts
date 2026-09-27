@@ -170,6 +170,11 @@ export const residency = pgTable(
   'residency',
   {
     id: id(),
+    /** Публичный ID для API (очередь подтверждения, приглашение собственника); выдаётся базой. */
+    publicId: text('public_id')
+      .notNull()
+      .unique()
+      .default(sql`substr(md5(random()::text || clock_timestamp()::text), 1, 10)`),
     userId: maxId('user_id')
       .notNull()
       .references(() => maxUser.id, { onDelete: 'cascade' }),

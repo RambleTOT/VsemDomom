@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { houseByPublicId } from '../src/bot/queries.ts';
+import { houseByPublicId } from '../src/db/queries.ts';
 import { chatCard, deadline, houseChat, incident, incidentEvent, incidentParticipant, outboundMessage, residency } from '../src/db/schema.ts';
 import { QUEUES } from '../src/jobs/queue.ts';
 import {

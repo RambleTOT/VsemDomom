@@ -1,0 +1,47 @@
+/** Эндпоинты /api/v1 (кроме системных). Реализованные операции контракта — см. IMPLEMENTED_OPERATIONS. */
+import type { FastifyInstance } from 'fastify';
+import type { ApiDeps, OperationId } from '../api-route.ts';
+import { registerAuthRoutes } from './auth.ts';
+import { registerHouseRoutes } from './houses.ts';
+import { registerIncidentRoutes } from './incidents.ts';
+import { registerMeRoutes } from './me.ts';
+import { registerNormRoutes } from './norms.ts';
+
+export function registerApiRoutes(app: FastifyInstance, deps: ApiDeps): void {
+  registerAuthRoutes(app, deps);
+  registerMeRoutes(app, deps);
+  registerHouseRoutes(app, deps);
+  registerNormRoutes(app, deps);
+  registerIncidentRoutes(app, deps);
+}
+
+/** Операции контракта, которые ещё не реализованы, и задача, в которой появятся (docs/STREAM_A.md). */
+export const PENDING_OPERATIONS: Partial<Record<OperationId, string>> = {
+  demoUkRole: 'A10',
+  postObservation: 'A8',
+  getIncidentResult: 'A8',
+  recalculate: 'A9',
+  sendApplicationToDm: 'A9',
+  actReady: 'A13',
+  createOwnerInvite: 'A11',
+  getOwnerInvite: 'A11',
+  confirmOwnerInvite: 'A11',
+  rejectOwnerInvite: 'A11',
+  ukListIncidents: 'A7',
+  ukGetIncident: 'A7',
+  ukSetStatus: 'A7',
+  ukMerge: 'A7',
+  ukListHouses: 'A7',
+  ukGetHouse: 'A7',
+  ukGetChatBinding: 'A7',
+  ukBindChat: 'A7',
+  ukHeatmap: 'A13',
+  ukStartHeatingPoll: 'A13',
+  ukListResidents: 'A11',
+  ukConfirmResident: 'A11',
+  ukRejectResident: 'A11',
+  demoNeighbours: 'A10',
+  demoTimeShift: 'A10',
+  demoReset: 'A10',
+  sandboxReset: 'A12',
+};

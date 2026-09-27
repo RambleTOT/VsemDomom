@@ -18,13 +18,13 @@ import {
   RESIDENCY_ROLES,
   type ResidencySource,
 } from '@vsemdomom/core';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { PARAMS } from '../config/params.ts';
-import { maxUser, residency } from '../db/schema.ts';
+import { maxUser } from '../db/schema.ts';
 import type { JobContext } from '../jobs/context.ts';
 import { activeDialogState, sendDm, setDialogState } from './dm.ts';
-import { refreshMembership } from './membership.ts';
-import { chatOfHouse, dmHouse, houseByPublicId, listResidentialHouses, residenciesOf, residencyIn, userById, type HouseRow } from './queries.ts';
+import { saveResidency } from '../services/residency.ts';
+import { chatOfHouse, dmHouse, houseByPublicId, listResidentialHouses, residenciesOf, userById, type HouseRow } from '../db/queries.ts';
 import type { CallbackHandler, DialogState, UpdateMeta } from './types.ts';
 
 export function privacyUrl(ctx: JobContext): string {
@@ -194,25 +194,10 @@ export async function onFlatInput(ctx: JobContext, userId: number, text: string,
     await ctx.db.transaction(async (tx) => sendDm(tx, ctx, userId, renderFlatError(dmHouse(h), ctx.i18n), meta.dedupeKey));
     return true;
   }
-  const role = state.role;
-  const existing = await residencyIn(ctx.db, userId, h.id);
-  // Одна учётная запись MAX — одна квартира в доме; смена квартиры сбрасывает уровень доверия.
-  const trustReset = existing !== null && existing.flatNo !== flatNo && existing.trustLevel > 0;
-  if (existing) {
-    await ctx.db
-      .update(residency)
-      .set({
-        flatNo,
-        role,
-        updatedAt: ctx.clock.now(),
-        ...(existing.flatNo !== flatNo ? { trustLevel: 0, reviewStatus: 'pending' as const, confirmedAt: null, confirmedBy: null, membershipCheckedAt: null } : {}),
-      })
-      .where(and(eq(residency.id, existing.id)));
-  } else {
-    await ctx.db.insert(residency).values({ userId, houseId: h.id, flatNo, role, trustLevel: 0, source: state.source });
-  }
-  const row = await residencyIn(ctx.db, userId, h.id);
-  const membership = row ? await refreshMembership(ctx, row, { force: true }) : { inChat: null };
+  const saved = await saveResidency(ctx, { userId, house: h, flatNo, role: state.role, source: state.source });
+  if (!saved.ok) return true;
+  const { trustReset } = saved;
+  const membership = { inChat: saved.inChat };
   const chat = await chatOfHouse(ctx.db, h.id);
   const joinChatLink = ctx.config.features.joinChat && membership.inChat !== true && chat?.inviteLink ? chat.inviteLink : null;
   await sendMenu(ctx, userId, meta.dedupeKey, { justRegistered: true, trustReset, joinChatLink, houseId: h.id });

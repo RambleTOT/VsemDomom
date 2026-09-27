@@ -1,5 +1,6 @@
 /** Процесс api: REST для мини-приложения, webhook MAX, проверки /health и /ready. */
 import { keywordMatcher } from '@vsemdomom/core';
+import { ruTranslator } from '@vsemdomom/shared';
 import { ConfigError, loadConfig } from './config/env.ts';
 import { KEYWORD_PHRASES } from './config/params.ts';
 import { createDb } from './db/client.ts';
@@ -34,6 +35,7 @@ async function main(): Promise<void> {
       queue,
       keywordMatcher: config.features.keywordReply ? keywordMatcher(KEYWORD_PHRASES) : null,
     },
+    api: { config, db: handle.db, queue, max, log, clock: systemClock, i18n: ruTranslator },
   });
 
   let stopping = false;

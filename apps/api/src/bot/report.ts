@@ -41,7 +41,7 @@ import {
   type IncidentRow,
 } from '../services/incidents.ts';
 import { activeDialogState, sendDm, setDialogState } from './dm.ts';
-import { chatOfHouse, residenciesOf, userById, type HouseRow, type ResidencyRow } from './queries.ts';
+import { chatOfHouse, residenciesOf, userById, type HouseRow, type ResidencyRow } from '../db/queries.ts';
 import { sendMenu } from './registration.ts';
 import type { CallbackHandler, DialogState, UpdateMeta } from './types.ts';
 
