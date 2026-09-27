@@ -9,6 +9,7 @@ services:
       - '443:443/udp'
     environment:
       DOMAIN: ${DOMAIN:?задайте DOMAIN в .env}
+      REDIRECT_DOMAINS: ${REDIRECT_DOMAINS:-}
     command: ['caddy', 'run', '--config', '/etc/caddy/Caddyfile.prod', '--adapter', 'caddyfile']
     volumes:
       - caddy_data:/data

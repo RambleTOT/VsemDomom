@@ -4,7 +4,12 @@
 	admin off
 }
 
-{$DOMAIN} {
+# REDIRECT_DOMAINS — дополнительные адреса через пробел (например корневой домен и www):
+# сертификаты выпускаются и для них, запросы перенаправляются на основной адрес.
+{$DOMAIN} {$REDIRECT_DOMAINS} {
+	@other not host {$DOMAIN}
+	redir @other https://{$DOMAIN}{uri} permanent
+
 	encode zstd gzip
 
 	handle /api/* {
