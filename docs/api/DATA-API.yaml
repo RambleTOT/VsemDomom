@@ -4,7 +4,7 @@
 # заголовок Authorization: Bearer <токен>. Токены работают только с домом-песочницей dom5sandbx:
 # в ней «Устранено» сразу закрывает аварию, чата и сообщений нет, поэтому цепочку можно
 # повторять сколько угодно раз. Тестовые данные — docs/api/test-data/.
-# baseUrl — адрес стенда без /api/v1 (заменяется при развёртывании стенда).
+# baseUrl — адрес стенда без /api/v1.
 
 schemaVersion: "1.0"
 
@@ -12,7 +12,7 @@ solution:
   name: "Всем домом"
 
 api:
-  baseUrl: "https://app.vsemdomom.example"
+  baseUrl: "https://app.vsemdomom.ru"
   openapi: "./openapi.yaml"
   defaultHeaders:
     Accept: "application/json"
