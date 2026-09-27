@@ -116,3 +116,9 @@ export function renderDeleteConfirm(t: Translator): BotMessage {
 export function renderText(key: string, t: Translator, params?: Record<string, string | number>): BotMessage {
   return msg(t.t(key, params));
 }
+
+/** Проживание подтверждено (уровень доверия 2): собственником по ссылке или УК в очереди подтверждения. */
+export function renderResidencyConfirmed(input: { by: 'owner' | 'uk'; flat: number; isModel: boolean }, t: Translator): BotMessage {
+  const key = input.by === 'owner' ? 'bot.dm.owner.confirmed' : 'bot.dm.uk.confirmed';
+  return msg(lines(t.t(key, { flat: input.flat }), input.isModel ? t.t('bot.footer') : null));
+}

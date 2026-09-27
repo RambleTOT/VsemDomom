@@ -4,7 +4,7 @@
  * и итог аварии; подтверждение даёт жильцу уровень доверия 2, «Не знаю этого человека» уровень не меняет.
  * Токен одноразовый, 7 дней, в БД — только хеш.
  */
-import { encodeStartApp, lowerFirst, renderText, serviceNo, startAppLink } from '@vsemdomom/core';
+import { encodeStartApp, lowerFirst, renderResidencyConfirmed, serviceNo, startAppLink } from '@vsemdomom/core';
 import { eq } from 'drizzle-orm';
 import { PARAMS } from '../config/params.ts';
 import type { Executor } from '../db/client.ts';
@@ -90,7 +90,7 @@ export async function decideOwnerInvite(
           kind: 'dm',
           idempotencyKey: `owner:confirmed:${invite.tokenHash}`,
           target: { userId: found.residency.userId },
-          message: renderText('bot.dm.owner.confirmed', ctx.i18n, { flat: found.residency.flatNo }),
+          message: renderResidencyConfirmed({ by: 'owner', flat: found.residency.flatNo, isModel: found.house.isModel }, ctx.i18n),
         });
       }
     }

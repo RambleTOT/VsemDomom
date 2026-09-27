@@ -12,6 +12,7 @@ import type { HouseChatRow, HouseRow } from '../db/queries.ts';
 import { incident, incidentEvent, residency } from '../db/schema.ts';
 import { incidentDetail, type IncidentBundle, type IncidentViewer } from './incident-view.ts';
 import { monthSummary } from './month.ts';
+import { pendingResidentWhere } from './residents.ts';
 import { chatInfo } from './views.ts';
 
 type Reader = Pick<Executor, 'select'>;
@@ -118,10 +119,7 @@ export async function ukHouseView(db: Reader, h: HouseRow, chat: HouseChatRow | 
     .select({ n: count() })
     .from(incident)
     .where(and(eq(incident.houseId, h.id), inArray(incident.status, ['open', 'accepted', 'brigade_on_site', 'localized', 'checking', 'discrepancy'])));
-  const [pending] = await db
-    .select({ n: count() })
-    .from(residency)
-    .where(and(eq(residency.houseId, h.id), eq(residency.reviewStatus, 'pending'), lt(residency.trustLevel, 2), eq(residency.isModel, false)));
+  const [pending] = await db.select({ n: count() }).from(residency).where(pendingResidentWhere([h.id]));
   const info = chatInfo(chat);
   return {
     id: h.publicId,

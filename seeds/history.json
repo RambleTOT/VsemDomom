@@ -21,6 +21,25 @@
       ]
     },
     {
+      "publicId": "hist4gvs06",
+      "housePublicId": "dom4model4",
+      "serviceType": "hot_water",
+      "scope": "house",
+      "monthDay": 2,
+      "startTime": "08:00",
+      "steps": {
+        "acceptedMin": 20,
+        "localizedMin": 50,
+        "resolvedMin": 360
+      },
+      "note": "Копия истории дома 1 для второго демо-чата (дом 4): тот же перерыв ГВС 6 ч в текущем месяце",
+      "participantFlats": [
+        21,
+        38,
+        60
+      ]
+    },
+    {
       "publicId": "hist2hvs01",
       "housePublicId": "dom2model2",
       "serviceType": "cold_water",

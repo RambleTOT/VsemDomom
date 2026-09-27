@@ -177,7 +177,7 @@ describe.skipIf(!url)('перерасчёт, заявление в личку, �
       const [res] = await api.handle.db.select().from(residency).where(eq(residency.userId, A));
       expect(res).toMatchObject({ trustLevel: 2, reviewStatus: 'confirmed', confirmedBy: 'owner:8100' });
       await api.drain();
-      expect(lastDm(api, A).text).toBe('Собственник подтвердил ваше проживание в кв. 57. Уровень доверия — «подтверждён»');
+      expect(lastDm(api, A).text).toBe('Собственник подтвердил ваше проживание в кв. 57. Уровень доверия — «подтверждён»\nМодельные данные');
       const again = await api.call<Problem>('POST', `/api/v1/owner-invites/${tokenOf(link)}/reject`, { token: owner });
       expect(again.status).toBe(410);
       expect(again.body.code).toBe('token_used');

@@ -71,7 +71,8 @@ describe.skipIf(!url)('экраны и действия УК (A7, PostgreSQL + �
     const list = await api.call<UkList>('GET', '/api/v1/uk/incidents', { token: uk });
     expect(list.status).toBe(200);
     expect(list.body.items.map((i) => i.id)).toEqual([hot.id]);
-    expect(list.body.counts).toEqual({ open: 1, expired: 0, closed: 3 });
+    // Закрытые — история модельных домов 1–4 (дом 4 — копия дома 1).
+    expect(list.body.counts).toEqual({ open: 1, expired: 0, closed: 4 });
     expect(list.body.houses.find((h) => h.id === 'dom1model1')?.openCount).toBe(1);
     expect(list.body.houses.map((h) => h.id)).not.toContain('dom5sandbx');
     const closed = await api.call<UkList>('GET', '/api/v1/uk/incidents?status=closed', { token: uk });

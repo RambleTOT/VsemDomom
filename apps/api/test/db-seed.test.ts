@@ -24,7 +24,7 @@ describe.skipIf(!url)('миграции и сиды (PostgreSQL)', () => {
 
   it('сиды применяются и повторный запуск ничего не дублирует', async () => {
     const first = await runSeeds(handle.db, { seedsDir, staffMaxIds: [123, 456], now, log });
-    expect(first).toMatchObject({ companies: 1, houses: 5, history: 3, checkers: 3, staff: 2 });
+    expect(first).toMatchObject({ companies: 1, houses: 5, history: 4, checkers: 3, staff: 2 });
     const snapshot = {
       norm: await count('norm'),
       house: await count('house'),

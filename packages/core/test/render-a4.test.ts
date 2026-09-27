@@ -9,6 +9,7 @@ import {
   renderHelp,
   renderMenu,
   renderPanel,
+  renderResidencyConfirmed,
   renderUnregisteredMenu,
   renderWelcome,
   validateBotMessage,
@@ -87,5 +88,17 @@ describe('C05 — личка', () => {
     for (const name of ['house', 'menu-registered', 'menu']) {
       expect(all.find(([n]) => n === name)?.[1].text.split('\n').at(-1)).toBe('Модельные данные');
     }
+  });
+});
+
+describe('C05 — проживание подтверждено (уровень 2)', () => {
+  it('собственником или УК; в модельном доме — пометка «Модельные данные»', () => {
+    expect(renderResidencyConfirmed({ by: 'owner', flat: 57, isModel: false }, t).text).toBe(
+      'Собственник подтвердил ваше проживание в кв. 57. Уровень доверия — «подтверждён»',
+    );
+    const uk = renderResidencyConfirmed({ by: 'uk', flat: 57, isModel: true }, t);
+    expect(uk.text).toBe('УК подтвердила ваше проживание в кв. 57. Уровень доверия — «подтверждён»\nМодельные данные');
+    expect(uk.keyboard).toEqual([]);
+    expect(validateBotMessage(uk)).toEqual([]);
   });
 });

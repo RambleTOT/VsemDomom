@@ -8,6 +8,7 @@ import { registerIncidentRoutes } from './incidents.ts';
 import { registerMeRoutes } from './me.ts';
 import { registerNormRoutes } from './norms.ts';
 import { registerOwnerRoutes } from './owner.ts';
+import { registerResidentRoutes } from './residents.ts';
 import { registerUkRoutes } from './uk.ts';
 
 export function registerApiRoutes(app: FastifyInstance, deps: ApiDeps): void {
@@ -18,6 +19,7 @@ export function registerApiRoutes(app: FastifyInstance, deps: ApiDeps): void {
   registerIncidentRoutes(app, deps);
   registerUkRoutes(app, deps);
   registerOwnerRoutes(app, deps);
+  registerResidentRoutes(app, deps);
   registerDemoRoutes(app, deps);
 }
 
@@ -26,8 +28,5 @@ export const PENDING_OPERATIONS: Partial<Record<OperationId, string>> = {
   actReady: 'A13',
   ukHeatmap: 'A13',
   ukStartHeatingPoll: 'A13',
-  ukListResidents: 'A11',
-  ukConfirmResident: 'A11',
-  ukRejectResident: 'A11',
   sandboxReset: 'A12',
 };

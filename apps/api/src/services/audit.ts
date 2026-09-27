@@ -13,14 +13,16 @@ export type AuditAction =
   | 'demo_uk_role'
   | 'demo_neighbours'
   | 'demo_time_shift'
-  | 'demo_reset';
+  | 'demo_reset'
+  | 'resident_confirm'
+  | 'resident_reject';
 
 export interface AuditEntry {
   /** staff:<userId> — сотрудник УК (в том числе демо-роль и checker-УК); user:<userId> — пользователь. */
   actor: string;
   action: AuditAction;
-  entity: 'incident' | 'house' | 'user';
-  /** Публичный ID аварии или дома; для пользователя — его MAX ID. */
+  entity: 'incident' | 'house' | 'user' | 'residency';
+  /** Публичный ID аварии, дома или проживания; для пользователя — его MAX ID. */
   entityId: string;
   at: Date;
 }
