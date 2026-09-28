@@ -171,7 +171,11 @@ describe.skipIf(!url)('проверка после «Устранено», ра�
 
   it('правило (а): все жители уровня 1–2 ответили «Да» — закрытие сразу', async () => {
     const cold = await report('cold_water');
-    await status(cold.id, { status: 'resolved' });
+    const checking = await status(cold.id, { status: 'resolved' });
+    // «Устранено» без «Принято»: срок ответа отменён, в хронологии нет «Срок выполнен: УК сообщит сроки работ».
+    expect(checking.deadlines.find((d) => d.kind === 'answer')?.state).toBe('cancelled');
+    expect(checking.timeline.filter((e) => e.type === 'deadline_met').map((e) => e.payload?.kind)).not.toContain('answer');
+    expect(checking.headline.nextDeadline).toBeNull();
     const res = await api.call<IncidentDetail>('POST', `/api/v1/incidents/${cold.id}/observations`, { token: tokens[A], body: { kind: 'restored_yes' } });
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('closed');

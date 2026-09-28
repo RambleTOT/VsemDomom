@@ -32,6 +32,8 @@ export type IncidentCommandType = IncidentCommand['type'];
 export type TransitionEffect =
   | { type: 'set_eta'; eta: Date }
   | { type: 'mark_deadlines_met'; kinds: DeadlineKind[] }
+  /** Сроки, которые после шага УК больше не нужны: не истёкшие — отменить без события, истёкшие — «истёк». */
+  | { type: 'drop_deadlines'; kinds: DeadlineKind[] }
   | { type: 'cancel_pending_deadlines' }
   | { type: 'set_resolved_at_uk' }
   | { type: 'start_check' }
@@ -157,10 +159,11 @@ export function transition(from: IncidentStatus, command: IncidentCommand): Tran
     case 'resolve': {
       const repeated = from === 'discrepancy';
       const skipped = repeated ? [] : skippedBetween(from, 'resolved');
-      // Срок ответа тоже: после «Устранено» «сообщить сроки» уже не нужно (до срока — выполнен, после — истёк).
+      // Срок ответа («сообщить сроки работ») после «Устранено» не нужен: не выполнен, а отменён.
       const common: TransitionEffect[] = [
         { type: 'set_resolved_at_uk' },
-        { type: 'mark_deadlines_met', kinds: ['answer', 'localize', 'clog', 'fix', 'single_limit'] },
+        { type: 'drop_deadlines', kinds: ['answer'] },
+        { type: 'mark_deadlines_met', kinds: ['localize', 'clog', 'fix', 'single_limit'] },
       ];
       if (command.sandbox && !repeated) {
         // Песочница API: «Устранено» сразу закрывает аварию без окна проверки и без сообщений.

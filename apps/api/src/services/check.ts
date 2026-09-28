@@ -143,6 +143,7 @@ async function applyCheckCommand(tx: Tx, ctx: JobContext, inc: IncidentRow, h: H
         break;
       case 'set_eta':
       case 'mark_deadlines_met':
+      case 'drop_deadlines':
       case 'set_resolved_at_uk':
       case 'start_check':
       case 'post_check_question':

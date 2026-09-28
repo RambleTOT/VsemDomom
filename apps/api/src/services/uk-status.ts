@@ -100,6 +100,26 @@ async function markDeadlines(tx: Tx, inc: IncidentRow, kinds: readonly DeadlineK
   return flags;
 }
 
+/** Сроки, которые после шага УК не нужны: не истёкшие отменяются без события, истёкшие — «истёк», как у таймера. */
+async function dropDeadlines(tx: Tx, inc: IncidentRow, kinds: readonly DeadlineKind[], now: Date, events: EventRow[]): Promise<Partial<IncidentRow>> {
+  const rows = await tx
+    .select()
+    .from(deadline)
+    .where(and(eq(deadline.incidentId, inc.id), eq(deadline.status, 'pending'), inArray(deadline.kind, [...kinds])));
+  const flags: Partial<IncidentRow> = {};
+  for (const d of rows) {
+    if (now.getTime() <= d.dueAt.getTime()) {
+      await tx.update(deadline).set({ status: 'cancelled' }).where(eq(deadline.id, d.id));
+      continue;
+    }
+    await tx.update(deadline).set({ status: 'breached', resolvedAt: d.dueAt }).where(eq(deadline.id, d.id));
+    events.push({ type: 'deadline_breached', payload: { kind: d.kind, dueAt: d.dueAt.toISOString() } });
+    if (breachFlag(d.kind) === 'overdue') flags.overdue = true;
+    else flags.singleLimitExceeded = true;
+  }
+  return flags;
+}
+
 interface EventRow {
   type: IncidentEventType;
   payload?: Record<string, unknown>;
@@ -156,6 +176,9 @@ export async function applyUkStatus(ctx: JobContext, input: UkStatusInput): Prom
           break;
         case 'cancel_pending_deadlines':
           await tx.update(deadline).set({ status: 'cancelled' }).where(and(eq(deadline.incidentId, inc.id), eq(deadline.status, 'pending')));
+          break;
+        case 'drop_deadlines':
+          Object.assign(update, await dropDeadlines(tx, inc, effect.kinds, now, extra));
           break;
         case 'set_resolved_at_uk':
           update.resolvedAtUk = now;
