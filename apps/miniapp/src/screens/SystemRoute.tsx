@@ -3,7 +3,7 @@ import { useParams } from 'react-router';
 import { SystemScreen, type ErrorKind } from '../components/errors.tsx';
 import { useErrorAction } from './common.tsx';
 
-const KINDS: readonly ErrorKind[] = ['outside', 'session', 'network', 'server', 'forbidden', 'notfound', 'merged', 'expired', 'feature_off', 'slow'];
+const KINDS: readonly ErrorKind[] = ['outside', 'session', 'network', 'server', 'busy', 'forbidden', 'notfound', 'merged', 'expired', 'feature_off', 'slow'];
 
 export function SystemRoute() {
   const { kind } = useParams();

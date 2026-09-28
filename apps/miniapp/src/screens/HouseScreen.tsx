@@ -9,9 +9,9 @@ import { Icon } from '../components/Icon.tsx';
 import { IncidentHeadline } from '../components/incident.tsx';
 import { NormBasisLink } from '../components/norm.tsx';
 import { Screen } from '../components/Screen.tsx';
-import { Banner, Card, EmptyState, SectionTitle } from '../components/ui.tsx';
-import { dateIn, minutesText, monthOfKey, whenIn } from '../format.ts';
-import { plural, serviceName, t, upperFirst } from '../i18n.ts';
+import { Banner, Card, EmptyState, Muted, SectionTitle } from '../components/ui.tsx';
+import { dayMonthIn, minutesText, monthOfKey, whenIn } from '../format.ts';
+import { lowerFirst, plural, serviceName, serviceNo, t, upperFirst } from '../i18n.ts';
 import { useSession } from '../app/session.tsx';
 import { Loaded } from './common.tsx';
 
@@ -23,10 +23,47 @@ function IncidentCard({ incident, onOpen }: { incident: IncidentSummary; onOpen:
   return (
     <button type="button" className="card clickable incident-row" onClick={onOpen}>
       <IncidentHeadline incident={incident} compact />
-      <p className="meta">
-        {t('screen.S03.card.since', { time: whenIn(incident.startedAt, tz), joined: plural(incident.participantsCount, 'joined'), count: incident.participantsCount, residents: plural(incident.participantsCount, 'residents'), entrances })}
-      </p>
+      <div className="stack tight">
+        <p className="hero-line">{serviceNo(incident.service)}</p>
+        <p className="meta">
+          {t('screen.S03.card.since', { time: whenIn(incident.startedAt, tz), joined: plural(incident.participantsCount, 'joined'), count: incident.participantsCount, residents: plural(incident.participantsCount, 'residents'), entrances })}
+        </p>
+        {incident.joined ? <p className="meta">{t('screen.S03.card.joined.plain')}</p> : null}
+      </div>
     </button>
+  );
+}
+
+/** Итог в списке: устранено в норматив или со сроком сверх норматива; расхождение — отдельно. */
+function resultLine(r: IncidentSummary): string {
+  if (r.displayStatus === 'closed_with_discrepancy') return t('status.closed_disc');
+  const duration = minutesText(r.headline.durationMinutes ?? 0);
+  return r.overdue ? t('screen.S03.result.done', { duration }) : t('screen.S03.result.in_norm', { duration });
+}
+
+/** Месяц против нормы: крупное число, полоса заполнения, основание. */
+function MonthCard({ month, service, hasActive }: { month: string; service: HouseDetail['month']['services'][number]; hasActive: boolean }) {
+  const limit = service.limitMinutes;
+  const share = limit ? Math.min(1, service.totalMinutes / limit) : 0;
+  const over = limit !== null && service.totalMinutes > limit;
+  return (
+    <Card>
+      <p className="muted small">{t('screen.S03.month.title', { month: upperFirst(monthOfKey(month)), service: lowerFirst(serviceName(service.service)) })}</p>
+      {limit === null ? (
+        <Muted>{t('deadline.no_norm')}</Muted>
+      ) : (
+        <>
+          <p className="month-value">
+            <span className="big-number">{minutesText(service.totalMinutes)}</span> <span className="muted">{t('screen.S03.month.of', { limit: minutesText(limit) })}</span>
+          </p>
+          <div className={`meter ${over ? 'over' : ''}`} role="img" aria-label={t('screen.S03.month.value', { total: minutesText(service.totalMinutes), limit: minutesText(limit) })}>
+            <span style={{ width: `${Math.round(share * 100)}%` }} />
+          </div>
+        </>
+      )}
+      {hasActive ? <p className="muted small">{t('screen.S03.month.note.current')}</p> : null}
+      {service.norm ? <NormBasisLink norm={service.norm} /> : null}
+    </Card>
   );
 }
 
@@ -81,50 +118,45 @@ function HouseBody({ house }: { house: HouseDetail }) {
           {house.recentResults.length > 0 ? (
             <>
               <SectionTitle>{t('screen.S03.results')}</SectionTitle>
-              {house.recentResults.map((r) => (
-                <button type="button" key={r.id} className="card clickable" onClick={() => void navigate(`/incident/${r.id}/result`)}>
-                  <div className="row">
-                    <strong>{serviceName(r.service)}</strong>
-                    <span className="muted">{r.closedAt ? dateIn(r.closedAt, tz) : ''}</span>
-                  </div>
-                  <p className="muted small">
-                    {r.displayStatus === 'closed' && r.headline.durationMinutes !== null
-                      ? t('screen.S03.result.in_norm', { duration: minutesText(r.headline.durationMinutes) })
-                      : t(r.displayStatus === 'closed_with_discrepancy' ? 'status.closed_disc' : 'status.closed')}
-                  </p>
-                </button>
-              ))}
+              <div className="list-card">
+                {house.recentResults.map((r) => (
+                  <button type="button" key={r.id} className="list-row plain-button" onClick={() => void navigate(`/incident/${r.id}/result`)}>
+                    <span className="list-row-text">
+                      <span className="list-row-title">{t('screen.S03.result.title', { service: serviceName(r.service), date: dayMonthIn(r.closedAt ?? r.startedAt, tz) })}</span>
+                      <span className="muted small">{resultLine(r)}</span>
+                    </span>
+                    <Icon name="chevron-right" size={16} className="muted" />
+                  </button>
+                ))}
+              </div>
             </>
           ) : null}
           {house.month.services.length > 0 ? (
             <>
               <SectionTitle>{t('screen.S07.month.label')}</SectionTitle>
               {house.month.services.map((s) => (
-                <Card key={s.service}>
-                  <p>{t('screen.S03.month.title', { month: upperFirst(monthOfKey(house.month.month)), service: serviceName(s.service) })}</p>
-                  <p className="muted">
-                    {s.limitMinutes === null
-                      ? t('deadline.no_norm')
-                      : t('screen.S03.month.value', { total: minutesText(s.totalMinutes), limit: minutesText(s.limitMinutes) })}
-                  </p>
-                  {s.norm ? <NormBasisLink norm={s.norm} /> : null}
-                </Card>
+                <MonthCard key={s.service} month={house.month.month} service={s} hasActive={house.activeIncidents.some((i) => i.service === s.service)} />
               ))}
             </>
           ) : null}
           {house.chat?.bound ? (
-            <>
-              <SectionTitle>{t('screen.S03.chat.title')}</SectionTitle>
-              <Card>
-                <p>{house.chat.title ?? t('screen.S03.chat.title')}</p>
-                {house.chat.participantsCount !== null ? <p className="muted small">{t('screen.S03.chat.members', { count: house.chat.participantsCount })}</p> : null}
+            <Card>
+              <div className="row between">
+                <div className="stack tight">
+                  <p className="card-title">{t('screen.S03.chat.title')}</p>
+                  {house.chat.participantsCount !== null ? (
+                    <p className="muted small">
+                      {house.chat.participantsCount} {plural(house.chat.participantsCount, 'members')}
+                    </p>
+                  ) : null}
+                </div>
                 {house.chat.inviteLink ? (
                   <Button size="medium" variant="secondary" onClick={() => openMaxLink(house.chat!.inviteLink!)}>
                     {t('screen.S03.chat.open')}
                   </Button>
                 ) : null}
-              </Card>
-            </>
+              </div>
+            </Card>
           ) : null}
         </div>
       </div>

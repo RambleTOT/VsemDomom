@@ -6,14 +6,15 @@ import { useId, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { api } from '../api/endpoints.ts';
 import { copyText, isWebPlatform, openLink } from '../bridge/webapp.ts';
-import { DeadlineList, EntranceCounter, IncidentHeadline, StatusStepper, Timeline } from '../components/incident.tsx';
+import { DeadlineList, EntranceCounter, IncidentHero, StatusStepper, Timeline } from '../components/incident.tsx';
+import { headlineText } from '../texts.ts';
 import { Screen } from '../components/Screen.tsx';
 import { Sheet } from '../components/Sheet.tsx';
 import { useToast } from '../components/Toast.tsx';
 import { NormBasisLink } from '../components/norm.tsx';
 import { Banner, Card, SectionTitle } from '../components/ui.tsx';
 import { whenIn } from '../format.ts';
-import { plural, restoreBadLabel, restoreQuestion, serviceGen, serviceName, t } from '../i18n.ts';
+import { plural, restoreBadLabel, restoreQuestion, serviceGen, serviceNo, t } from '../i18n.ts';
 import { useSession } from '../app/session.tsx';
 import { errorText, Loaded } from './common.tsx';
 
@@ -119,11 +120,11 @@ function IncidentBody({ incident }: { incident: IncidentDetail }) {
   const bad = restoreBadLabel(incident.service);
   const scopeText = incident.scope === 'entrance' && incident.entrance ? t('screen.S05.scope.entrance', { entrance: incident.entrance }) : t(`screen.S05.scope.${incident.scope}`);
 
+  const meta = t('screen.S05.meta', { house: incident.house.label, time: whenIn(incident.startedAt, tz), joined: plural(incident.participantsCount, 'joined'), count: incident.participantsCount, residents: plural(incident.participantsCount, 'residents') });
+
   return (
     <Screen
-      title={serviceName(incident.service)}
-      sub={t('screen.S05.meta', { house: incident.house.label, time: whenIn(incident.startedAt, tz), joined: plural(incident.participantsCount, 'joined'), count: incident.participantsCount, residents: plural(incident.participantsCount, 'residents') })}
-      model={incident.isModel}
+      title={headlineText(incident).title}
       back={session.staff ? '/uk' : `/house/${incident.house.id}`}
       width="wide"
       actions={actions}
@@ -135,7 +136,11 @@ function IncidentBody({ incident }: { incident: IncidentDetail }) {
         ) : null
       }
     >
-      <IncidentHeadline incident={incident} onOpenActual={incident.mergedInto ? () => void navigate(`/incident/${incident.mergedInto}`) : undefined} />
+      <IncidentHero
+        incident={incident}
+        lines={[serviceNo(incident.service), meta]}
+        {...(incident.mergedInto ? { onOpenActual: () => void navigate(`/incident/${incident.mergedInto}`) } : {})}
+      />
 
       {incident.status === 'brigade_on_site' && features.brigadeConfirm && me?.joined ? (
         <Banner
@@ -220,12 +225,12 @@ function IncidentBody({ incident }: { incident: IncidentDetail }) {
           </Card>
           <Card>
             <SectionTitle>{t('screen.S05.stepper')}</SectionTitle>
-            <StatusStepper steps={incident.steps} timezone={tz} />
+            <StatusStepper steps={incident.steps} timezone={tz} eta={incident.eta} discrepancy={incident.displayStatus === 'discrepancy'} />
           </Card>
           <Card>
             <SectionTitle>{t('screen.S05.where')}</SectionTitle>
             <p>{scopeText}</p>
-            <EntranceCounter byEntrance={incident.counters.byEntrance} unknown={incident.counters.unknownEntrance} />
+            <EntranceCounter byEntrance={incident.counters.byEntrance} entrances={incident.house.entrances} unknown={incident.counters.unknownEntrance} />
             {incident.counters.unconfirmed > 0 ? (
               <p className="muted small">{t('screen.S05.where.unconfirmed', { count: incident.counters.unconfirmed })}</p>
             ) : null}

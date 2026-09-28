@@ -3,10 +3,10 @@
  * авария — предложение присоединиться, шаг 4 — АДС (номер заявки), затем «Готово».
  */
 import { Button, Input, Radio } from '@maxhub/max-ui';
-import { SERVICE_TYPES, STARTED_PRESETS } from '@vsemdomom/shared/browser';
+import { SERVICE_TYPES, STARTED_PRESET_HOURS, STARTED_PRESETS } from '@vsemdomom/shared/browser';
 import type { IncidentDetail, IncidentScope, ServiceType, StartedPreset } from '@vsemdomom/shared';
 import { useQuery } from '@tanstack/react-query';
-import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { ApiError, newIdempotencyKey } from '../api/client.ts';
 import { api } from '../api/endpoints.ts';
@@ -16,11 +16,13 @@ import { Icon } from '../components/Icon.tsx';
 import { EntranceCounter, IncidentHeadline } from '../components/incident.tsx';
 import { Screen } from '../components/Screen.tsx';
 import { useToast } from '../components/Toast.tsx';
-import { Banner, Card, Muted, SectionTitle, Skeleton } from '../components/ui.tsx';
+import { Banner, Card, EmptyState, Muted, Skeleton } from '../components/ui.tsx';
 import { localInputValue, timeIn, whenIn } from '../format.ts';
 import { plural, serviceGen, serviceName, serviceNo, t } from '../i18n.ts';
 import type { IconName } from '../icons/icons.ts';
 import { useSession } from '../app/session.tsx';
+import { useWide } from '../app/useWide.ts';
+import { whenLabel } from '../texts.ts';
 import { errorText } from './common.tsx';
 
 const SERVICE_ICON: Record<ServiceType, IconName> = {
@@ -35,7 +37,8 @@ const SERVICE_ICON: Record<ServiceType, IconName> = {
 
 const MS_PER_HOUR = 3_600_000;
 const HOURS_PER_DAY = 24;
-const SCOPES: readonly IncidentScope[] = ['entrance', 'house', 'flat'];
+/** Порядок как в макете: от узкого к широкому. */
+const SCOPES: readonly IncidentScope[] = ['flat', 'entrance', 'house'];
 
 type Step = 1 | 2 | 3 | 'duplicate' | 4 | 'done';
 
@@ -50,6 +53,11 @@ export function Progress({ step, of, label }: { step: number; of: number; label?
       </div>
     </div>
   );
+}
+
+/** Вопрос шага («Что случилось?») — крупнее заголовка секции. */
+export function StepQuestion({ children }: { children: ReactNode }) {
+  return <h2 className="step-question">{children}</h2>;
 }
 
 /** Плитки вида услуги (radiogroup): стрелки переключают выбор. */
@@ -90,6 +98,7 @@ export function ReportScreen() {
   const [adsNumber, setAdsNumber] = useState('');
   const [adsTime, setAdsTime] = useState(() => localInputValue(new Date()));
   const floorId = useId();
+  const wide = useWide();
   // Шаг назад — и для кнопки «Назад» внизу, и для нативной «Назад» MAX (стабильная ссылка: без мигания кнопки).
   const stepBack = useCallback(() => setStep((s) => (s === 2 ? 1 : s === 3 ? 2 : s === 'duplicate' ? 3 : s)), []);
 
@@ -190,14 +199,150 @@ export function ReportScreen() {
 
   const title = t('report.cta');
   const houseInfo = house.data;
+  const sub = houseInfo ? `${t('screen.S03.title', { house: houseInfo.label })} · ${houseInfo.address}` : undefined;
   const tz = houseInfo?.timezone ?? 'Europe/Moscow';
   const backTo = back === null ? (houseInfo ? `/house/${houseInfo.id}` : session.home) : null;
+
+  // ---------- шаги 1–3: что, когда, где ----------
+  const entrances = houseInfo?.entrances ?? 0;
+  const needEntrance = scope === 'entrance' && entrance === null;
+  const timeBlocked = customFuture || (customOld && !confirmOld);
+  const futureText = t('screen.S04.step2.error.future', { time: timeIn(now.toISOString(), tz) });
+  const startAt = preset === 'custom' ? (customFuture || Number.isNaN(customDate.getTime()) ? null : customDate) : new Date(now.getTime() - STARTED_PRESET_HOURS[preset] * MS_PER_HOUR);
+  const whereTitle = service ? t('screen.S04.step3.title', { service_gen: serviceGen(service) }) : t('screen.S04.step3.title.any');
+
+  const whatBody = (
+    <>
+      <StepQuestion>{t('screen.S04.step1.title')}</StepQuestion>
+      <ServiceTypePicker value={service} onChange={setService} />
+      {service === 'gas' ? (
+        <Banner tone="negative" icon="flame" title={t('screen.S04.gas.title')}>
+          {t('screen.S04.gas.text')}
+        </Banner>
+      ) : null}
+    </>
+  );
+
+  const whenBody = (
+    <>
+      <StepQuestion>{t('screen.S04.step2.title')}</StepQuestion>
+      <div className="chip-radios" role="radiogroup" aria-label={t('screen.S04.step2.title')}>
+        {STARTED_PRESETS.map((p) => (
+          <button type="button" role="radio" aria-checked={preset === p} className="chip-radio" key={p} onClick={() => setPreset(p)}>
+            {t(`since.${p}`)}
+          </button>
+        ))}
+      </div>
+      {preset === 'custom' ? (
+        <div className="field">
+          <input
+            className="native-input"
+            type="datetime-local"
+            value={custom}
+            max={localInputValue(now)}
+            aria-invalid={customFuture}
+            onChange={(e) => setCustom(e.currentTarget.value)}
+          />
+          {customFuture ? (
+            <p className="field-error">
+              <Icon name="circle-alert" size={16} />
+              {futureText}
+            </p>
+          ) : null}
+          {customOld ? (
+            <label className="radio-row card">
+              <input type="checkbox" checked={confirmOld} onChange={(e) => setConfirmOld(e.currentTarget.checked)} />
+              <span className="radio-text">{t('screen.S04.step2.confirm.old')}</span>
+            </label>
+          ) : null}
+        </div>
+      ) : null}
+      <p className="muted small">{t('screen.S04.step2.hint')}</p>
+      <p className="start-line">{t('screen.S04.step2.start', { when: startAt ? whenLabel(startAt.toISOString(), tz) : '—' })}</p>
+    </>
+  );
+
+  const whereBody = (
+    <>
+      <StepQuestion>{whereTitle}</StepQuestion>
+      <div className="radio-list" role="radiogroup" aria-label={whereTitle}>
+        {SCOPES.map((s) => (
+          <label className="radio-row" key={s}>
+            <span className="radio-text">
+              <span>{t(`scope.${s}`)}</span>
+              <span className="muted small">{t(`scope.${s}.sub`)}</span>
+            </span>
+            <Radio name="scope" value={s} checked={scope === s} onChange={() => setScope(s)} />
+          </label>
+        ))}
+      </div>
+      {scope === 'entrance' && entrances > 0 ? (
+        <div className="field">
+          <p className="field-label">{t('screen.S04.entrance')}</p>
+          <div className="entrance-buttons" role="radiogroup" aria-label={t('screen.S04.entrance')}>
+            {Array.from({ length: entrances }, (_, i) => i + 1).map((n) => (
+              <button type="button" role="radio" aria-checked={entrance === n} className="chip-radio" key={n} onClick={() => setEntrance(n)}>
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {scope !== 'flat' ? (
+        <div className="field">
+          <label className="field-label" htmlFor={floorId}>
+            {t('screen.S04.floor')}
+          </label>
+          <Input id={floorId} size="large" mode="contrast" inputMode="numeric" value={floor} onChange={(e) => setFloor(e.currentTarget.value.replace(/[^\d]/g, '').slice(0, 2))} />
+        </div>
+      ) : null}
+    </>
+  );
+
+  // Ноутбук: шаги 1–3 на одном экране в две колонки, одна кнопка «Отметить аварию».
+  if (wide && (step === 1 || step === 2 || step === 3)) {
+    const reason = !service
+      ? t('report.disabled.what')
+      : customFuture
+        ? futureText
+        : customOld && !confirmOld
+          ? t('screen.S04.step2.confirm.old')
+          : needEntrance
+            ? t('screen.S04.step3.disabled')
+            : undefined;
+    return (
+      <Screen
+        title={title}
+        sub={sub}
+        model={houseInfo?.isModel ?? false}
+        back={houseInfo ? `/house/${houseInfo.id}` : session.home}
+        width="wide"
+        actionsReason={reason}
+        actions={
+          <Button size="large" stretched disabled={reason !== undefined || !houseInfo} loading={busy} onClick={() => void create()}>
+            {t('screen.S04.step3.cta')}
+          </Button>
+        }
+      >
+        <div className="report-columns">
+          <div className="stack">{whatBody}</div>
+          <div className="stack">
+            {whenBody}
+            {whereBody}
+          </div>
+        </div>
+        {house.isPending ? <Skeleton kind="line" /> : null}
+        {error ? <InlineError error={error} /> : null}
+      </Screen>
+    );
+  }
 
   // ---------- шаг 1: что случилось ----------
   if (step === 1) {
     return (
       <Screen
         title={title}
+        sub={sub}
         model={houseInfo?.isModel ?? false}
         back={backTo}
         actionsReason={service ? undefined : t('report.disabled.what')}
@@ -208,129 +353,49 @@ export function ReportScreen() {
         }
       >
         <Progress step={1} of={4} />
-        <SectionTitle>{t('screen.S04.step1.title')}</SectionTitle>
-        <ServiceTypePicker value={service} onChange={setService} />
-        {service === 'gas' ? (
-          <Banner tone="negative" icon="flame" title={t('screen.S04.gas.title')}>
-            {t('screen.S04.gas.text')}
-          </Banner>
-        ) : null}
+        {whatBody}
       </Screen>
     );
   }
 
   // ---------- шаг 2: с какого времени ----------
   if (step === 2) {
-    const blocked = customFuture || (customOld && !confirmOld);
     return (
       <Screen
         title={title}
+        sub={sub}
         model={houseInfo?.isModel ?? false}
         back={stepBack}
-        actionsReason={customFuture ? t('screen.S04.step2.error.future', { time: timeIn(now.toISOString(), tz) }) : undefined}
+        actionsReason={customFuture ? futureText : undefined}
         actions={
-          <>
-            <Button size="large" stretched disabled={blocked} onClick={() => setStep(3)}>
-              {t('common.continue')}
-            </Button>
-            <Button size="large" stretched variant="secondary" onClick={stepBack}>
-              {t('common.back')}
-            </Button>
-          </>
+          <Button size="large" stretched disabled={timeBlocked} onClick={() => setStep(3)}>
+            {t('common.continue')}
+          </Button>
         }
       >
         <Progress step={2} of={4} />
-        <SectionTitle>{t('screen.S04.step2.title')}</SectionTitle>
-        <div className="chip-radios" role="radiogroup" aria-label={t('screen.S04.step2.title')}>
-          {STARTED_PRESETS.map((p) => (
-            <button type="button" role="radio" aria-checked={preset === p} className="chip-radio" key={p} onClick={() => setPreset(p)}>
-              {t(`since.${p}`)}
-            </button>
-          ))}
-        </div>
-        {preset === 'custom' ? (
-          <div className="field">
-            <input
-              className="native-input"
-              type="datetime-local"
-              value={custom}
-              max={localInputValue(now)}
-              aria-invalid={customFuture}
-              onChange={(e) => setCustom(e.currentTarget.value)}
-            />
-            {customFuture ? (
-              <p className="field-error">
-                <Icon name="circle-alert" size={16} />
-                {t('screen.S04.step2.error.future', { time: timeIn(now.toISOString(), tz) })}
-              </p>
-            ) : null}
-            {customOld ? (
-              <label className="radio-row card">
-                <input type="checkbox" checked={confirmOld} onChange={(e) => setConfirmOld(e.currentTarget.checked)} />
-                <span className="radio-text">{t('screen.S04.step2.confirm.old')}</span>
-              </label>
-            ) : null}
-          </div>
-        ) : null}
-        <Muted>{t('screen.S04.step2.hint')}</Muted>
+        {whenBody}
       </Screen>
     );
   }
 
   // ---------- шаг 3: где ----------
   if (step === 3) {
-    const entrances = houseInfo?.entrances ?? 0;
-    const needEntrance = scope === 'entrance' && entrance === null;
     return (
       <Screen
         title={title}
+        sub={sub}
         model={houseInfo?.isModel ?? false}
         back={stepBack}
         actionsReason={needEntrance ? t('screen.S04.step3.disabled') : undefined}
         actions={
-          <>
-            <Button size="large" stretched disabled={needEntrance || !houseInfo} loading={busy} onClick={() => void create()}>
-              {t('screen.S04.step3.cta')}
-            </Button>
-            <Button size="large" stretched variant="secondary" disabled={busy} onClick={stepBack}>
-              {t('common.back')}
-            </Button>
-          </>
+          <Button size="large" stretched disabled={needEntrance || !houseInfo} loading={busy} onClick={() => void create()}>
+            {t('screen.S04.step3.cta')}
+          </Button>
         }
       >
         <Progress step={3} of={4} />
-        <SectionTitle>{t('screen.S04.step3.title', { service_gen: service ? serviceGen(service) : '' })}</SectionTitle>
-        <div className="radio-list" role="radiogroup" aria-label={t('screen.S04.step3.title', { service_gen: service ? serviceGen(service) : '' })}>
-          {SCOPES.map((s) => (
-            <label className="radio-row" key={s}>
-              <Radio name="scope" value={s} checked={scope === s} onChange={() => setScope(s)} />
-              <span className="radio-text">
-                <span>{t(`scope.${s}`)}</span>
-                <span className="muted small">{t(`scope.${s}.sub`)}</span>
-              </span>
-            </label>
-          ))}
-        </div>
-        {scope === 'entrance' && entrances > 0 ? (
-          <div className="stack">
-            <p className="section-title">{t('screen.S04.entrance')}</p>
-            <div className="entrance-buttons" role="radiogroup" aria-label={t('screen.S04.entrance')}>
-              {Array.from({ length: entrances }, (_, i) => i + 1).map((n) => (
-                <button type="button" role="radio" aria-checked={entrance === n} className="chip-radio" key={n} onClick={() => setEntrance(n)}>
-                  {n}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-        {scope !== 'flat' ? (
-          <div className="field">
-            <label className="field-label" htmlFor={floorId}>
-              {t('screen.S04.floor')}
-            </label>
-            <Input id={floorId} size="large" mode="contrast" inputMode="numeric" value={floor} onChange={(e) => setFloor(e.currentTarget.value.replace(/[^\d]/g, '').slice(0, 2))} />
-          </div>
-        ) : null}
+        {whereBody}
         {house.isPending ? <Skeleton kind="line" /> : null}
         {error ? <InlineError error={error} /> : null}
       </Screen>
@@ -341,7 +406,8 @@ export function ReportScreen() {
   if (step === 'duplicate' && duplicate) {
     return (
       <Screen
-        title={t('screen.S04.dup.title')}
+        title={title}
+        sub={sub}
         model={duplicate.isModel}
         back={stepBack}
         actions={
@@ -355,13 +421,18 @@ export function ReportScreen() {
           </>
         }
       >
+        <Progress step={3} of={4} />
+        <StepQuestion>{t('screen.S04.dup.title')}</StepQuestion>
         <Muted>{t('screen.S04.dup.text')}</Muted>
         <Card>
           <IncidentHeadline incident={duplicate} compact />
-          <p className="muted small">
-            {t('screen.S05.meta', { house: duplicate.house.label, time: whenIn(duplicate.startedAt, duplicate.house.timezone), joined: plural(duplicate.participantsCount, 'joined'), count: duplicate.participantsCount, residents: plural(duplicate.participantsCount, 'residents') })}
-          </p>
-          <EntranceCounter byEntrance={duplicate.byEntrance} />
+          <div className="stack tight">
+            <p className="hero-line">{serviceNo(duplicate.service)}</p>
+            <p className="muted small">
+              {t('screen.S03.card.since', { time: whenIn(duplicate.startedAt, duplicate.house.timezone), joined: plural(duplicate.participantsCount, 'joined'), count: duplicate.participantsCount, residents: plural(duplicate.participantsCount, 'residents'), entrances: duplicate.byEntrance.map((e) => e.entrance).join(', ') || '—' })}
+            </p>
+          </div>
+          <EntranceCounter byEntrance={duplicate.byEntrance} entrances={duplicate.house.entrances} />
         </Card>
       </Screen>
     );
@@ -373,12 +444,13 @@ export function ReportScreen() {
     const web = isWebPlatform();
     const flat = session.me.residencies.find((r) => r.house.id === created.house.id)?.flatNo;
     return (
-      <Screen title={t('report.ads.title')} model={created.isModel}>
+      <Screen title={title} sub={sub} model={created.isModel}>
         <Progress step={4} of={4} />
         <Banner tone="positive" title={t('report.created')} />
+        <StepQuestion>{t('report.ads.title')}</StepQuestion>
         <Muted>{t('report.ads.body')}</Muted>
         <Card>
-          <p className="section-title">{t('report.ads.label', { uk: houseInfo?.uk.name ?? '' })}</p>
+          <p className="muted small">{t('report.ads.label', { uk: houseInfo?.uk.name ?? '' })}</p>
           <p className="big-number">{phone}</p>
           {web ? (
             <>
@@ -398,14 +470,14 @@ export function ReportScreen() {
             </Button>
           )}
         </Card>
-        <Card>
-          <p className="section-title">{t('report.ads.say')}</p>
+        <div className="field">
+          <p className="field-label">{t('report.ads.say')}</p>
           <ul className="say-list">
             <li>{t('report.ads.say.name')}</li>
             <li>{flat ? t('report.ads.say.address', { address: created.house.address, flat }) : t('report.ads.say.address.no_flat', { address: created.house.address })}</li>
             <li>{t('report.ads.say.what', { service_no: serviceNo(created.service), time: whenIn(created.startedAt, created.house.timezone) })}</li>
           </ul>
-        </Card>
+        </div>
         <Card>
           <div className="field">
             <label className="field-label" htmlFor="ads-number">
@@ -445,7 +517,8 @@ export function ReportScreen() {
     const invite = houseInfo?.chat?.inviteLink ?? null;
     return (
       <Screen
-        title={t('report.done.title')}
+        title={title}
+        sub={sub}
         model={created.isModel}
         actions={
           <>
@@ -460,12 +533,29 @@ export function ReportScreen() {
           </>
         }
       >
-        <Banner tone="positive" icon="circle-check" title={t('report.done.title')}>
-          {created.scope === 'flat' ? t('report.done.flat') : t('report.done')}
-        </Banner>
-        <Card>
-          <IncidentHeadline incident={created} compact />
+        <Card className="done-card">
+          <EmptyState icon="circle-check" title={t('report.done.title')} text={created.scope === 'flat' ? t('report.done.flat') : t('report.done')} />
         </Card>
+        <div className="list-card">
+          <div className="list-row static">
+            <span className="list-row-text">
+              <span className="list-row-title">{t('report.done.what', { service: serviceName(created.service), time: whenIn(created.startedAt, created.house.timezone) })}</span>
+              {created.me?.entrance ? (
+                <span className="muted small">
+                  {created.me.floor ? t('report.done.where.floor', { entrance: created.me.entrance, floor: created.me.floor }) : t('report.done.where', { entrance: created.me.entrance })}
+                </span>
+              ) : null}
+            </span>
+          </div>
+          {created.ads.registration?.number ? (
+            <div className="list-row static">
+              <span className="list-row-text">
+                <span className="list-row-title">{t('report.done.ads', { number: created.ads.registration.number })}</span>
+                {created.ads.registration.at ? <span className="muted small">{t('report.done.ads.at', { time: whenIn(created.ads.registration.at, created.house.timezone) })}</span> : null}
+              </span>
+            </div>
+          ) : null}
+        </div>
       </Screen>
     );
   }

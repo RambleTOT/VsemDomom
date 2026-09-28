@@ -14,8 +14,8 @@ import { SystemScreen } from '../components/errors.tsx';
 import { NormBasisLink } from '../components/norm.tsx';
 import { Screen } from '../components/Screen.tsx';
 import { useToast } from '../components/Toast.tsx';
-import { Banner, Card, Chip, KeyValue, Muted, SectionTitle } from '../components/ui.tsx';
-import { whenIn } from '../format.ts';
+import { Banner, Card, Chip, KeyValue, Muted } from '../components/ui.tsx';
+import { dayMonthIn, whenIn } from '../format.ts';
 import { plural, serviceName, t } from '../i18n.ts';
 import { useSession } from '../app/session.tsx';
 import { actTemplateText } from '../documents.ts';
@@ -67,7 +67,7 @@ function ActBody({ incident, act }: { incident: IncidentDetail; act: ActInfo }) 
   return (
     <Screen
       title={t('screen.S09.title')}
-      sub={`${serviceName(incident.service)} · ${t('screen.S03.title', { house: incident.house.label })}`}
+      sub={`${serviceName(incident.service)} · ${t('screen.S03.title', { house: incident.house.label })} · ${dayMonthIn(incident.startedAt, incident.house.timezone)}`}
       model={incident.isModel}
       back={`/incident/${incident.id}`}
       actions={
@@ -99,12 +99,12 @@ function ActBody({ incident, act }: { incident: IncidentDetail; act: ActInfo }) 
     >
       <Card>
         <p>{act.checkDueAt ? t('screen.S09.lead.at', { time: whenIn(act.checkDueAt, tz) }) : t('screen.S09.lead.plain')}</p>
-        <p>{t('screen.S09.need.n', { persons })}</p>
+        <Muted>{t('screen.S09.need.n', { persons })}</Muted>
         <NormBasisLink norm={act.norm} />
       </Card>
 
       <Card>
-        <SectionTitle>{t('screen.S09.ready')}</SectionTitle>
+        <p className="muted small">{t('screen.S09.ready')}</p>
         <p className="big-number">{t('screen.S09.ready.value', { count: act.readyCount, neighbors: plural(act.readyCount, 'neighbours') })}</p>
         <KeyValue rows={[{ key: t('screen.S09.row.consumers'), value: t('screen.S09.row.value', { n: Math.min(act.readyCount, act.requiredConsumers), need: act.requiredConsumers }) }]} />
         {act.myReady ? (
@@ -140,7 +140,7 @@ function ActBody({ incident, act }: { incident: IncidentDetail; act: ActInfo }) 
       ) : null}
 
       <div className="row between">
-        <SectionTitle>{t('screen.S09.template.title')}</SectionTitle>
+        <p className="field-label">{t('screen.S09.template.title')}</p>
         <Chip tone="warning" icon="file-text">
           {t('screen.S09.sample')}
         </Chip>

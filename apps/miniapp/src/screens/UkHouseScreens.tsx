@@ -16,11 +16,12 @@ import { Screen } from '../components/Screen.tsx';
 import { ConfirmDialog } from '../components/Sheet.tsx';
 import { useToast } from '../components/Toast.tsx';
 import { Banner, Card, Chip, EmptyState, Muted, SectionTitle } from '../components/ui.tsx';
+import { Icon } from '../components/Icon.tsx';
 import { dateIn, minutesText, monthOfKey, whenIn } from '../format.ts';
-import { plural, roleName, serviceName, t, upperFirst } from '../i18n.ts';
+import { lowerFirst, plural, roleName, serviceName, t, upperFirst } from '../i18n.ts';
 import { useSession } from '../app/session.tsx';
 import { errorText, Loaded, useErrorAction } from './common.tsx';
-import { useWide } from './UkIncidentScreens.tsx';
+import { useWide } from '../app/useWide.ts';
 
 const houseTitle = (h: { label: string }) => t('screen.S03.title', { house: h.label });
 const deviceTimezone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -36,27 +37,38 @@ function chatLine(h: UkHouse): string {
   ].join(' · ');
 }
 
-function HouseLinks({ house }: { house: UkHouse }) {
+/** Разделы дома списком со стрелками: жильцы, тепловая карта, итог месяца (по флагам), чат и демо. */
+function HouseLinks({ house, withChat = false }: { house: UkHouse; withChat?: boolean }) {
   const navigate = useNavigate();
   const f = useSession().me.features;
+  const rows: { key: string; title: string; sub: string | null; badge?: number; to: string }[] = [];
+  if (f.trustLevels) {
+    rows.push({
+      key: 'residents',
+      title: t('screen.U03L.residents'),
+      sub: house.pendingResidents > 0 ? t('screen.U03L.residents.sub', { count: house.pendingResidents, requests: plural(house.pendingResidents, 'requests') }) : t('screen.U03L.residents.none'),
+      badge: house.pendingResidents,
+      to: `/uk/residents?house=${house.id}`,
+    });
+  }
+  if (f.polls) rows.push({ key: 'heat', title: t('screen.U03L.heat'), sub: t('screen.U03L.heat.sub'), to: `/uk/houses/${house.id}/heat` });
+  if (f.monthlySummary) rows.push({ key: 'month', title: t('screen.U03L.month'), sub: null, to: `/uk/houses/${house.id}/month` });
+  if (withChat) rows.push({ key: 'chat', title: t('screen.U03L.chat_tools'), sub: chatLine(house), to: `/uk/houses/${house.id}` });
+  if (rows.length === 0) return null;
   return (
-    <div className="row">
-      {f.trustLevels ? (
-        <Button size="small" variant="secondary" onClick={() => void navigate(`/uk/residents?house=${house.id}`)}>
-          {t('screen.U03L.residents')}
-          {house.pendingResidents > 0 ? ` · ${house.pendingResidents}` : ''}
-        </Button>
-      ) : null}
-      {f.polls ? (
-        <Button size="small" variant="secondary" onClick={() => void navigate(`/uk/houses/${house.id}/heat`)}>
-          {t('screen.U03L.heat')}
-        </Button>
-      ) : null}
-      {f.monthlySummary ? (
-        <Button size="small" variant="secondary" onClick={() => void navigate(`/uk/houses/${house.id}/month`)}>
-          {t('screen.U03L.month')}
-        </Button>
-      ) : null}
+    <div className="list-card inset">
+      {rows.map((r) => (
+        <button type="button" key={r.key} className="list-row plain-button" onClick={() => void navigate(r.to)}>
+          <span className="list-row-text">
+            <span className="list-row-title">{r.title}</span>
+            {r.sub ? <span className="muted small">{r.sub}</span> : null}
+          </span>
+          <span className="row">
+            {r.badge ? <span className="count-badge">{r.badge}</span> : null}
+            <Icon name="chevron-right" size={16} className="muted" />
+          </span>
+        </button>
+      ))}
     </div>
   );
 }
@@ -64,33 +76,32 @@ function HouseLinks({ house }: { house: UkHouse }) {
 // ---------- U03L ----------
 
 export function UkHousesScreen() {
-  const navigate = useNavigate();
+  const staff = useSession().me.staff;
   const query = useQuery({ queryKey: ['uk-houses'], queryFn: api.ukHouses });
+  const n = query.data?.items.length ?? 0;
   return (
-    <Screen title={t('screen.U03L.title')} back="/uk" model={query.data?.items.some((h) => h.isModel) ?? false} width="wide">
+    <Screen
+      title={t('screen.U03L.title')}
+      sub={staff && n > 0 ? t('screen.U01.sub.n', { uk: staff.uk.name, n, houses: plural(n, 'houses') }) : undefined}
+      back="/uk"
+      model={query.data?.items.some((h) => h.isModel) ?? false}
+      width="wide"
+    >
       <Loaded query={query}>
         {(data) => (
           <div className="stack">
             {data.items.map((h) => (
               <Card key={h.id}>
-                <div className="row between">
-                  <div>
-                    <p className="banner-title">{houseTitle(h)}</p>
-                    <Muted>{h.address}</Muted>
-                  </div>
-                  {h.activeIncidents > 0 ? (
-                    <Chip tone="negative" icon="circle-alert">
-                      {h.activeIncidents} {plural(h.activeIncidents, 'incidents')}
-                    </Chip>
-                  ) : null}
+                <div className="stack tight">
+                  <p className="card-title">
+                    {houseTitle(h)} · {h.address}
+                  </p>
+                  <p className="muted small">
+                    {chatLine(h)}
+                    {h.activeIncidents > 0 ? ` · ${h.activeIncidents} ${plural(h.activeIncidents, 'incidents')}` : ''}
+                  </p>
                 </div>
-                <p className="muted small">{chatLine(h)}</p>
-                <HouseLinks house={h} />
-                <div>
-                  <Button size="medium" variant="secondary" onClick={() => void navigate(`/uk/houses/${h.id}`)}>
-                    {t('screen.U03L.chat_tools')}
-                  </Button>
-                </div>
+                <HouseLinks house={h} withChat />
               </Card>
             ))}
           </div>
@@ -310,13 +321,16 @@ function BindBody({ token, info }: { token: string; info: ChatBindingInfo }) {
           <div className="radio-list" role="radiogroup" aria-label={t('screen.U03.bind.pick')}>
             {data.items.map((h) => (
               <label className="radio-row" key={h.id}>
-                <Radio name="house" value={h.id} checked={houseId === h.id} onChange={() => setHouseId(h.id)} />
                 <span className="radio-text">
-                  <span>{houseTitle(h)}</span>
-                  <span className="muted small">
-                    {h.address} · {h.chat?.bound ? t('screen.U03.bind.rebind') : t('screen.U03.chat.pending')}
+                  <span>
+                    {houseTitle(h)} · {h.address}
                   </span>
+                  <span className="muted small">
+                    {h.entrances} {plural(h.entrances, 'entrances')} · {h.flatTo - h.flatFrom + 1} {plural(h.flatTo - h.flatFrom + 1, 'flats')}
+                  </span>
+                  {h.chat?.bound ? <span className="muted small">{t('screen.U03.bind.rebind')}</span> : null}
                 </span>
+                <Radio name="house" value={h.id} checked={houseId === h.id} onChange={() => setHouseId(h.id)} />
               </label>
             ))}
           </div>
@@ -347,7 +361,7 @@ function ResidentRow({ item, decided, busy, onDecide }: { item: ResidentRequest;
       <div className="row between">
         <div>
           <p className="banner-title">
-            {t('screen.S11.flat', { flat: item.flatNo })} · {roleName(item.role)}
+            {t('screen.S11.flat', { flat: item.flatNo })} · {lowerFirst(roleName(item.role))}
           </p>
           <Muted>{from ? t(`screen.U04.from.${from}`, { date }) : `${houseTitle(item.house)} · ${date}`}</Muted>
         </div>
@@ -470,18 +484,19 @@ function HeatBody({ map, house }: { map: HeatMap; house: UkHouseDetail }) {
       }
     >
       {map.poll ? (
-        <>
-          <p className="banner-title">{t('screen.U05.answered.n', { n: map.answered, total: map.totalFlats, flats: plural(map.totalFlats, 'flats_gen') })}</p>
-          <Card>
-            <HeatGrid map={map} />
-          </Card>
-        </>
+        <Card>
+          <div className="stack tight">
+            <SectionTitle>{t('screen.U02.grid')}</SectionTitle>
+            <p className="muted small">{t('screen.U05.answered.n', { n: map.answered, total: map.totalFlats, flats: plural(map.totalFlats, 'flats_gen') })}</p>
+          </div>
+          <HeatGrid map={map} />
+        </Card>
       ) : (
         <Card>
           <EmptyState icon="heater" title={t('screen.U05.empty')} text={t('screen.U05.empty.text')} />
         </Card>
       )}
-      <Banner tone="info" title={t('screen.U05.legal')} />
+      <p className="muted small">{t('screen.U05.legal')}</p>
       {map.norm ? <NormBasisLink norm={map.norm} /> : null}
     </Screen>
   );
@@ -517,24 +532,29 @@ export function UkMonthScreen() {
                   <Card>
                     <Muted>{t('screen.U06.kpi.incidents')}</Muted>
                     <p className="big-number">{m.incidents}</p>
+                    {m.services.length > 0 ? <p className="muted small">{m.services.map((x) => lowerFirst(serviceName(x.service))).join(', ')}</p> : null}
                   </Card>
                   <Card>
                     <Muted>{t('screen.U06.kpi.in_norm')}</Muted>
-                    <p className="big-number">{m.inNorm}</p>
+                    <p className="big-number">{t('screen.U06.kpi.in_norm.value', { n: m.inNorm, total: m.incidents })}</p>
+                    <p className="muted small">{t('screen.U06.kpi.in_norm.sub')}</p>
                   </Card>
                   <Card>
                     <Muted>{t('screen.U06.kpi.to_accept')}</Muted>
                     <p className="big-number">{m.avgAcceptMinutes === null ? '—' : minutesText(m.avgAcceptMinutes)}</p>
+                    <p className="muted small">{t('screen.U06.kpi.to_accept.sub')}</p>
                   </Card>
                   <Card>
                     <Muted>{t('screen.U06.kpi.disc')}</Muted>
                     <p className="big-number">{m.discrepancies}</p>
+                    <p className="muted small">{t('screen.U06.kpi.disc.sub')}</p>
                   </Card>
                 </div>
                 <Card>
                   <SectionTitle>{t('screen.U06.services')}</SectionTitle>
                   <MonthServices services={m.services} month={m.month} />
                 </Card>
+                <p className="muted small">{t('calc.disclaimer')}</p>
               </>
             ) : (
               <Muted>{t('feature.off')}</Muted>

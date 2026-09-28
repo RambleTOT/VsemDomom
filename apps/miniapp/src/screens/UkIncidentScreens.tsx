@@ -3,58 +3,55 @@
  * U02. Авария глазами УК: следующий шаг одной кнопкой, остальное — в «Другой статус»; сетка подъездов,
  * жители, сроки, хронология. На широком экране — «список + деталь».
  */
-import { Button, IconButton } from '@maxhub/max-ui';
+import { Button, IconButton, Typography } from '@maxhub/max-ui';
 import type { IncidentSummary, UkAction, UkIncidentDetail, UkStatusRequest } from '@vsemdomom/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { ApiError } from '../api/client.ts';
 import { api, type UkListStatus } from '../api/endpoints.ts';
-import { EntranceFloorGridView } from '../components/grid.tsx';
+import { EntranceFloorGridView, GridLegend } from '../components/grid.tsx';
 import { Icon } from '../components/Icon.tsx';
-import { DeadlineList, IncidentHeadline, StatusStepper, Timeline } from '../components/incident.tsx';
+import { DeadlineList, IncidentHeadline, IncidentHero, StatusStepper, Timeline } from '../components/incident.tsx';
+import { headlineText } from '../texts.ts';
 import { NormBasisLink } from '../components/norm.tsx';
 import { Screen } from '../components/Screen.tsx';
 import { ConfirmDialog, Sheet } from '../components/Sheet.tsx';
 import { useToast } from '../components/Toast.tsx';
 import { Card, Chip, EmptyState, KeyValue, Muted, SectionTitle } from '../components/ui.tsx';
 import { localInputValue, timeIn, todayAt, whenIn } from '../format.ts';
-import { plural, restoreQuestion, serviceName, t } from '../i18n.ts';
+import { plural, restoreQuestion, serviceName, serviceNo, t } from '../i18n.ts';
 import { useSession } from '../app/session.tsx';
+import { useWide } from '../app/useWide.ts';
 import { errorText, Loaded } from './common.tsx';
 
 const REFRESH_MS = 15_000;
-const WIDE_QUERY = '(min-width: 840px)';
 const MS_PER_HOUR = 3_600_000;
 /** Быстрые варианты ориентира — варианты интерфейса, не нормативы. */
 const ETA_PLUS_HOURS = [1, 2, 4] as const;
 const ETA_EVENING_HOUR = 22;
 const STATUSES: readonly UkListStatus[] = ['open', 'expired', 'closed'];
 
-export function useWide(): boolean {
-  const [wide, setWide] = useState(() => globalThis.matchMedia?.(WIDE_QUERY).matches ?? false);
-  useEffect(() => {
-    const mq = globalThis.matchMedia?.(WIDE_QUERY);
-    if (!mq) return;
-    const onChange = () => setWide(mq.matches);
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
-  return wide;
-}
-
 // ---------- U01 ----------
+
+/** «П2, П3» — подъезды с отметками. */
+const entranceList = (incident: IncidentSummary) => incident.byEntrance.map((e) => t('entrance.short', { entrance: e.entrance })).join(', ');
 
 function UkIncidentRow({ incident, selected, onOpen }: { incident: IncidentSummary; selected: boolean; onOpen: () => void }) {
   const tz = incident.house.timezone;
-  const entrances = incident.byEntrance.map((e) => e.entrance).join(', ') || '—';
+  const entrances = entranceList(incident);
   return (
     <button type="button" className={`card clickable incident-row ${selected ? 'selected' : ''}`} aria-current={selected ? 'true' : undefined} onClick={onOpen}>
-      <p className="meta">
-        {t('screen.S03.title', { house: incident.house.label })} · {incident.house.address} · {serviceName(incident.service)}
-      </p>
       <IncidentHeadline incident={incident} compact />
-      <p className="meta">{t('screen.U01.row.meta', { time: whenIn(incident.startedAt, tz), count: incident.flatsCount, flats: plural(incident.flatsCount, 'flats'), entrances })}</p>
+      <div className="stack tight">
+        <p className="hero-line">
+          {serviceName(incident.service)} <span className="muted">{t('screen.U01.row.since', { time: whenIn(incident.startedAt, tz) })}</span>
+        </p>
+        <p className="meta">
+          {t('screen.U01.row.where', { house: incident.house.label, address: incident.house.address, count: incident.flatsCount, flats: plural(incident.flatsCount, 'flats') })}
+          {entrances ? ` · ${entrances}` : ''}
+        </p>
+      </div>
     </button>
   );
 }
@@ -128,9 +125,9 @@ export function UkListScreen() {
       sub={staff ? t('screen.U01.sub.n', { uk: staff.uk.name, n: houses.length, houses: plural(houses.length, 'houses') }) : undefined}
       model={staff?.uk.isModel ?? false}
       width="wide"
+      badges={staff?.isDemo ? <Chip tone="info">{t('role.demo')}</Chip> : null}
       headerAfter={
         <>
-          {staff?.isDemo ? <Chip tone="info">{t('role.demo')}</Chip> : null}
           <IconButton size="medium" variant="secondary" aria-label={t('screen.U03L.title')} onClick={() => void navigate('/uk/houses')}>
             <Icon name="building-2" size={20} />
           </IconButton>
@@ -348,12 +345,27 @@ function UkIncidentBody({ incident, embedded, onMoved }: { incident: UkIncidentD
 
   const content = (
     <>
-      <IncidentHeadline incident={incident} onOpenActual={incident.mergedInto ? () => (onMoved ? onMoved(incident.mergedInto!) : void navigate(`/uk/incident/${incident.mergedInto}`)) : undefined} />
+      {embedded ? (
+        <Typography.Text variant="subheader" asChild>
+          <h2 className="screen-title">{headlineText(incident).title}</h2>
+        </Typography.Text>
+      ) : null}
+      <IncidentHero
+        incident={incident}
+        lines={[
+          t('screen.U02.line', { service_no: serviceNo(incident.service), house: incident.house.label }),
+          t('screen.U02.meta', { address: incident.house.address, time: whenIn(incident.startedAt, tz), count: incident.participantsCount, residents: plural(incident.participantsCount, 'residents') }),
+        ]}
+        {...(incident.mergedInto ? { onOpenActual: () => (onMoved ? onMoved(incident.mergedInto!) : void navigate(`/uk/incident/${incident.mergedInto}`)) } : {})}
+      />
       {embedded && buttons ? <div className="row">{buttons}</div> : null}
       <div className="columns">
         <div className="stack">
           <Card>
-            <SectionTitle>{t('screen.U02.grid')}</SectionTitle>
+            <div className="row between">
+              <SectionTitle>{t('screen.U02.grid')}</SectionTitle>
+              <GridLegend />
+            </div>
             <EntranceFloorGridView grid={incident.grid} />
           </Card>
           <Card>
@@ -366,7 +378,7 @@ function UkIncidentBody({ incident, embedded, onMoved }: { incident: UkIncidentD
           </Card>
           <Card>
             <SectionTitle>{t('screen.S05.stepper')}</SectionTitle>
-            <StatusStepper steps={incident.steps} timezone={tz} />
+            <StatusStepper steps={incident.steps} timezone={tz} eta={incident.eta} discrepancy={incident.displayStatus === 'discrepancy'} />
           </Card>
           <Card>
             <SectionTitle>{t('screen.S05.ads')}</SectionTitle>
@@ -414,7 +426,9 @@ function UkIncidentBody({ incident, embedded, onMoved }: { incident: UkIncidentD
           {incident.mergeCandidates.map((c) => (
             <button type="button" key={c.id} className="card clickable incident-row" disabled={busy !== null} onClick={() => void merge(c.id)}>
               <IncidentHeadline incident={c} compact />
-              <p className="meta">{t('screen.U01.row.meta', { time: whenIn(c.startedAt, c.house.timezone), count: c.flatsCount, flats: plural(c.flatsCount, 'flats'), entrances: c.byEntrance.map((e) => e.entrance).join(', ') || '—' })}</p>
+              <p className="meta">
+                {serviceName(c.service)} {t('screen.U01.row.since', { time: whenIn(c.startedAt, c.house.timezone) })}
+              </p>
             </button>
           ))}
         </div>
@@ -431,13 +445,7 @@ function UkIncidentBody({ incident, embedded, onMoved }: { incident: UkIncidentD
   if (embedded) {
     return (
       <section className="stack panel" aria-label={serviceName(incident.service)}>
-        <div className="row between">
-          <div>
-            <h2 className="screen-title">{serviceName(incident.service)}</h2>
-            <p className="muted small">{t('screen.U02.meta', { house: incident.house.label, address: incident.house.address, time: whenIn(incident.startedAt, tz) })}</p>
-          </div>
-          {asResident}
-        </div>
+        <div className="panel-tools">{asResident}</div>
         {content}
       </section>
     );
@@ -445,9 +453,7 @@ function UkIncidentBody({ incident, embedded, onMoved }: { incident: UkIncidentD
 
   return (
     <Screen
-      title={serviceName(incident.service)}
-      sub={t('screen.U02.meta', { house: incident.house.label, address: incident.house.address, time: whenIn(incident.startedAt, tz) })}
-      model={incident.isModel}
+      title={headlineText(incident).title}
       back="/uk"
       width="wide"
       headerAfter={asResident}

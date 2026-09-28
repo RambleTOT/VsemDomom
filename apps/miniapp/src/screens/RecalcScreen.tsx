@@ -15,12 +15,12 @@ import { Icon } from '../components/Icon.tsx';
 import { NormBasisLink } from '../components/norm.tsx';
 import { Screen } from '../components/Screen.tsx';
 import { useToast } from '../components/Toast.tsx';
-import { Banner, Card, KeyValue, Muted, SectionTitle } from '../components/ui.tsx';
+import { Banner, Card, KeyValue, Muted } from '../components/ui.tsx';
 import { minutesText, monthOfKey, percent, rubles } from '../format.ts';
 import { lowerFirst, serviceKey, serviceNo, t } from '../i18n.ts';
 import { useSession } from '../app/session.tsx';
 import { errorText, Loaded } from './common.tsx';
-import { Progress } from './ReportScreen.tsx';
+import { Progress, StepQuestion } from './ReportScreen.tsx';
 import { parseCharge, serviceAcc, statementText } from '../documents.ts';
 
 const STEPS = 3;
@@ -53,29 +53,44 @@ function ReceiptScheme({ line }: { line: string }) {
 }
 
 function MoneyBreakdown({ calc, service }: { calc: RecalculationResponse; service: Result['service'] }) {
-  if (calc.limitMinutes === null || !calc.norm) return <Muted>{t('money.no_norm')}</Muted>;
+  if (calc.limitMinutes === null || !calc.norm) {
+    return (
+      <Card>
+        <p className="muted">{t('money.no_norm')}</p>
+      </Card>
+    );
+  }
   if (calc.withinNorm || calc.amount === 0) {
     return (
-      <div className="money-line tone-positive">
-        <p className="banner-title">{t('money.none', { limit: minutesText(calc.limitMinutes) })}</p>
+      <>
+        <Card className="tone-positive">
+          <p className="card-title">{t('money.none', { limit: minutesText(calc.limitMinutes) })}</p>
+        </Card>
         <NormBasisLink norm={calc.norm} />
-      </div>
+      </>
     );
   }
   return (
-    <div className="stack">
-      <KeyValue
-        rows={[
-          { key: t('money.row.excess'), value: minutesText(calc.excessMinutes) },
-          { key: t('money.row.rate'), value: percent(calc.ratePercent) },
-          { key: t('money.row.fee', { service_acc: serviceAcc(service) }), value: rubles(calc.monthlyCharge) },
-          { key: t('money.row.formula'), value: calc.formula },
-          { key: t('money.total', { month: monthOfKey(calc.month) }), value: rubles(calc.amount), strong: true },
-        ]}
-      />
-      {calc.round === 'ceil' ? <p className="muted small">{t('money.round')}</p> : null}
+    <>
+      <Card>
+        <p className="card-title">{t('screen.S08.calc')}</p>
+        <KeyValue
+          rows={[
+            { key: t('money.row.excess'), value: t('money.row.excess.value', { excess: minutesText(calc.excessMinutes), hours: String(calc.excessHours).replace('.', ',') }) },
+            { key: t('money.row.rate'), value: percent(calc.ratePercent) },
+            { key: t('money.row.fee', { service_acc: serviceAcc(service) }), value: rubles(calc.monthlyCharge) },
+            { key: t('money.row.formula'), value: calc.formula },
+          ]}
+        />
+        <div className="money-total">
+          <p className="muted small">{t('money.total', { month: monthOfKey(calc.month) })}</p>
+          <p className="big-number">{rubles(calc.amount)}</p>
+          {calc.round === 'ceil' ? <p className="muted small">{t('money.round')}</p> : null}
+        </div>
+      </Card>
+      <p className="muted small">{calc.disclaimer}</p>
       <NormBasisLink norm={calc.norm} />
-    </div>
+    </>
   );
 }
 
@@ -206,16 +221,16 @@ function RecalcBody({ result, incident, house }: { result: Result; incident: Inc
         actionsReason={amount.trim() === '' ? t('screen.S08.amount.error') : undefined}
       >
         <Progress step={1} of={STEPS} label={t('screen.S08.progress', { n: 1 })} />
-        <SectionTitle>{t('screen.S08.amount.title', { service_acc: serviceAcc(result.service) })}</SectionTitle>
+        <StepQuestion>
+          <label htmlFor={amountId}>{t('screen.S08.amount.title', { service_acc: serviceAcc(result.service) })}</label>
+        </StepQuestion>
         <div className="field">
-          <label className="field-label" htmlFor={amountId}>
-            {t('screen.S08.amount.hint', { receipt_line: t(`receipt_line.${serviceKey(result.service)}`) })}
-          </label>
           <Input
             id={amountId}
             size="large"
             mode="contrast"
             inputMode="decimal"
+            iconAfter={<span className="muted">{t('money.currency')}</span>}
             value={amount}
             placeholder={t('screen.S08.amount.placeholder')}
             aria-invalid={amountError}
@@ -233,6 +248,7 @@ function RecalcBody({ result, incident, house }: { result: Result; incident: Inc
               {t('screen.S08.amount.error')}
             </p>
           ) : null}
+          <p className="field-hint">{t('screen.S08.amount.hint', { receipt_line: t(`receipt_line.${serviceKey(result.service)}`) })}</p>
         </div>
         <ReceiptScheme line={t(`receipt_line.${serviceKey(result.service)}`)} />
       </Screen>
@@ -259,24 +275,15 @@ function RecalcBody({ result, incident, house }: { result: Result; incident: Inc
               {t('common.done')}
             </Button>
           ) : (
-            <>
-              <Button size="large" stretched onClick={() => setStep(3)}>
-                {t('common.continue')}
-              </Button>
-              <Button size="large" stretched variant="secondary" onClick={() => setStep(1)}>
-                {t('common.back')}
-              </Button>
-            </>
+            <Button size="large" stretched onClick={() => setStep(3)}>
+              {t('common.continue')}
+            </Button>
           )
         }
       >
         <Progress step={2} of={STEPS} label={t('screen.S08.progress', { n: 2 })} />
-        <SectionTitle>{t('screen.S08.calc')}</SectionTitle>
         {calc.preliminary ? <Banner tone="info" title={t('screen.S08.preliminary')} /> : null}
-        <Card>
-          <MoneyBreakdown calc={calc} service={result.service} />
-        </Card>
-        <p className="muted small">{calc.disclaimer}</p>
+        <MoneyBreakdown calc={calc} service={result.service} />
       </Screen>
     );
   }
@@ -313,12 +320,12 @@ function RecalcBody({ result, incident, house }: { result: Result; incident: Inc
       }
     >
       <Progress step={3} of={STEPS} label={t('screen.S08.progress', { n: 3 })} />
-      <SectionTitle>{t('screen.S08.account.title')}</SectionTitle>
+      <StepQuestion>{t('screen.S08.account.title')}</StepQuestion>
       <div className="radio-list" role="radiogroup" aria-label={t('screen.S08.account.title')}>
         {(['yes', 'no'] as const).map((v) => (
           <label className="radio-row" key={v}>
-            <Radio name="account" value={v} checked={account === v} onChange={() => void chooseAccount(v)} />
             <span className="radio-text">{t(`screen.S08.account.${v}`)}</span>
+            <Radio name="account" value={v} checked={account === v} onChange={() => void chooseAccount(v)} />
           </label>
         ))}
       </div>
@@ -358,9 +365,11 @@ function RecalcBody({ result, incident, house }: { result: Result; incident: Inc
               {t('screen.S08.bot_blocked.text')}
             </Banner>
           ) : null}
-          <SectionTitle>{t('screen.S08.doc')}</SectionTitle>
-          <div className="document" aria-live="polite">
-            {statement}
+          <div className="field">
+            <p className="field-label">{t('screen.S08.doc')}</p>
+            <div className="document" aria-live="polite">
+              {statement}
+            </div>
           </div>
         </>
       ) : null}

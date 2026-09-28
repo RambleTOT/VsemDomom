@@ -4,64 +4,79 @@
  */
 import { Button, Typography } from '@maxhub/max-ui';
 import type { Deadline, DisplayStatus, EntranceCount, IncidentSummary, StatusStep, TimelineEvent } from '@vsemdomom/shared';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { minutesLeft, minutesText, whenIn } from '../format.ts';
 import { has, plural, statusName, t } from '../i18n.ts';
 import { eventText, headlineText } from '../texts.ts';
 import type { IconName } from '../icons/icons.ts';
 import { Icon } from './Icon.tsx';
 import { NormBasisLink } from './norm.tsx';
-import { Chip, type Tone } from './ui.tsx';
+import { Chip, ModelDataBadge, type Tone } from './ui.tsx';
 
-const STATUS_ICON: Record<DisplayStatus, IconName> = {
-  open: 'circle-slash',
-  accepted: 'clock',
-  brigade_on_site: 'wrench',
-  localized: 'shield',
-  checking: 'circle-help',
-  discrepancy: 'triangle-alert',
-  closed: 'circle-check',
-  closed_with_discrepancy: 'triangle-alert',
-  merged: 'merge',
-};
-
-const STATUS_TONE: Record<DisplayStatus, Tone> = {
-  open: 'negative',
-  accepted: 'warning',
-  brigade_on_site: 'warning',
-  localized: 'warning',
-  checking: 'info',
-  discrepancy: 'negative',
-  closed: 'positive',
-  closed_with_discrepancy: 'negative',
-  merged: 'neutral',
-};
-
+/** Статус — нейтральным чипом без значка (как в макете): первая строка уже отвечает «знает ли УК и когда». */
 export function StatusBadge({ status }: { status: DisplayStatus }) {
   return (
-    <Chip tone={STATUS_TONE[status]} icon={STATUS_ICON[status]}>
+    <Chip tone="neutral" className="status-chip">
       <span className="sr-only">{t('status.sr_prefix')}</span>
       {statusName(status)}
     </Chip>
   );
 }
 
-export function IncidentHeadline({ incident, compact = false, onOpenActual }: { incident: IncidentSummary; compact?: boolean; onOpenActual?: () => void }) {
-  const { title, sub } = headlineText(incident);
+/** Чипы под первой строкой: статус и ближайший срок по нормативу. */
+export function HeadlineChips({ incident }: { incident: IncidentSummary }) {
   const deadline = incident.headline.nextDeadline;
   return (
-    <div className={`headline tone-border-${STATUS_TONE[incident.displayStatus]}`} aria-live="polite">
+    <div className="chips-row">
       <StatusBadge status={incident.displayStatus} />
+      {deadline ? <DeadlineChip deadline={deadline} timezone={incident.house.timezone} withPrefix /> : null}
+    </div>
+  );
+}
+
+function OpenActual({ incident, onOpenActual }: { incident: IncidentSummary; onOpenActual?: (() => void) | undefined }) {
+  if (incident.displayStatus !== 'merged' || !onOpenActual) return null;
+  return (
+    <div>
+      <Button size="medium" variant="secondary" onClick={onOpenActual}>
+        {t('incident.headline.action.open_actual')}
+      </Button>
+    </div>
+  );
+}
+
+/** Карточка аварии в списке: первая строка, чипы статуса и срока. */
+export function IncidentHeadline({ incident, compact = false, onOpenActual }: { incident: IncidentSummary; compact?: boolean; onOpenActual?: () => void }) {
+  const { title, sub } = headlineText(incident);
+  return (
+    <div className="headline" aria-live="polite">
       <Typography.Text variant={compact ? 'title' : 'subheader'} asChild>
         <h2 className="headline-title">{title}</h2>
       </Typography.Text>
+      <HeadlineChips incident={incident} />
       {sub ? <p className="muted">{sub}</p> : null}
-      {deadline ? <DeadlineChip deadline={deadline} timezone={incident.house.timezone} withPrefix /> : null}
-      {incident.displayStatus === 'merged' && onOpenActual ? (
-        <Button size="medium" variant="secondary" onClick={onOpenActual}>
-          {t('incident.headline.action.open_actual')}
-        </Button>
-      ) : null}
+      <OpenActual incident={incident} onOpenActual={onOpenActual} />
+    </div>
+  );
+}
+
+/**
+ * Шапка экрана аварии под заголовком (заголовок — первая строка, его рисует Screen): чипы, пояснение,
+ * вид аварии и дом, «Модельные данные».
+ */
+export function IncidentHero({ incident, lines, onOpenActual, children }: { incident: IncidentSummary; lines: [string, string]; onOpenActual?: () => void; children?: ReactNode }) {
+  const { sub } = headlineText(incident);
+  return (
+    <div className="incident-hero" aria-live="polite">
+      <HeadlineChips incident={incident} />
+      {sub ? <p className="muted">{sub}</p> : null}
+      {children}
+      <div className="stack tight">
+        <p className="hero-line">{lines[0]}</p>
+        <p className="muted">{lines[1]}</p>
+      </div>
+      {incident.isModel ? <ModelDataBadge /> : null}
+      <OpenActual incident={incident} onOpenActual={onOpenActual} />
     </div>
   );
 }
@@ -76,32 +91,27 @@ export function DeadlineChip({ deadline, timezone, withPrefix = false, now = new
   let text: string;
   let label: string;
   let tone: Tone;
-  let icon: IconName;
   switch (deadline.state) {
     case 'pending':
       text = t('deadline.normal', { time: due, left: minutesText(left) });
       label = t('deadline.sr.normal', { time: due, left: minutesText(left) });
       tone = 'neutral';
-      icon = 'clock';
       break;
     case 'soon':
       text = t('deadline.soon', { time: due, minutes: left });
       label = t('deadline.sr.soon', { time: due, left: minutesText(left) });
       tone = 'warning';
-      icon = 'alarm-clock';
       break;
     case 'breached':
       text = t('deadline.expired', { time: due });
       label = t('deadline.sr.expired', { time: due });
       tone = 'negative';
-      icon = 'circle-alert';
       break;
     case 'met': {
       const done = whenIn(deadline.doneAt ?? deadline.dueAt, timezone, now);
       text = t('deadline.done', { time: done });
       label = t('deadline.sr.done', { time: done });
       tone = 'positive';
-      icon = 'check';
       break;
     }
     case 'cancelled':
@@ -109,7 +119,7 @@ export function DeadlineChip({ deadline, timezone, withPrefix = false, now = new
   }
   const prefix = withPrefix ? deadlinePrefix(deadline.kind) : null;
   return (
-    <Chip tone={tone} icon={icon} role="img" aria-label={label} className="deadline-chip">
+    <Chip tone={tone} role="img" aria-label={label} className="deadline-chip">
       {prefix ? `${prefix} ${text}` : text}
     </Chip>
   );
@@ -132,7 +142,7 @@ export function DeadlineList({ deadlines, timezone, collapseDone = true }: { dea
         </div>
       ))}
       {collapseDone && done.length > 0 ? (
-        <button type="button" className="link-button" onClick={() => setShowDone((v) => !v)}>
+        <button type="button" className="deadline-done plain-button" aria-expanded={showDone} onClick={() => setShowDone((v) => !v)}>
           {showDone ? t('screen.S05.done.hide') : t('screen.S05.done.count', { n: done.length })}
         </button>
       ) : null}
@@ -141,39 +151,55 @@ export function DeadlineList({ deadlines, timezone, collapseDone = true }: { dea
   );
 }
 
-export function StatusStepper({ steps, timezone }: { steps: StatusStep[]; timezone: string }) {
+/** Подпись шага: когда и что отметила УК; пропущенный шаг — «шаг пропущен». */
+function stepSub(s: StatusStep, timezone: string, eta: string | null): string | null {
+  if (s.state === 'skipped') return t('stepper.skipped');
+  if (!s.at || s.state === 'pending') return null;
+  const time = whenIn(s.at, timezone);
+  if (s.step === 'accepted' && eta) return t('stepper.sub.accepted.eta', { time, eta: whenIn(eta, timezone) });
+  return t(`stepper.sub.${s.step}`, { time });
+}
+
+/** Шаги статуса УК: пройденный — серый кружок, текущий — синий, будущий — контур. На широком экране — сеткой. */
+export function StatusStepper({ steps, timezone, eta = null, discrepancy = false }: { steps: StatusStep[]; timezone: string; eta?: string | null; discrepancy?: boolean }) {
   return (
     <ol className="stepper">
-      {steps.map((s) => (
-        <li key={s.step} className={`step step-${s.state}`} aria-current={s.state === 'current' ? 'step' : undefined}>
-          <span className="step-dot" aria-hidden="true">
-            {s.state === 'done' ? <Icon name="check" size={14} /> : null}
-          </span>
-          <span className="step-name">{t(`stepper.step.${s.step}`)}</span>
-          <span className="step-at muted">{s.state === 'skipped' ? t('stepper.skipped') : s.at ? whenIn(s.at, timezone) : ''}</span>
-        </li>
-      ))}
+      {steps.map((s) => {
+        const sub = stepSub(s, timezone, eta);
+        const label = s.step === 'resolved' && discrepancy ? t('stepper.label.resolved.disc') : t(`stepper.label.${s.step}`);
+        return (
+          <li key={s.step} className={`step step-${s.state}`} aria-current={s.state === 'current' ? 'step' : undefined}>
+            <span className="step-dot" aria-hidden="true" />
+            <span className="step-text">
+              <span className="step-name">{label}</span>
+              {sub ? <span className="step-at muted">{sub}</span> : null}
+            </span>
+          </li>
+        );
+      })}
     </ol>
   );
 }
 
-export function EntranceCounter({ byEntrance, unknown = 0 }: { byEntrance: EntranceCount[]; unknown?: number }) {
-  if (byEntrance.length === 0 && unknown === 0) return null;
+/** Отметки по подъездам: все подъезды дома, «П2 · 6»; «не указан» — если есть. */
+export function EntranceCounter({ byEntrance, entrances, unknown = 0 }: { byEntrance: EntranceCount[]; entrances: number; unknown?: number }) {
+  const count = new Map(byEntrance.map((e) => [e.entrance, e.count]));
   return (
     <ul className="entrance-counter">
-      {byEntrance.map((e) => (
-        <li key={e.entrance} className="chip tone-neutral">
-          {t('bot.card.entrance_count', { entrance: e.entrance, count: e.count > 99 ? '99+' : e.count })}
-        </li>
-      ))}
-      {unknown > 0 ? (
-        <li className="chip tone-neutral">
-          {t('screen.U02.grid.floor_unknown')} — {unknown}
-        </li>
-      ) : null}
+      {Array.from({ length: entrances }, (_, i) => i + 1).map((n) => {
+        const c = count.get(n) ?? 0;
+        return (
+          <li key={n} className={`chip ${c > 0 ? 'tone-strong' : 'tone-neutral'}`} aria-label={t('entrance.chip.sr', { entrance: n, count: c })}>
+            {t('entrance.chip', { entrance: n, count: c > MAX_SHOWN ? `${MAX_SHOWN}+` : c })}
+          </li>
+        );
+      })}
+      {unknown > 0 ? <li className="chip tone-neutral">{t('entrance.chip.unknown', { count: unknown })}</li> : null}
     </ul>
   );
 }
+
+const MAX_SHOWN = 99;
 
 export function Timeline({ events, timezone }: { events: TimelineEvent[]; timezone: string }) {
   if (events.length === 0) return <p className="muted">{t('timeline.empty')}</p>;
@@ -190,7 +216,7 @@ export function Timeline({ events, timezone }: { events: TimelineEvent[]; timezo
             <div className="timeline-body">
               <p className="timeline-line">
                 <strong>{whenIn(e.at, timezone)}</strong> {eventText(e, timezone)}
-                {e.payload.model === true ? <span className="muted"> · {t('timeline.event.model')}</span> : null}
+                {e.payload.model === true && e.actorType === 'resident' ? <span className="muted"> · {t('timeline.event.model')}</span> : null}
               </p>
               <p className="muted timeline-src">{src}</p>
             </div>

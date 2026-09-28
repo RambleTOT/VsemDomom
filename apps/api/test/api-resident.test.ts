@@ -335,6 +335,7 @@ describe.skipIf(!url)('лимиты запросов (A6)', () => {
     const limited = await api.call<Problem>('POST', '/api/v1/auth/dev', { body: { userId: 9102, role: 'resident' } });
     expect(limited.status).toBe(429);
     expect(limited.body.code).toBe('rate_limited');
+    expect(limited.body.detail).toMatch(/^Повторите через \d+ с$/);
     for (let i = 0; i < 3; i += 1) expect((await api.call('GET', '/api/v1/me', { token })).status).toBe(200);
     const over = await api.call<Problem>('GET', '/api/v1/me', { token });
     expect(over.status).toBe(429);

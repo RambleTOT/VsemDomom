@@ -239,8 +239,8 @@ export function ResidenceScreen() {
             <div className="radio-list">
               {RESIDENCY_ROLES.map((r) => (
                 <label className="radio-row" key={r}>
-                  <Radio name="role" value={r} checked={role === r} onChange={() => setRole(r)} />
                   <span className="radio-text">{roleName(r)}</span>
+                  <Radio name="role" value={r} checked={role === r} onChange={() => setRole(r)} />
                 </label>
               ))}
             </div>

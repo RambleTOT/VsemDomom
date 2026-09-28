@@ -1,7 +1,7 @@
 /** Тексты аварии без React: первая строка «знает ли УК и когда» и строки хронологии. */
 import type { IncidentSummary, TimelineEvent } from '@vsemdomom/shared';
-import { minutesText, whenIn } from './format.ts';
-import { has, plural, restoreQuestion, serviceGen, serviceNo, t } from './i18n.ts';
+import { dateIn, minutesText, rangeIn, whenIn } from './format.ts';
+import { has, plural, restoreQuestion, serviceGen, t } from './i18n.ts';
 
 /** Текст первой строки по статусу: ответ на вопрос «знает ли УК и когда». */
 export function headlineText(inc: Pick<IncidentSummary, 'displayStatus' | 'headline' | 'service' | 'house'>, now: Date = new Date()): { title: string; sub: string | null } {
@@ -9,19 +9,20 @@ export function headlineText(inc: Pick<IncidentSummary, 'displayStatus' | 'headl
   const h = inc.headline;
   const at = (iso: string | null) => (iso ? whenIn(iso, tz, now) : '');
   switch (inc.displayStatus) {
+    // Вид аварии («Нет горячей воды») — отдельной строкой под чипами, здесь только ответ «знает ли УК и когда».
     case 'open':
-      return { title: `${serviceNo(inc.service)} · ${t('incident.headline.no_answer')}`, sub: null };
+      return { title: t('incident.headline.no_answer'), sub: null };
     case 'accepted':
-      return { title: h.eta ? t('incident.headline.accepted', { eta: at(h.eta) }) : t('incident.headline.accepted.no_eta'), sub: serviceNo(inc.service) };
+      return { title: h.eta ? t('incident.headline.accepted', { eta: at(h.eta) }) : t('incident.headline.accepted.no_eta'), sub: null };
     case 'brigade_on_site':
       return {
         title: h.eta ? t('incident.headline.brigade', { time: at(h.statusAt), eta: at(h.eta) }) : t('incident.headline.brigade.no_eta', { time: at(h.statusAt) }),
-        sub: serviceNo(inc.service),
+        sub: null,
       };
     case 'localized':
       return {
         title: h.eta ? t('incident.headline.localized', { time: at(h.statusAt), eta: at(h.eta) }) : t('incident.headline.localized.no_eta', { time: at(h.statusAt) }),
-        sub: serviceNo(inc.service),
+        sub: null,
       };
     case 'checking':
       return { title: t('incident.headline.checking', { restore_question: restoreQuestion(inc.service) }), sub: h.statusAt ? t('screen.S05.restore.meta', { time: at(h.statusAt) }) : null };
@@ -84,4 +85,16 @@ export function eventText(e: TimelineEvent, timezone: string): string {
     default:
       return has(`timeline.event.${e.type}`) ? t(`timeline.event.${e.type}`) : e.type;
   }
+}
+
+/** «сегодня 17:40» — время сегодняшнего дня с подписью; другой день — «27.09 17:40». */
+export function whenLabel(iso: string, tz: string, now: Date = new Date()): string {
+  const when = whenIn(iso, tz, now);
+  return dateIn(iso, tz) === dateIn(now.toISOString(), tz) ? t('time.today', { time: when }) : when;
+}
+
+/** «сегодня 17:40–23:20» — интервал; начало в другой день — с датой. */
+export function rangeLabel(fromIso: string, toIso: string, tz: string, now: Date = new Date()): string {
+  const { range, today } = rangeIn(fromIso, toIso, tz, now);
+  return today ? t('time.today', { time: range }) : range;
 }

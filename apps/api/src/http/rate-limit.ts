@@ -16,6 +16,7 @@ export interface RateLimits {
 export const DEFAULT_RATE_LIMITS: RateLimits = { userPerMinute: 60, authPerMinute: 10 };
 
 const WINDOW = '1 minute';
+const MS_PER_SECOND = 1000;
 
 /** Проверки и статика документации — без лимита. */
 const UNLIMITED = /^\/api\/(v1\/(health|version)(\?|$)|docs(\/|$|\?))/;
@@ -31,8 +32,9 @@ export async function registerRateLimit(app: FastifyInstance, limits: RateLimits
     hook: 'preHandler',
     keyGenerator: keyOf,
     allowList: (req) => !req.url.startsWith('/api/v1/') || UNLIMITED.test(req.url),
+    // context.after — английская строка («1 minute»): в ответ пишем секунды по-русски.
     errorResponseBuilder: (_req, context) =>
-      new ApiError(429, 'rate_limited', 'Слишком много запросов', `Повторите через ${context.after}`),
+      new ApiError(429, 'rate_limited', 'Слишком много запросов', `Повторите через ${Math.max(1, Math.ceil(context.ttl / MS_PER_SECOND))} с`),
   });
 }
 

@@ -9,36 +9,40 @@ import { copyText } from '../bridge/webapp.ts';
 import { NormBasisLink } from '../components/norm.tsx';
 import { Screen } from '../components/Screen.tsx';
 import { useToast } from '../components/Toast.tsx';
-import { Banner, Card, SectionTitle } from '../components/ui.tsx';
-import { dateIn, minutesText, monthOfKey, timeIn, whenIn } from '../format.ts';
+import { Card } from '../components/ui.tsx';
+import { dayMonthIn, minutesText, monthOfKey, timeIn, whenIn } from '../format.ts';
 import { plural, serviceGen, serviceName, t } from '../i18n.ts';
 import { useSession } from '../app/session.tsx';
 import { timelineText } from '../documents.ts';
+import { rangeLabel } from '../texts.ts';
 import { errorText, Loaded } from './common.tsx';
 
 const WATER = new Set(['cold_water', 'hot_water']);
 
-/** Месячная норма: превышение (от него зависят деньги) или «в пределах». */
-export function MonthBlock({ result }: { result: Result }) {
+/** Месячная норма: превышение (от него зависят деньги) или «в пределах» — вся карточка в цвете результата. */
+export function MonthCard({ result, label = true }: { result: Result; label?: boolean }) {
   const m = result.month;
-  if (!m) return <p className="muted">{t('money.no_norm')}</p>;
+  if (!m) {
+    return (
+      <Card>
+        <p className="muted">{t('money.no_norm')}</p>
+      </Card>
+    );
+  }
   const month = monthOfKey(m.month);
   return (
-    <div className="stack tight">
-      <div className={`money-line ${m.withinNorm ? 'tone-positive' : 'tone-negative'}`}>
-        {m.withinNorm ? (
-          <>
-            <p className="banner-title">{t('result.within_norm')}</p>
-            <p>{t('result.within_norm.detail', { month, total: minutesText(m.totalMinutes), limit: minutesText(m.limitMinutes) })}</p>
-          </>
-        ) : (
-          <p className="banner-title">
-            {t('result.over_norm', { month, total: minutesText(m.totalMinutes), limit: minutesText(m.limitMinutes), excess: minutesText(m.excessMinutes) })}
-          </p>
-        )}
-      </div>
+    <Card className={m.withinNorm ? 'tone-positive' : 'tone-negative'}>
+      {label ? <p className="small">{t('screen.S07.month.label')}</p> : null}
+      {m.withinNorm ? (
+        <div className="stack tight">
+          <p className="card-title">{t('result.within_norm')}</p>
+          <p>{t('result.within_norm.detail', { month, total: minutesText(m.totalMinutes), limit: minutesText(m.limitMinutes) })}</p>
+        </div>
+      ) : (
+        <p className="card-title">{t('result.over_norm', { month, total: minutesText(m.totalMinutes), limit: minutesText(m.limitMinutes), excess: minutesText(m.excessMinutes) })}</p>
+      )}
       <NormBasisLink norm={m.norm} />
-    </div>
+    </Card>
   );
 }
 
@@ -87,7 +91,7 @@ function ResultBody({ result }: { result: Result }) {
   return (
     <Screen
       title={t('screen.S07.title')}
-      sub={t('screen.S07.sub', { service: serviceName(result.service), house: result.house.label, date: dateIn(result.startedAt, tz) })}
+      sub={t('screen.S07.sub', { service: serviceName(result.service), house: result.house.label, date: dayMonthIn(result.startedAt, tz) })}
       model={result.house.isModel}
       back={session.staff ? `/uk/incident/${result.incidentId}` : `/incident/${result.incidentId}`}
       actions={actions}
@@ -95,11 +99,9 @@ function ResultBody({ result }: { result: Result }) {
       <Card>
         {my ? (
           <>
-            <p className="muted">{t('screen.S07.my', { service_gen: serviceGen(result.service) })}</p>
+            <p className="muted small">{t('screen.S07.my', { service_gen: serviceGen(result.service) })}</p>
             <p className="big-number">{minutesText(my.durationMinutes)}</p>
-            <p className="muted">
-              {timeIn(result.startedAt, tz)}–{timeIn(my.restoredAt, tz)}
-            </p>
+            <p className="muted">{rangeLabel(result.startedAt, my.restoredAt, tz)}</p>
             <p>
               {my.source === 'uk_mark'
                 ? t('screen.S07.by_uk.same', { uk_time: ukTime, uk_duration: ukDuration })
@@ -109,43 +111,42 @@ function ResultBody({ result }: { result: Result }) {
           </>
         ) : (
           <>
-            <p className="muted">{serviceName(result.service)}</p>
+            <p className="muted small">{serviceName(result.service)}</p>
             <p className="big-number">{ukDuration}</p>
             <p>{t('screen.S07.by_uk.same', { uk_time: ukTime, uk_duration: ukDuration })}</p>
           </>
         )}
       </Card>
 
-      {result.single ? (
-        <Banner tone={result.single.exceeded ? 'warning' : 'positive'} title={result.single.exceeded ? t('screen.S07.single.over.n', { limit: minutesText(result.single.limitMinutes) }) : t('screen.S07.single.ok.n', { limit: minutesText(result.single.limitMinutes) })}>
-          <p>{t('screen.S07.single.note')}</p>
-          <NormBasisLink norm={result.single.norm} />
-        </Banner>
-      ) : null}
+      <MonthCard result={result} />
 
-      <Card>
-        <SectionTitle>{t('screen.S07.month.label')}</SectionTitle>
-        <MonthBlock result={result} />
-        <p className="muted small">{result.disclaimer}</p>
-      </Card>
+      {result.single ? (
+        <Card>
+          <p>{result.single.exceeded ? t('screen.S07.single.over.n', { limit: minutesText(result.single.limitMinutes) }) : t('screen.S07.single.ok.n', { limit: minutesText(result.single.limitMinutes) })}</p>
+          <p className="muted small">{t('screen.S07.single.note')}</p>
+          <NormBasisLink norm={result.single.norm} />
+        </Card>
+      ) : null}
 
       {result.eligibleFlats > 0 ? (
         <Card>
-          <p className="banner-title">{t('screen.S07.flats', { count: result.eligibleFlats, flats: plural(result.eligibleFlats, 'flats'), can: plural(result.eligibleFlats, 'can') })}</p>
+          <p className="card-title">{t('screen.S07.flats', { count: result.eligibleFlats, flats: plural(result.eligibleFlats, 'flats'), can: plural(result.eligibleFlats, 'can') })}</p>
           {result.lateFlats.count > 0 && result.lateFlats.lastRestoredAt ? (
-            <p className="muted">{t(WATER.has(result.service) ? 'screen.S07.flats.sub' : 'screen.S07.flats.sub.other', { time: whenIn(result.lateFlats.lastRestoredAt, tz) })}</p>
+            <p className="muted small">{t(WATER.has(result.service) ? 'screen.S07.flats.sub' : 'screen.S07.flats.sub.other', { time: whenIn(result.lateFlats.lastRestoredAt, tz) })}</p>
           ) : null}
         </Card>
       ) : null}
 
-      {result.month?.withinNorm ? <p className="muted">{t('screen.S07.thanks')}</p> : null}
+      {result.month?.withinNorm ? <p>{t('screen.S07.thanks')}</p> : null}
 
       {result.actCopyNorm ? (
         <Card>
           <p>{t('screen.S07.act_copy.short')}</p>
+          <p className="muted small">{result.actCopyNorm.textPlain}</p>
           <NormBasisLink norm={result.actCopyNorm} />
         </Card>
       ) : null}
+      <p className="muted small">{result.disclaimer}</p>
     </Screen>
   );
 }

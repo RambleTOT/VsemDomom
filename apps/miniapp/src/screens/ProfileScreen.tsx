@@ -9,8 +9,8 @@ import { Icon } from '../components/Icon.tsx';
 import { Screen } from '../components/Screen.tsx';
 import { ConfirmDialog } from '../components/Sheet.tsx';
 import { useToast } from '../components/Toast.tsx';
-import { Card, Chip, KeyValue, Muted, SectionTitle } from '../components/ui.tsx';
-import { plural, roleName, t } from '../i18n.ts';
+import { Card, Chip, Muted, SectionTitle } from '../components/ui.tsx';
+import { lowerFirst, plural, roleName, t } from '../i18n.ts';
 import { homePath, onboardingFor } from '../app/start.ts';
 import { useSession } from '../app/session.tsx';
 import { errorText } from './common.tsx';
@@ -26,6 +26,10 @@ export function ProfileScreen() {
   const [codeError, setCodeError] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [codeOpen, setCodeOpen] = useState(false);
+  const canEnterCode = me.demoMode && !me.staff;
+  const chat = residency?.chat ?? null;
+  const flatRole = residency ? `${t('screen.S11.flat', { flat: residency.flatNo })} · ${lowerFirst(roleName(residency.role))}` : '';
 
   const setNotify = async (value: boolean) => {
     setBusy('notify');
@@ -87,64 +91,68 @@ export function ProfileScreen() {
       ) : null}
 
       {residency ? (
-        <Card>
-          <KeyValue
-            rows={[
-              { key: t('screen.S11.house'), value: `${t('screen.S03.title', { house: residency.house.label })} · ${residency.house.address}` },
-              { key: t('screen.S11.flat_role'), value: `${t('screen.S11.flat', { flat: residency.flatNo })} · ${roleName(residency.role)}` },
-            ]}
-          />
-          {me.features.trustLevels ? (
-            <div className="stack tight">
-              <Chip tone={residency.trustLevel === 2 ? 'positive' : residency.trustLevel === 1 ? 'info' : 'neutral'} icon="shield">
-                {t(`trust.${residency.trustLevel}`)}
-              </Chip>
-              <Muted>{t(`trust.${residency.trustLevel}.text`)}</Muted>
-            </div>
-          ) : null}
-          <div>
-            <Button size="medium" variant="secondary" onClick={() => void navigate('/onboarding/residence?next=/profile')}>
-              {t('screen.S02.house.change')}
-            </Button>
-          </div>
-        </Card>
-      ) : null}
-
-      {residency ? (
-        <Card>
-          <label className="radio-row plain-button">
-            <span className="radio-text">
-              <span>{t('screen.S11.notify')}</span>
-              <span className="muted small">{t('screen.S11.notify.sub')}</span>
+        <div className="list-card">
+          <div className="list-row static">
+            <span className="list-row-text">
+              <span className="muted small">{t('screen.S11.house')}</span>
+              <span className="list-row-title">{`${t('screen.S03.title', { house: residency.house.label })} · ${residency.house.address}`}</span>
             </span>
-            <Switch checked={me.settings.notifyDefault} disabled={busy === 'notify'} onChange={(e) => void setNotify(e.currentTarget.checked)} />
-          </label>
+          </div>
+          <button type="button" className="list-row plain-button" aria-label={`${t('screen.S11.flat_role')}: ${flatRole} — ${t('screen.S02.house.change')}`} onClick={() => void navigate('/onboarding/residence?next=/profile')}>
+            <span className="list-row-text">
+              <span className="muted small">{t('screen.S11.flat_role')}</span>
+              <span className="list-row-title">{flatRole}</span>
+            </span>
+            <Icon name="chevron-right" size={16} className="muted" />
+          </button>
+        </div>
+      ) : null}
+
+      {residency && me.features.trustLevels ? (
+        <Card>
+          <Chip tone={residency.trustLevel === 2 ? 'positive' : residency.trustLevel === 1 ? 'info' : 'neutral'} icon="shield">
+            {t(`trust.${residency.trustLevel}`)}
+          </Chip>
+          <Muted>{t(`trust.${residency.trustLevel}.text`)}</Muted>
         </Card>
       ) : null}
 
-      {residency?.chat?.bound ? (
-        <Card>
-          <SectionTitle>{t('screen.S11.chat')}</SectionTitle>
-          <p>{residency.chat.title ?? t('screen.S03.chat.title')}</p>
-          {residency.chat.participantsCount !== null ? (
-            <Muted>
-              {residency.chat.participantsCount} {plural(residency.chat.participantsCount, 'members')}
-            </Muted>
+      {residency || canEnterCode ? (
+        <div className="list-card">
+          {residency ? (
+            <label className="list-row">
+              <span className="list-row-text">
+                <span className="list-row-title">{t('screen.S11.notify')}</span>
+                <span className="muted small">{t('screen.S11.notify.sub')}</span>
+              </span>
+              <Switch checked={me.settings.notifyDefault} disabled={busy === 'notify'} onChange={(e) => void setNotify(e.currentTarget.checked)} />
+            </label>
           ) : null}
-          {residency.chat.inviteLink ? (
-            <div>
-              <Button size="medium" variant="secondary" onClick={() => openMaxLink(residency.chat!.inviteLink!)}>
-                {t('screen.S03.chat.open')}
-              </Button>
-            </div>
+          {chat?.bound ? (
+            <button type="button" className="list-row plain-button" disabled={!chat.inviteLink} onClick={() => chat.inviteLink && openMaxLink(chat.inviteLink)}>
+              <span className="list-row-text">
+                <span className="list-row-title">{t('screen.S11.chat')}</span>
+                <span className="muted small">
+                  {[chat.title, chat.participantsCount !== null ? `${chat.participantsCount} ${plural(chat.participantsCount, 'members')}` : null].filter(Boolean).join(' · ')}
+                </span>
+              </span>
+              {chat.inviteLink ? <Icon name="chevron-right" size={16} className="muted" /> : null}
+            </button>
           ) : null}
-        </Card>
+          {canEnterCode ? (
+            <button type="button" className="list-row plain-button" aria-expanded={codeOpen} onClick={() => setCodeOpen((v) => !v)}>
+              <span className="list-row-text">
+                <span className="list-row-title">{t('screen.S11.uk')}</span>
+                <span className="muted small">{t('screen.S11.uk.sub')}</span>
+              </span>
+              <Icon name="chevron-right" size={16} className={codeOpen ? 'muted rotate-down' : 'muted'} />
+            </button>
+          ) : null}
+        </div>
       ) : null}
 
-      {me.demoMode && !me.staff ? (
+      {canEnterCode && codeOpen ? (
         <Card>
-          <SectionTitle>{t('screen.S11.uk')}</SectionTitle>
-          <Muted>{t('screen.S11.uk.sub')}</Muted>
           <div className="field">
             <label className="field-label" htmlFor={codeId}>
               {t('screen.S11.code.label')}
@@ -174,20 +182,16 @@ export function ProfileScreen() {
               <p className="field-hint">{t('screen.S11.code.hint')}</p>
             )}
           </div>
-          <div>
-            <Button size="medium" disabled={code.trim() === ''} loading={busy === 'code'} onClick={() => void enterCode()}>
-              {t('screen.S11.code.cta')}
-            </Button>
-          </div>
+          <Button size="large" stretched disabled={code.trim() === ''} loading={busy === 'code'} onClick={() => void enterCode()}>
+            {t('screen.S11.code.cta')}
+          </Button>
         </Card>
       ) : null}
 
       {residency ? (
-        <div>
-          <Button size="medium" variant="destructive" onClick={() => setConfirmDelete(true)}>
-            <Icon name="trash-2" size={16} /> {t('screen.S11.delete')}
-          </Button>
-        </div>
+        <Button size="large" stretched variant="destructive" onClick={() => setConfirmDelete(true)}>
+          {t('screen.S11.delete')}
+        </Button>
       ) : null}
 
       <ConfirmDialog

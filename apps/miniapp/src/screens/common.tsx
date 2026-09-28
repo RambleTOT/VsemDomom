@@ -28,6 +28,7 @@ export function useErrorAction(): (kind: ErrorKind, retry?: () => void, mergedIn
         return () => void navigate(session.home);
       case 'network':
       case 'server':
+      case 'busy':
       case 'slow':
         return retry;
       case 'outside':

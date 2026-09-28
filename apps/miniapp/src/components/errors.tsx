@@ -6,12 +6,14 @@ import { t } from '../i18n.ts';
 import type { IconName } from '../icons/icons.ts';
 import { Icon } from './Icon.tsx';
 
-export type ErrorKind = 'outside' | 'session' | 'network' | 'server' | 'forbidden' | 'notfound' | 'merged' | 'expired' | 'feature_off' | 'slow';
+export type ErrorKind = 'outside' | 'session' | 'network' | 'server' | 'busy' | 'forbidden' | 'notfound' | 'merged' | 'expired' | 'feature_off' | 'slow';
 
 export function errorKind(err: unknown): ErrorKind {
   if (!(err instanceof ApiError)) return 'server';
   if (err.isNetwork) return 'network';
   if (err.status === 401) return 'session';
+  // Лимит запросов: не «ошибка сервиса», а просьба подождать.
+  if (err.status === 429) return 'busy';
   if (err.status === 403) return 'forbidden';
   if (err.status === 404) return err.code === 'feature_disabled' ? 'feature_off' : 'notfound';
   if (err.status === 410) return 'expired';
@@ -24,6 +26,7 @@ const ERROR_VIEW: Record<ErrorKind, { icon: IconName; title: string; text: strin
   session: { icon: 'log-in', title: 'error.session.title', text: 'error.session', cta: 'common.close' },
   network: { icon: 'wifi-off', title: 'error.network.title', text: 'error.network', cta: 'common.retry' },
   server: { icon: 'server-crash', title: 'error.server.title', text: 'error.server', cta: 'common.retry' },
+  busy: { icon: 'clock', title: 'error.busy.title', text: 'error.busy', cta: 'common.retry' },
   forbidden: { icon: 'lock', title: 'error.forbidden.title', text: 'error.forbidden.uk', cta: 'error.forbidden.cta' },
   notfound: { icon: 'search-x', title: 'error.notfound.title', text: 'error.notfound', cta: 'common.to_home' },
   merged: { icon: 'merge', title: 'error.merged.title', text: 'error.merged', cta: 'incident.headline.action.open_actual' },
@@ -69,7 +72,7 @@ export function InlineError({ error, onRetry }: { error: unknown; onRetry?: () =
   const kind = errorKind(error);
   const view = ERROR_VIEW[kind];
   const code = error instanceof ApiError ? (error.body?.traceId ?? null) : null;
-  const text = error instanceof ApiError && error.detail && kind !== 'network' ? error.detail : t(view.text);
+  const text = error instanceof ApiError && error.detail && kind !== 'network' && kind !== 'busy' ? error.detail : t(view.text);
   return (
     <div className="inline-error" role="alert">
       <Icon name={view.icon} size={20} />

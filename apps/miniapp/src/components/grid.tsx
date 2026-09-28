@@ -8,6 +8,21 @@ const entrancesAsc = (entrances: number) => Array.from({ length: entrances }, (_
 /** Порог «3+ квартиры» — подсветка плотности, а не норматив. */
 const DENSE = 3;
 
+/** Легенда плотности: 1–2 и 3+ квартиры — в строке заголовка карточки. */
+export function GridLegend() {
+  return (
+    <div className="grid-legend" aria-hidden="true">
+      <span className="legend-swatch lvl-1" />
+      <span className="small muted">{t('screen.U02.grid.legend.low')}</span>
+      <span className="legend-swatch lvl-3" />
+      <span className="small muted">{t('screen.U02.grid.legend.high')}</span>
+    </div>
+  );
+}
+
+/** Пустая клетка — точка без фона (как в макете). */
+const EMPTY = '·';
+
 export function EntranceFloorGridView({ grid }: { grid: EntranceFloorGrid }) {
   const count = new Map(grid.cells.map((c) => [`${c.entrance}:${c.floor}`, c.count]));
   const unknown = new Map(grid.unknownFloor.map((c) => [c.entrance, c.count]));
@@ -23,7 +38,7 @@ export function EntranceFloorGridView({ grid }: { grid: EntranceFloorGrid }) {
               </th>
               {entrances.map((e) => (
                 <th scope="col" key={e}>
-                  {e}
+                  {t('entrance.short', { entrance: e })}
                 </th>
               ))}
             </tr>
@@ -35,8 +50,8 @@ export function EntranceFloorGridView({ grid }: { grid: EntranceFloorGrid }) {
                 {entrances.map((e) => {
                   const n = count.get(`${e}:${floor}`) ?? 0;
                   return (
-                    <td key={e} className={n >= DENSE ? 'lvl-3' : n > 0 ? 'lvl-1' : ''} aria-label={t('screen.U02.grid.sr', { entrance: e, floor, count: n, flats: plural(n, 'flats') })}>
-                      {n > 0 ? n : ''}
+                    <td key={e} className={n >= DENSE ? 'lvl-3' : n > 0 ? 'lvl-1' : 'empty'} aria-label={t('screen.U02.grid.sr', { entrance: e, floor, count: n, flats: plural(n, 'flats') })}>
+                      {n > 0 ? n : EMPTY}
                     </td>
                   );
                 })}
@@ -48,8 +63,8 @@ export function EntranceFloorGridView({ grid }: { grid: EntranceFloorGrid }) {
                 {entrances.map((e) => {
                   const n = unknown.get(e) ?? 0;
                   return (
-                    <td key={e} className={n >= DENSE ? 'lvl-3' : n > 0 ? 'lvl-1' : ''} aria-label={t('screen.U02.grid.sr', { entrance: e, floor: t('screen.U02.grid.floor_unknown'), count: n, flats: plural(n, 'flats') })}>
-                      {n > 0 ? n : ''}
+                    <td key={e} className={n >= DENSE ? 'lvl-3' : n > 0 ? 'lvl-1' : 'empty'} aria-label={t('screen.U02.grid.sr', { entrance: e, floor: t('screen.U02.grid.floor_unknown'), count: n, flats: plural(n, 'flats') })}>
+                      {n > 0 ? n : EMPTY}
                     </td>
                   );
                 })}
@@ -57,11 +72,6 @@ export function EntranceFloorGridView({ grid }: { grid: EntranceFloorGrid }) {
             ) : null}
           </tbody>
         </table>
-      </div>
-      <div className="row grid-legend">
-        <span className="legend-swatch lvl-1" aria-hidden="true" />
-        <span className="legend-swatch lvl-3" aria-hidden="true" />
-        <span className="muted small">{t('screen.U02.grid.legend')}</span>
       </div>
       {grid.unknownEntrance > 0 ? <p className="muted small">{t('screen.U02.grid.unknown_entrance', { count: grid.unknownEntrance, flats: plural(grid.unknownEntrance, 'flats') })}</p> : null}
     </div>
@@ -98,7 +108,7 @@ export function HeatGrid({ map }: { map: HeatMap }) {
               </th>
               {entrances.map((e) => (
                 <th scope="col" key={e}>
-                  {e}
+                  {t('entrance.short', { entrance: e })}
                 </th>
               ))}
             </tr>
@@ -112,8 +122,8 @@ export function HeatGrid({ map }: { map: HeatMap }) {
                   const state = heatState(cell);
                   const n = cell ? cell.warm + cell.luke + cell.cold : 0;
                   return (
-                    <td key={e} className={state === 'none' ? '' : `heat-${state}`} aria-label={t('heat.cell.sr', { entrance: e, floor, state: t(`heat.${state}`), count: n, answers: plural(n, 'answers') })}>
-                      {state === 'none' ? '' : t(`heat.mark.${state}`)}
+                    <td key={e} className={state === 'none' ? 'empty' : `heat-${state}`} aria-label={t('heat.cell.sr', { entrance: e, floor, state: t(`heat.${state}`), count: n, answers: plural(n, 'answers') })}>
+                      {state === 'none' ? t('heat.mark.none') : `${t(`heat.mark.${state}`)} ${n}`}
                     </td>
                   );
                 })}
@@ -122,17 +132,23 @@ export function HeatGrid({ map }: { map: HeatMap }) {
           </tbody>
         </table>
       </div>
-      <ul className="row grid-legend">
+      <ul className="heat-legend">
         {(['warm', 'luke', 'cold'] as const).map((s) => (
           <li key={s} className="row">
             <span className={`legend-swatch heat-${s}`} aria-hidden="true">
               {t(`heat.mark.${s}`)}
             </span>
-            <span className="small">
-              {t(`heat.${s}`)} — {totals[s]}
-            </span>
+            <span className="small">{t(`heat.${s}`)}</span>
+            <strong className="small">{totals[s]}</strong>
           </li>
         ))}
+        <li className="row">
+          <span className="legend-swatch" aria-hidden="true">
+            {t('heat.mark.none')}
+          </span>
+          <span className="small">{t('heat.none')}</span>
+          <strong className="small">{Math.max(0, map.totalFlats - map.answered)}</strong>
+        </li>
       </ul>
     </div>
   );
