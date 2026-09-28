@@ -2,11 +2,12 @@
  * Стенд бота для интеграционных тестов: тестовая база с сидами, FakeMaxApi, очередь в памяти
  * и ручные часы. События подаются как из webhook, задачи выполняются до пустой очереди.
  */
-import { encodeCallback, ManualClock, type CallbackAction, type KeyboardButton } from '@vsemdomom/core';
+import { encodeCallback, keywordMatcher, ManualClock, type CallbackAction, type KeyboardButton } from '@vsemdomom/core';
 import { ruTranslator } from '@vsemdomom/shared';
 import { pino } from 'pino';
 import { botJobHandlers, botUpdateHandlers } from '../../src/bot/index.ts';
 import { LOCAL_SESSION_SECRET, loadConfig } from '../../src/config/env.ts';
+import { KEYWORD_PHRASES } from '../../src/config/params.ts';
 import type { DbHandle } from '../../src/db/client.ts';
 import { runSeeds } from '../../src/db/seed.ts';
 import type { JobContext } from '../../src/jobs/context.ts';
@@ -79,6 +80,8 @@ export async function createHarness(
     : calls;
   const max = new FakeMaxApi({ clock, store, botUsername: BOT_USERNAME, chats: options.chats ?? [fakeChat(-1001), fakeChat(-1004)] });
   const queue = new MemoryJobQueue();
+  // Как в api и worker: словарь F13 — только при включённом флаге.
+  const matcher = config.features.keywordReply ? keywordMatcher(KEYWORD_PHRASES) : null;
   const ctx: JobContext = { config, db: handle.db, queue, max, log, clock, i18n: ruTranslator };
 
   const due = (job: MemoryJobQueue['sent'][number]) => !job.options?.startAfter || job.options.startAfter.getTime() <= clock.now().getTime();
@@ -111,7 +114,7 @@ export async function createHarness(
     clock,
     drain,
     async deliver(raw) {
-      const result = await ingestUpdate({ db: handle.db, queue, keywordMatcher: null }, raw);
+      const result = await ingestUpdate({ db: handle.db, queue, keywordMatcher: matcher }, raw);
       await drain();
       return result;
     },

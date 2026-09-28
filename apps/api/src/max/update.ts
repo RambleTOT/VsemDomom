@@ -5,7 +5,7 @@
  */
 import { z } from 'zod';
 
-const userSchema = z.object({ user_id: z.number() }).passthrough();
+const userSchema = z.object({ user_id: z.number(), is_bot: z.boolean().nullish() }).passthrough();
 const recipientSchema = z
   .object({ chat_id: z.number().nullish(), user_id: z.number().nullish(), chat_type: z.string().nullish() })
   .passthrough();
@@ -137,7 +137,8 @@ export function normalizeUpdate(u: RawUpdate, options: NormalizeOptions): Normal
     case 'message_created': {
       const recipient = u.message?.recipient;
       const chatType = recipient?.chat_type ?? null;
-      const text = u.message?.body?.text ?? '';
+      // Сообщения ботов (в том числе нашего — карточка «Нет горячей воды») не команды и не ключевые слова.
+      const text = u.message?.sender?.is_bot === true ? '' : (u.message?.body?.text ?? '');
       const isDialog = chatType === 'dialog';
       return {
         ...base,

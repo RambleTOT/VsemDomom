@@ -19,6 +19,7 @@ import { onActIntro, onActReady } from './act.ts';
 import { onAdsAgain, onCrewNo, onCrewYes, onRestore } from './check.ts';
 import type { CallbackAnswerJob } from './dm.ts';
 import { onJoin, onMute, onNotMe } from './incident.ts';
+import { onKeywordHit } from './keyword.ts';
 import { onHeatEntrance, onHeatPoll, onWaterPoll } from './poll.ts';
 import {
   adsReminderJob,
@@ -56,6 +57,7 @@ export const botRouting: BotRouting = {
   },
   dialogInputs: [onReportTimeInput, onAdsNumberInput],
   onReportCommand: (ctx, userId, meta) => startReport(ctx, userId, null, meta),
+  onKeywordHit,
 };
 
 /** Порядок важен: сначала отметка «диалог открыт», затем сценарий. */

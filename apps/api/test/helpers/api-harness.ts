@@ -2,11 +2,12 @@
  * Стенд REST API: тот же стенд бота (тестовая БД с сидами, симулятор MAX, очередь в памяти, ручные часы)
  * плюс приложение Fastify с /api/v1. Запросы — через app.inject, без сети.
  */
+import { keywordMatcher } from '@vsemdomom/core';
 import type { FastifyInstance } from 'fastify';
 import { pino } from 'pino';
 import { signInitData } from '../../src/auth/init-data.ts';
 import { LOCAL_CHECKER_TOKENS } from '../../src/config/env.ts';
-import { PARAMS } from '../../src/config/params.ts';
+import { KEYWORD_PHRASES, PARAMS } from '../../src/config/params.ts';
 import { buildApp } from '../../src/http/app.ts';
 import type { RateLimits } from '../../src/http/rate-limit.ts';
 import type { FakeChat } from '../../src/max/fake.ts';
@@ -55,7 +56,7 @@ export async function createApiHarness(
     config: h.ctx.config,
     log: pino({ level: 'silent' }),
     readiness: [],
-    webhook: { db: h.handle.db, queue: h.queue, keywordMatcher: null },
+    webhook: { db: h.handle.db, queue: h.queue, keywordMatcher: h.ctx.config.features.keywordReply ? keywordMatcher(KEYWORD_PHRASES) : null },
     api: h.ctx,
     rateLimits: options.rateLimits ?? NO_LIMITS,
   });
