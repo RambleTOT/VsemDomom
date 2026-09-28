@@ -1,5 +1,6 @@
 /** Профиль: GET /me, согласие, проживание, удаление данных, настройки уведомлений. */
 import type { FastifyInstance } from 'fastify';
+import type { Principal } from '../../auth/principal.ts';
 import { deleteUserData } from '../../services/user-data.ts';
 import { giveConsent, hasConsent, loadMe, setNotifyDefault } from '../../services/me.ts';
 import { saveResidency } from '../../services/residency.ts';
@@ -8,6 +9,11 @@ import { residencyView } from '../../services/views.ts';
 import { loadViewer, visibleHouse } from '../access.ts';
 import { registerApiRoute, type ApiDeps } from '../api-route.ts';
 import { ApiError } from '../problem.ts';
+
+/** Профиль проверяющих задан сидами песочницы: тестовые токены его не меняют и не удаляют. */
+function assertNotChecker(principal: Principal): void {
+  if (principal.kind === 'checker') throw new ApiError(403, 'forbidden', 'Недоступно тестовым токенам', 'Профиль проверяющих задан сидами песочницы');
+}
 
 export function registerMeRoutes(app: FastifyInstance, deps: ApiDeps): void {
   const { ctx } = deps;
@@ -23,6 +29,7 @@ export function registerMeRoutes(app: FastifyInstance, deps: ApiDeps): void {
   });
 
   registerApiRoute(app, deps, 'putResidency', async ({ principal, body }) => {
+    assertNotChecker(principal);
     const viewer = await loadViewer(ctx.db, principal);
     if (!hasConsent(viewer.user)) throw new ApiError(403, 'consent_required', 'Нужно согласие на обработку данных');
     const h = await visibleHouse(ctx.db, viewer, body.houseId);
@@ -40,6 +47,7 @@ export function registerMeRoutes(app: FastifyInstance, deps: ApiDeps): void {
   });
 
   registerApiRoute(app, deps, 'deleteMe', async ({ principal }) => {
+    assertNotChecker(principal);
     await deleteUserData(ctx.db, principal.userId, ctx.clock.now());
     return { status: 204 };
   });

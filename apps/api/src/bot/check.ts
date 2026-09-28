@@ -4,20 +4,22 @@
  */
 import { isOneOf, renderText, RESTORED_ANSWERS } from '@vsemdomom/core';
 import { and, eq } from 'drizzle-orm';
-import { chatOfHouse, userById } from '../db/queries.ts';
+import { userById } from '../db/queries.ts';
 import { incidentParticipant } from '../db/schema.ts';
 import { observeBrigade } from '../services/brigade.ts';
 import { answerCheck } from '../services/check.ts';
 import { incidentByPublicId } from '../services/incidents.ts';
 import { sendDm, setDialogState } from './dm.ts';
+import { fromHouseChat } from './incident.ts';
 import type { CallbackHandler } from './types.ts';
 
 export const onRestore: CallbackHandler = async (e, ctx) => {
   const inc = e.payload.id ? await incidentByPublicId(ctx.db, e.payload.id) : null;
   const answer = e.payload.arg;
   if (!inc || !isOneOf(RESTORED_ANSWERS, answer)) return ctx.i18n.t('bot.answer.expired');
-  const chat = await chatOfHouse(ctx.db, inc.houseId);
-  const saved = await answerCheck(ctx, { incidentId: inc.id, userId: e.userId, answer, source: 'bot', fromHouseChat: chat?.chatId === e.chatId });
+  // Вопрос о восстановлении — только в чате этого дома.
+  if (!(await fromHouseChat(ctx, inc.houseId, e.chatId))) return ctx.i18n.t('bot.answer.expired');
+  const saved = await answerCheck(ctx, { incidentId: inc.id, userId: e.userId, answer, source: 'bot', fromHouseChat: true });
   if (saved.status === 'not_checking') return ctx.i18n.t('bot.answer.check_closed');
   if (answer !== 'no') return ctx.i18n.t('restore.answer.saved');
   return ctx.i18n.t(saved.instructed ? 'restore.answer.no_saved' : 'restore.answer.no_saved.no_dialog');
@@ -27,7 +29,7 @@ const brigade =
   (seen: boolean): CallbackHandler =>
   async (e, ctx) => {
     const inc = e.payload.id ? await incidentByPublicId(ctx.db, e.payload.id) : null;
-    if (!inc) return ctx.i18n.t('bot.answer.expired');
+    if (!inc || !(await fromHouseChat(ctx, inc.houseId, e.chatId))) return ctx.i18n.t('bot.answer.expired');
     const saved = await observeBrigade(ctx, { incidentId: inc.id, userId: e.userId, seen, source: 'bot' });
     if (saved === 'not_applicable') return ctx.i18n.t('bot.answer.expired');
     return ctx.i18n.t(seen ? 'brigade.confirmed' : 'brigade.none.saved');

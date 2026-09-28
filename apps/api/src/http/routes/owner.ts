@@ -24,7 +24,8 @@ export function registerOwnerRoutes(app: FastifyInstance, deps: ApiDeps): void {
     if (!inc) throw notFound('Авария не найдена');
     const h = await houseById(ctx.db, inc.houseId);
     const residency = assertResident(viewer, h);
-    if (inc.status === 'merged') throw notFound('Авария не найдена');
+    // «Только в моей квартире» видна автору — и приглашение по ней тоже только от автора.
+    if (inc.status === 'merged' || (inc.scope === 'flat' && inc.createdBy !== principal.userId)) throw notFound('Авария не найдена');
     const invite = await createOwnerInvite(ctx, { incident: inc, house: h, residency });
     return { status: 201, body: { link: invite.link, shareText: invite.shareText, expiresAt: iso(invite.expiresAt) } };
   });
@@ -67,6 +68,8 @@ export function registerOwnerRoutes(app: FastifyInstance, deps: ApiDeps): void {
           throw gone(result);
         case 'self':
           throw new ApiError(403, 'forbidden', 'Подтвердить проживание может только собственник');
+        case 'mutual':
+          throw new ApiError(403, 'forbidden', 'Подтверждать друг друга нельзя', 'Проживание подтверждает собственник или УК');
         default:
           return { status: 200, body: { status: decision, tenantTrustLevel: result.trustLevel, incidentId: result.bundle.incident.publicId } };
       }

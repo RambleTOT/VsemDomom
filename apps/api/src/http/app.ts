@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import helmet from '@fastify/helmet';
-import Fastify, { type FastifyBaseLogger, type FastifyError, type FastifyInstance } from 'fastify';
+import Fastify, { LogController, type FastifyBaseLogger, type FastifyError, type FastifyInstance } from 'fastify';
 import { registerWebhookRoute } from '../webhook/route.ts';
 import { registerAuth } from './auth.ts';
 import { registerDocs } from './docs.ts';
@@ -13,14 +13,18 @@ import type { AppDeps } from './types.ts';
 export type { AppDeps, ReadinessCheck } from './types.ts';
 
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9._-]{8,128}$/;
+const QUIET_ROUTES = new Set(['/health', '/api/v1/health', '/ready']);
 
 export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   const app = Fastify({
     // pino.Logger совместим с FastifyBaseLogger; приведение фиксирует тип логгера у экземпляра.
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     loggerInstance: deps.log as FastifyBaseLogger,
-    trustProxy: true,
+    // Перед API ровно один прокси — Caddy; доверяем только ему (первому звену X-Forwarded-For).
+    trustProxy: (_address: string, hop: number) => hop < 1,
     bodyLimit: 256 * 1024,
+    // Стандартный лог запросов пишет полный URL (в нём бывают одноразовые токены) и IP клиента — свой ниже.
+    logController: new LogController({ disableRequestLogging: true }),
     // X-Request-Id от прокси принимаем, если он похож на идентификатор; иначе создаём свой.
     genReqId: (req) => {
       const incoming = req.headers['x-request-id'];
@@ -30,6 +34,19 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   app.addHook('onRequest', async (req, reply) => {
     reply.header('X-Request-Id', req.id);
+  });
+
+  // Ответы API зависят от пользователя: не кешировать ни в браузере, ни в прокси.
+  app.addHook('onSend', async (req, reply, payload) => {
+    if (req.url.startsWith('/api/v1/') && !reply.hasHeader('cache-control')) reply.header('cache-control', 'no-store');
+    return payload;
+  });
+
+  // Журнал запросов: шаблон маршрута вместо URL (без токенов и ID), без IP; проверки живости не пишем.
+  app.addHook('onResponse', async (req, reply) => {
+    const route = req.routeOptions.url ?? 'не найден';
+    if (QUIET_ROUTES.has(route) || route.startsWith('/api/docs')) return;
+    req.log.info({ method: req.method, route, status: reply.statusCode, ms: Math.round(reply.elapsedTime) }, 'запрос');
   });
 
   // Заголовки безопасности для API. CSP мини-приложения задаёт Caddy (статика).

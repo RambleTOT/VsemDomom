@@ -12,13 +12,20 @@ import type { CallbackHandler } from './types.ts';
 
 const ENTRANCE_ARG = /^[1-9]\d{0,2}$/;
 
+/** Нажатие пришло из чата, привязанного к дому аварии. */
+export async function fromHouseChat(ctx: Parameters<CallbackHandler>[1], houseId: number, chatId: number | null): Promise<boolean> {
+  const chat = await chatOfHouse(ctx.db, houseId);
+  return chat !== null && chatId !== null && chat.chatId === chatId;
+}
+
 export const onJoin: CallbackHandler = async (e, ctx) => {
   const inc = e.payload.id ? await incidentByPublicId(ctx.db, e.payload.id) : null;
   if (!inc) return ctx.i18n.t('bot.answer.expired');
   if (!isOpenStatus(inc.status)) return ctx.i18n.t('bot.answer.closed');
   const entrance = e.payload.arg && ENTRANCE_ARG.test(e.payload.arg) ? Number(e.payload.arg) : null;
-  const chat = await chatOfHouse(ctx.db, inc.houseId);
-  const r = await joinIncident(ctx, { incident: inc, userId: e.userId, entrance, source: 'bot', fromHouseChat: chat?.chatId === e.chatId });
+  // Кнопки карточки — только в чате этого дома: нажатие из другого чата не принимаем.
+  if (!(await fromHouseChat(ctx, inc.houseId, e.chatId))) return ctx.i18n.t('bot.answer.expired');
+  const r = await joinIncident(ctx, { incident: inc, userId: e.userId, entrance, source: 'bot', fromHouseChat: true });
   if (r.result === 'already_joined') return ctx.i18n.t('bot.answer.already');
   if (r.entrance === null) return ctx.i18n.t('bot.answer.joined_no_entrance');
   return r.dialogActive
@@ -30,6 +37,7 @@ export const onNotMe: CallbackHandler = async (e, ctx) => {
   const inc = e.payload.id ? await incidentByPublicId(ctx.db, e.payload.id) : null;
   if (!inc) return ctx.i18n.t('bot.answer.expired');
   if (!isOpenStatus(inc.status)) return ctx.i18n.t('bot.answer.closed');
+  if (!(await fromHouseChat(ctx, inc.houseId, e.chatId))) return ctx.i18n.t('bot.answer.expired');
   await markNotAffected(ctx, { incident: inc, userId: e.userId, source: 'bot' });
   return ctx.i18n.t('bot.answer.not_me', { service_ok: serviceOk(ctx.i18n, inc.serviceType) });
 };

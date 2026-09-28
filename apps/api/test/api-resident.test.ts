@@ -263,9 +263,11 @@ describe.skipIf(!url)('REST API жителя (A6, PostgreSQL)', () => {
       expect(res.body.ads.registration).toMatchObject({ number: '4127', at: registeredAt, notReached: false });
       expect(res.body.deadlines.find((d) => d.kind === 'answer')).toMatchObject({ anchor: 'ads_registration', dueAt: new Date(Date.parse(registeredAt) + 30 * 60_000).toISOString() });
       expect(res.body.timeline[0]).toMatchObject({ type: 'ads_registered', mine: true, payload: { number: '4127' } });
-      const fail = await api.call<IncidentDetail>('POST', `/api/v1/incidents/${hotId}/ads-registration`, { token: bob, body: { notReached: true } });
+      // Номер и «не дозвонился» — только от отметившихся: Боб ответил «Не у меня».
+      expect((await api.call<Problem>('POST', `/api/v1/incidents/${hotId}/ads-registration`, { token: bob, body: { notReached: true } })).body.code).toBe('not_participant');
+      const fail = await api.call<IncidentDetail>('POST', `/api/v1/incidents/${hotId}/ads-registration`, { token: alice, body: { notReached: true } });
       expect(fail.body.ads.registration).toMatchObject({ number: '4127', notReached: true });
-      expect((await api.call('POST', `/api/v1/incidents/${hotId}/ads-registration`, { token: bob, body: {} })).status).toBe(400);
+      expect((await api.call('POST', `/api/v1/incidents/${hotId}/ads-registration`, { token: alice, body: {} })).status).toBe(400);
     });
 
     it('«Уведомлять меня»: только участнику', async () => {

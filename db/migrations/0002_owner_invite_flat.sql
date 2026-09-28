@@ -1,0 +1,1 @@
+ALTER TABLE "owner_invite" ADD COLUMN "flat_no" integer;

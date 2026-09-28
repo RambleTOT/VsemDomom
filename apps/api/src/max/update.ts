@@ -58,8 +58,20 @@ export const SUBSCRIBED_UPDATE_TYPES = [
   'bot_admin_permissions_changed',
 ] as const;
 
-/** Текст из лички передаётся в задачу только для шагов диалога и команд — не длиннее этого. */
-const MAX_DM_TEXT = 500;
+/**
+ * Текст из лички попадает в задачу, только если это команда или короткий ввод шага диалога
+ * (квартира, время, номер заявки — в них всегда есть цифра). Свободный текст, где могут быть
+ * имя или телефон, не хранится: бот всё равно ответит подсказкой и меню.
+ */
+const DM_COMMAND = /^\/[A-Za-z_]{1,32}(?:\s+\S{1,64})?$/;
+const DM_INPUT = /^(?=.*\d)[0-9A-Za-zА-Яа-яЁё\s:.,/+-]{1,32}$/;
+const PHONE_LIKE = /\d{10,}/;
+
+function dmText(text: string): string {
+  const t = text.trim();
+  if (DM_COMMAND.test(t)) return t;
+  return DM_INPUT.test(t) && !PHONE_LIKE.test(t.replace(/[\s()+-]/g, '')) ? t : '';
+}
 
 /** Из группы в задачу попадает только команда привязки /connect <код дома>. */
 const GROUP_COMMAND = /^\/connect(@\S+)?(\s|$)/i;
@@ -133,7 +145,7 @@ export function normalizeUpdate(u: RawUpdate, options: NormalizeOptions): Normal
         chatType,
         userId: u.message?.sender?.user_id ?? null,
         ...(u.message?.body?.mid ? { mid: u.message.body.mid } : {}),
-        ...(isDialog ? { text: text.slice(0, MAX_DM_TEXT) } : {}),
+        ...(isDialog ? { text: dmText(text) } : {}),
         ...(!isDialog && GROUP_COMMAND.test(text) ? { text: text.slice(0, MAX_GROUP_COMMAND_TEXT) } : {}),
         ...(!isDialog && options.keywordMatcher ? { keywordHit: options.keywordMatcher(text) } : {}),
       };

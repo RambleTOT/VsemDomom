@@ -63,20 +63,41 @@ export async function onChatTitleChanged(u: NormalizedUpdate, ctx: JobContext): 
   await ctx.db.update(houseChat).set({ title: u.title ?? null }).where(eq(houseChat.chatId, u.chatId));
 }
 
-export type BindError = 'token_not_found' | 'token_used' | 'token_expired' | 'house_not_found' | 'forbidden';
+export type BindError = 'token_not_found' | 'token_used' | 'token_expired' | 'house_not_found' | 'forbidden' | 'already_bound';
 
 export interface BindResult {
   house: HouseRow;
   botIsAdmin: boolean;
 }
 
-/** Сотрудник УК, которой принадлежит дом (песочница не привязывается к чатам). */
-async function staffHouse(ctx: JobContext, staffUserId: number, housePublicId: string): Promise<HouseRow | BindError> {
+/**
+ * Сотрудник УК, которой принадлежит дом (песочница не привязывается к чатам). Демо-роль привязывает
+ * только свободный дом к свободному чату: чужую привязку (демо-чаты команды) она не перехватывает.
+ */
+async function staffHouse(ctx: JobContext, staffUserId: number, housePublicId: string, chatId: number): Promise<HouseRow | BindError> {
   const h = await houseByPublicId(ctx.db, housePublicId);
   if (!h || h.isSandbox) return 'house_not_found';
-  const roles = await staffOf(ctx.db, staffUserId);
-  if (!roles.some((r) => r.uk.id === h.ukId)) return 'forbidden';
+  const roles = (await staffOf(ctx.db, staffUserId)).filter((r) => r.uk.id === h.ukId);
+  if (roles.length === 0) return 'forbidden';
+  if (roles.every((r) => r.staff.isDemo)) {
+    const taken = await ctx.db
+      .select({ houseId: houseChat.houseId, chatId: houseChat.chatId })
+      .from(houseChat)
+      .where(or(eq(houseChat.houseId, h.id), eq(houseChat.chatId, chatId)));
+    if (taken.some((b) => b.houseId !== h.id || b.chatId !== chatId)) return 'already_bound';
+  }
   return h;
+}
+
+/** Привязывает по ссылке только участник этого чата (если бот может это проверить). */
+async function memberOfChat(ctx: JobContext, chatId: number, userId: number): Promise<boolean> {
+  try {
+    const members = await ctx.max.getChatMembers(chatId, [userId]);
+    return members.some((m) => m.user_id === userId);
+  } catch (err) {
+    ctx.log.info({ err: err instanceof MaxApiError ? err.kind : 'error' }, 'привязка: участников чата не проверить — пропускаем проверку');
+    return true;
+  }
 }
 
 /** Сведения о чате по токену (экран привязки U03). */
@@ -144,8 +165,9 @@ export async function bindChatWithToken(
   if (!row) return 'token_not_found';
   if (row.usedAt) return 'token_used';
   if (row.expiresAt.getTime() < ctx.clock.now().getTime()) return 'token_expired';
-  const h = await staffHouse(ctx, input.staffUserId, input.housePublicId);
+  const h = await staffHouse(ctx, input.staffUserId, input.housePublicId, row.chatId);
   if (typeof h === 'string') return h;
+  if (!(await memberOfChat(ctx, row.chatId, input.staffUserId))) return 'forbidden';
   return bind(ctx, row.chatId, h, input.staffUserId, { key: `bind:${tokenHash}`, tokenHash });
 }
 
@@ -154,7 +176,7 @@ export async function onConnectCommand(u: NormalizedUpdate, ctx: JobContext, met
   if (u.chatId === null || u.userId === null || !u.text) return;
   const code = u.text.trim().split(/\s+/)[1];
   if (!code) return;
-  const h = await staffHouse(ctx, u.userId, code);
+  const h = await staffHouse(ctx, u.userId, code, u.chatId);
   if (typeof h === 'string') {
     ctx.log.info({ reason: h }, '/connect отклонён');
     return;

@@ -3,6 +3,7 @@ export * from './house/geometry.ts';
 export * from './time/clock.ts';
 export * from './constants/time.ts';
 export * from './incident/state-machine.ts';
+export * from './incident/ads-number.ts';
 export * from './incident/check.ts';
 export * from './incident/trust.ts';
 export * from './norms/select.ts';

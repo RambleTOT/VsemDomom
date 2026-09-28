@@ -4,7 +4,7 @@
  * пропустил — одно напоминание через 30 минут, если диалог с ботом начат.
  */
 import {
-  checkStartedAt,
+  looksLikePhone,
   INCIDENT_SCOPES,
   isOneOf,
   parseLocalDateTime,
@@ -27,10 +27,11 @@ import {
   type ServiceType,
   type StartedPreset,
 } from '@vsemdomom/core';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { PARAMS } from '../config/params.ts';
-import { house, incident, managementCompany } from '../db/schema.ts';
+import { house, incident, incidentParticipant, managementCompany } from '../db/schema.ts';
 import { rereportAds } from '../services/check.ts';
+import { checkIncidentMoment, checkIncidentStart, momentFloor } from '../services/time-bounds.ts';
 import type { JobContext } from '../jobs/context.ts';
 import {
   adsNotReached,
@@ -49,8 +50,6 @@ import type { CallbackHandler, DialogState, UpdateMeta } from './types.ts';
 type ReportState = Extract<DialogState, { flow: 'report' }>;
 type Step = 'what' | 'when' | 'when_custom' | 'confirm_old' | 'where';
 
-const MS_PER_SECOND = 1000;
-const MS_PER_HOUR = 3_600_000;
 
 async function state(ctx: JobContext, userId: number): Promise<DialogState | null> {
   const user = await userById(ctx.db, userId);
@@ -122,7 +121,6 @@ async function toWhere(ctx: JobContext, userId: number, s: ReportState, startedA
   );
 }
 
-const startedChecks = () => ({ futureSkewMs: PARAMS.startedAtFutureSkewSec * MS_PER_SECOND, confirmOldAfterMs: PARAMS.oldStartConfirmHours * MS_PER_HOUR });
 
 export const onReportWhen: CallbackHandler = async (e, ctx) => {
   const s = await reportState(ctx, e.userId);
@@ -151,9 +149,10 @@ export async function onReportTimeInput(ctx: JobContext, userId: number, text: s
   if (!r) return false;
   const now = ctx.clock.now();
   const startedAt = parseLocalDateTime(text, now, r.house.timezone);
-  const check = startedAt ? checkStartedAt(startedAt, now, startedChecks()) : null;
-  if (!startedAt || check === 'future') {
-    await ctx.db.transaction(async (tx) => sendDm(tx, ctx, userId, renderReportTimeError(startedAt ? 'future' : 'format', ctx.i18n), meta.dedupeKey));
+  const check = startedAt ? checkIncidentStart(startedAt, now) : null;
+  if (!startedAt || check === 'future' || check === 'too_old') {
+    const kind = !startedAt ? 'format' : check === 'too_old' ? 'too_old' : 'future';
+    await ctx.db.transaction(async (tx) => sendDm(tx, ctx, userId, renderReportTimeError(kind, ctx.i18n, { days: PARAMS.startedAtMaxAgeDays }), meta.dedupeKey));
     return true;
   }
   if (check === 'old') {
@@ -233,8 +232,19 @@ export const onReportWhere: CallbackHandler = async (e, ctx) => {
 
 // ---------- номер заявки АДС ----------
 
+/** Номер заявки и «Не дозвонился» — только от участника аварии. */
+async function participantIncident(ctx: JobContext, publicId: string | null, userId: number) {
+  const inc = publicId ? await incidentByPublicId(ctx.db, publicId) : null;
+  if (!inc) return null;
+  const [p] = await ctx.db
+    .select({ id: incidentParticipant.id })
+    .from(incidentParticipant)
+    .where(and(eq(incidentParticipant.incidentId, inc.id), eq(incidentParticipant.userId, userId), eq(incidentParticipant.affected, true)));
+  return p ? inc : null;
+}
+
 export const onAdsNumber: CallbackHandler = async (e, ctx) => {
-  const inc = e.payload.id ? await incidentByPublicId(ctx.db, e.payload.id) : null;
+  const inc = await participantIncident(ctx, e.payload.id, e.userId);
   if (!inc) return ctx.i18n.t('bot.answer.expired');
   await ctx.db.transaction(async (tx) => {
     await setDialogState(tx, ctx, e.userId, { flow: 'ads', incidentId: inc.publicId, kind: 'register' });
@@ -244,7 +254,7 @@ export const onAdsNumber: CallbackHandler = async (e, ctx) => {
 };
 
 export const onAdsFail: CallbackHandler = async (e, ctx) => {
-  const inc = e.payload.id ? await incidentByPublicId(ctx.db, e.payload.id) : null;
+  const inc = await participantIncident(ctx, e.payload.id, e.userId);
   if (!inc) return ctx.i18n.t('bot.answer.expired');
   await adsNotReached(ctx, { incident: inc, userId: e.userId, source: 'bot' });
   return ctx.i18n.t('report.ads.no_answer.saved');
@@ -264,9 +274,10 @@ export async function onAdsNumberInput(ctx: JobContext, userId: number, text: st
   const number = match?.[1];
   const timeText = match?.[2];
   const at = timeText && h ? parseLocalDateTime(timeText, now, h.timezone) : now;
-  const future = at !== null && checkStartedAt(at, now, startedChecks()) === 'future';
-  if (!number || !at || future) {
-    await ctx.db.transaction(async (tx) => sendDm(tx, ctx, userId, renderAdsNumberError(future ? 'future' : 'format', ctx.i18n), meta.dedupeKey));
+  const moment = at ? checkIncidentMoment(at, now, momentFloor(inc, s.kind === 'rereport' ? 'after_resolve' : 'registration')) : 'ok';
+  if (!number || !at || moment !== 'ok' || looksLikePhone(number)) {
+    const kind = moment !== 'ok' ? moment : number && looksLikePhone(number) ? 'phone' : 'format';
+    await ctx.db.transaction(async (tx) => sendDm(tx, ctx, userId, renderAdsNumberError(kind, ctx.i18n), meta.dedupeKey));
     return true;
   }
   let key: string;

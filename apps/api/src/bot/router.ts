@@ -4,6 +4,7 @@
  * в очередь callback-answer в той же транзакции, что и изменения.
  */
 import { decodeCallback, renderDeleteConfirm, renderHelp, renderText, type CallbackAction } from '@vsemdomom/core';
+import { PARAMS } from '../config/params.ts';
 import type { JobContext } from '../jobs/context.ts';
 import { markDialogStarted, type UpdateHandlers } from '../jobs/process-update.ts';
 import { MaxApiError } from '../max/types.ts';
@@ -66,8 +67,35 @@ async function handleCallback(u: NormalizedUpdate, ctx: JobContext, meta: Update
   await ctx.db.transaction(async (tx) => answerCallbackLater(tx, ctx, job));
 }
 
+const MS_PER_MINUTE = 60_000;
+const dmTimes = new Map<number, number[]>();
+
+/**
+ * Флуд в личку: сверх PARAMS.dmTextsPerMinute сообщений в минуту от одного пользователя бот не отвечает —
+ * иначе ответы займут очередь отправки и задержат карточки аварий во всех домах.
+ */
+export function dmTextAllowed(userId: number, now: Date): boolean {
+  const since = now.getTime() - MS_PER_MINUTE;
+  const recent = (dmTimes.get(userId) ?? []).filter((t) => t > since);
+  if (recent.length >= PARAMS.dmTextsPerMinute) {
+    dmTimes.set(userId, recent);
+    return false;
+  }
+  recent.push(now.getTime());
+  dmTimes.set(userId, recent);
+  if (dmTimes.size > DM_TRACKED_USERS) {
+    for (const [id, times] of dmTimes) if (times.every((t) => t <= since)) dmTimes.delete(id);
+  }
+  return true;
+}
+const DM_TRACKED_USERS = 10_000;
+
 async function handleDmText(u: NormalizedUpdate, ctx: JobContext, meta: UpdateMeta, routing: BotRouting): Promise<void> {
   if (u.userId === null) return;
+  if (!dmTextAllowed(u.userId, ctx.clock.now())) {
+    ctx.log.warn({ userId: u.userId }, 'личка: слишком много сообщений, без ответа');
+    return;
+  }
   await markDialogStarted(u, ctx, meta);
   const text = (u.text ?? '').trim();
   if (text.startsWith('/')) {

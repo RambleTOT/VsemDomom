@@ -6,7 +6,7 @@ export function registerSystemRoutes(app: FastifyInstance, deps: AppDeps): void 
   app.get('/health', { logLevel: 'warn' }, health);
   app.get('/api/v1/health', { logLevel: 'warn' }, health);
 
-  app.get('/ready', { logLevel: 'warn' }, async (_req, reply) => {
+  app.get('/ready', { logLevel: 'warn' }, async (req, reply) => {
     const results = await Promise.all(
       deps.readiness.map(async (c) => {
         try {
@@ -18,9 +18,11 @@ export function registerSystemRoutes(app: FastifyInstance, deps: AppDeps): void 
       }),
     );
     const ok = results.every(([, r]) => r.ok);
+    // Подробности — только в лог: наружу отдаём, какая проверка не прошла, без текста ошибок.
+    for (const [name, r] of results) if (!r.ok) req.log.warn({ check: name, detail: r.detail }, 'проверка готовности не прошла');
     return reply.status(ok ? 200 : 503).send({
       status: ok ? 'ok' : 'fail',
-      checks: Object.fromEntries(results.map(([name, r]) => [name, r.ok ? 'ok' : (r.detail ?? 'fail')])),
+      checks: Object.fromEntries(results.map(([name, r]) => [name, r.ok ? 'ok' : 'fail'])),
     });
   });
 

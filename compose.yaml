@@ -9,6 +9,13 @@ x-app-build: &app-build
   args:
     GIT_COMMIT: ${GIT_COMMIT:-dev}
 
+# Логи Docker с ротацией: поток запросов не должен забить диск, на котором лежит база.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: '10m'
+    max-file: '5'
+
 x-app-env: &app-env
   NODE_ENV: ${NODE_ENV:-development}
   DOMAIN: ${DOMAIN:-}
@@ -53,6 +60,7 @@ x-app-env: &app-env
 
 services:
   db:
+    logging: *logging
     image: postgres:16.15-alpine
     environment:
       POSTGRES_USER: app
@@ -68,6 +76,7 @@ services:
     restart: unless-stopped
 
   migrate:
+    logging: *logging
     build: *app-build
     image: vsemdomom-app:${GIT_COMMIT:-dev}
     command: ['node', 'dist/migrate.js']
@@ -81,6 +90,7 @@ services:
     restart: 'no'
 
   api:
+    logging: *logging
     build: *app-build
     image: vsemdomom-app:${GIT_COMMIT:-dev}
     command: ['node', 'dist/main.js']
@@ -108,6 +118,7 @@ services:
     restart: unless-stopped
 
   worker:
+    logging: *logging
     build: *app-build
     image: vsemdomom-app:${GIT_COMMIT:-dev}
     command: ['node', 'dist/worker.js']
@@ -133,6 +144,7 @@ services:
     restart: unless-stopped
 
   web:
+    logging: *logging
     build:
       context: .
       target: web

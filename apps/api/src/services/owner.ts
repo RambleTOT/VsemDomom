@@ -5,7 +5,7 @@
  * Токен одноразовый, 7 дней, в БД — только хеш.
  */
 import { encodeStartApp, lowerFirst, renderResidencyConfirmed, serviceNo, startAppLink } from '@vsemdomom/core';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { PARAMS } from '../config/params.ts';
 import type { Executor } from '../db/client.ts';
 import type { HouseRow, ResidencyRow } from '../db/queries.ts';
@@ -26,7 +26,9 @@ export async function createOwnerInvite(
 ): Promise<{ link: string; shareText: string; expiresAt: Date }> {
   const token = newToken();
   const expiresAt = new Date(ctx.clock.now().getTime() + PARAMS.ownerInviteTtlDays * MS_PER_DAY);
-  await ctx.db.insert(ownerInvite).values({ tokenHash: hashToken(token), incidentId: input.incident.id, residencyId: input.residency.id, expiresAt });
+  await ctx.db
+    .insert(ownerInvite)
+    .values({ tokenHash: hashToken(token), incidentId: input.incident.id, residencyId: input.residency.id, flatNo: input.residency.flatNo, expiresAt });
   return {
     link: startAppLink(ctx.config.max.botUsername, encodeStartApp('o', token)),
     shareText: ctx.i18n.t('owner.share.text', {
@@ -60,7 +62,7 @@ export function inviteStatus(invite: InviteRow): 'pending' | 'confirmed' | 'reje
   return invite.result === 'confirmed' ? 'confirmed' : invite.result === 'rejected' ? 'rejected' : 'pending';
 }
 
-export type DecisionError = 'not_found' | 'token_used' | 'token_expired' | 'self';
+export type DecisionError = 'not_found' | 'token_used' | 'token_expired' | 'self' | 'mutual';
 
 /** Решение собственника; подтверждение — уровень 2 и сообщение жильцу в личку (если диалог начат). */
 export async function decideOwnerInvite(
@@ -75,7 +77,15 @@ export async function decideOwnerInvite(
     if (!invite) return 'not_found';
     if (invite.usedAt) return 'token_used';
     if (invite.expiresAt.getTime() < now.getTime()) return 'token_expired';
+    // Жилец сменил квартиру после приглашения — подтверждение относилось к другой квартире.
+    if (invite.flatNo !== null && invite.flatNo !== found.residency.flatNo) return 'token_expired';
     if (found.residency.userId === input.ownerUserId) return 'self';
+    // Два аккаунта не подтверждают друг друга: кого подтвердил этот жилец, тот не подтверждает его.
+    const [mutual] = await tx
+      .select({ id: residency.id })
+      .from(residency)
+      .where(and(eq(residency.userId, input.ownerUserId), eq(residency.houseId, found.residency.houseId), eq(residency.confirmedBy, `owner:${found.residency.userId}`)));
+    if (mutual) return 'mutual';
     await tx.update(ownerInvite).set({ usedAt: now, result: input.decision }).where(eq(ownerInvite.tokenHash, invite.tokenHash));
     let trustLevel = found.residency.trustLevel;
     if (input.decision === 'confirmed') {

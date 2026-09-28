@@ -10,11 +10,28 @@ export function startedAtFromPreset(preset: Exclude<StartedPreset, 'custom'>, no
   return new Date(now.getTime() - STARTED_PRESET_HOURS[preset] * MS_PER_HOUR);
 }
 
-export type StartedAtCheck = 'ok' | 'future' | 'old';
+export type StartedAtCheck = 'ok' | 'future' | 'old' | 'too_old';
 
-export function checkStartedAt(startedAt: Date, now: Date, options: { futureSkewMs: number; confirmOldAfterMs: number }): StartedAtCheck {
+/**
+ * Начало аварии: в будущем (с допуском на часы) — ошибка; старше confirmOldAfterMs — нужно
+ * подтверждение; старше maxAgeMs — не принимается (такое начало ломает сроки и суммы за месяц).
+ */
+export function checkStartedAt(
+  startedAt: Date,
+  now: Date,
+  options: { futureSkewMs: number; confirmOldAfterMs: number; maxAgeMs?: number },
+): StartedAtCheck {
   if (startedAt.getTime() > now.getTime() + options.futureSkewMs) return 'future';
-  if (now.getTime() - startedAt.getTime() > options.confirmOldAfterMs) return 'old';
+  const age = now.getTime() - startedAt.getTime();
+  if (options.maxAgeMs !== undefined && age > options.maxAgeMs) return 'too_old';
+  if (age > options.confirmOldAfterMs) return 'old';
+  return 'ok';
+}
+
+/** Момент события аварии (регистрация в АДС, повторное сообщение): не раньше notBefore и не в будущем. */
+export function checkMomentInRange(at: Date, now: Date, options: { notBefore: Date; futureSkewMs: number }): 'ok' | 'before' | 'future' {
+  if (at.getTime() > now.getTime() + options.futureSkewMs) return 'future';
+  if (at.getTime() < options.notBefore.getTime()) return 'before';
   return 'ok';
 }
 

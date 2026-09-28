@@ -2,7 +2,7 @@
  * Аварии со стороны жителя (F01–F03): создание (409 duplicate_incident при открытой аварии того же вида),
  * просмотр, «У меня тоже» с подъездом и этажом, «Не у меня», регистрация в АДС, «Уведомлять меня».
  */
-import { botLink, checkStartedAt, flatLocation, isEntranceInRange, isFloorInRange, isOpenStatus, startedAtFromPreset } from '@vsemdomom/core';
+import { botLink, flatLocation, isEntranceInRange, isFloorInRange, isOpenStatus, looksLikePhone, startedAtFromPreset } from '@vsemdomom/core';
 import type { FastifyInstance } from 'fastify';
 import { and, eq } from 'drizzle-orm';
 import { PARAMS } from '../../config/params.ts';
@@ -14,6 +14,7 @@ import { incidentDetail, loadIncidentBundle } from '../../services/incident-view
 import { recalcForFlat } from '../../services/recalc.ts';
 import { resultView } from '../../services/result.ts';
 import { sendStatementToDm } from '../../services/statement.ts';
+import { checkIncidentMoment, checkIncidentStart, momentFloor } from '../../services/time-bounds.ts';
 import {
   adsNotReached,
   createIncident,
@@ -29,10 +30,7 @@ import { registerApiRoute, type ApiDeps } from '../api-route.ts';
 import { withIdempotency } from '../idempotency.ts';
 import { ApiError } from '../problem.ts';
 
-const MS_PER_SECOND = 1000;
-const MS_PER_HOUR = 3_600_000;
 const monthlyChargeInvalid = () => new ApiError(422, 'monthly_charge_invalid', 'Введите сумму из квитанции', 'Сумма должна быть больше нуля');
-const startedChecks = { futureSkewMs: PARAMS.startedAtFutureSkewSec * MS_PER_SECOND, confirmOldAfterMs: PARAMS.oldStartConfirmHours * MS_PER_HOUR };
 
 export function registerIncidentRoutes(app: FastifyInstance, deps: ApiDeps): void {
   const { ctx, config } = deps;
@@ -51,6 +49,20 @@ export function registerIncidentRoutes(app: FastifyInstance, deps: ApiDeps): voi
     assertHouseAccess(viewer, h);
     if (inc.scope === 'flat' && inc.createdBy !== viewer.userId && !isStaffOf(viewer, h)) throw notFound('Авария не найдена');
     return { inc, house: h };
+  };
+
+  /** Номер заявки виден соседям: телефон вместо номера не принимаем. */
+  const assertAdsNumber = (number: string | undefined) => {
+    if (number !== undefined && looksLikePhone(number)) {
+      throw new ApiError(422, 'ads_number_invalid', 'Похоже на номер телефона', 'Номер заявки видят соседи — укажите номер заявки АДС');
+    }
+  };
+
+  /** Время от жителя: не в будущем и не раньше допустимого момента аварии. */
+  const assertMoment = (at: Date, now: Date, notBefore: Date, beforeTitle: string) => {
+    const check = checkIncidentMoment(at, now, notBefore);
+    if (check === 'future') throw new ApiError(422, 'registered_at_in_future', 'Время регистрации ещё не наступило');
+    if (check === 'before') throw new ApiError(422, 'registered_at_before_start', beforeTitle);
   };
 
   const assertOpen = (inc: IncidentRow, mergedInto: string | null = null) => {
@@ -75,8 +87,11 @@ export function registerIncidentRoutes(app: FastifyInstance, deps: ApiDeps): voi
         throw new ApiError(400, 'validation_error', 'Неверный формат запроса', 'startedAt обязателен для startedPreset=custom');
       }
       const startedAt = preset === 'custom' ? new Date(body.startedAt as string) : startedAtFromPreset(preset, now);
-      const check = checkStartedAt(startedAt, now, startedChecks);
+      const check = checkIncidentStart(startedAt, now);
       if (check === 'future') throw new ApiError(422, 'started_at_in_future', 'Время начала ещё не наступило');
+      if (check === 'too_old') {
+        throw new ApiError(422, 'started_at_too_old', 'Авария началась слишком давно', `Укажите начало в пределах ${PARAMS.startedAtMaxAgeDays} дней`);
+      }
       if (check === 'old' && body.confirmOld !== true) {
         throw new ApiError(422, 'confirm_old_required', 'Авария началась больше суток назад', 'Подтвердите дату: confirmOld=true');
       }
@@ -142,6 +157,13 @@ export function registerIncidentRoutes(app: FastifyInstance, deps: ApiDeps): voi
     const { inc, house: h } = await load(viewer, params.id);
     assertResident(viewer, h);
     assertOpen(inc);
+    // Номер АДС переносит точку отсчёта сроков — только от отметившихся в аварии.
+    const [participant] = await ctx.db
+      .select({ id: incidentParticipant.id })
+      .from(incidentParticipant)
+      .where(and(eq(incidentParticipant.incidentId, inc.id), eq(incidentParticipant.userId, principal.userId), eq(incidentParticipant.affected, true)));
+    if (!participant) throw new ApiError(403, 'not_participant', 'Сначала отметьтесь в аварии', 'Нажмите «У меня тоже»');
+    assertAdsNumber(body.number);
     const source = principal.kind === 'checker' ? 'api' : 'miniapp';
     if (inc.status === 'checking' || inc.status === 'discrepancy') {
       // После «Устранено» — повторное сообщение в АДС (п. 108): номер и время у участника.
@@ -150,7 +172,7 @@ export function registerIncidentRoutes(app: FastifyInstance, deps: ApiDeps): voi
       }
       const now = ctx.clock.now();
       const at = body.registeredAt ? new Date(body.registeredAt) : now;
-      if (checkStartedAt(at, now, startedChecks) === 'future') throw new ApiError(422, 'registered_at_in_future', 'Время регистрации ещё не наступило');
+      assertMoment(at, now, momentFloor(inc, 'after_resolve'), 'Время раньше отметки «Устранено»');
       const saved = await rereportAds(ctx, { incidentId: inc.id, userId: principal.userId, number: body.number, at, source });
       if (saved === 'not_checking') throw new ApiError(409, 'invalid_transition', 'Сначала ответьте на вопрос о восстановлении');
       return { status: 200, body: await detail(viewer, inc.id) };
@@ -161,9 +183,7 @@ export function registerIncidentRoutes(app: FastifyInstance, deps: ApiDeps): voi
     if (body.number !== undefined) {
       const now = ctx.clock.now();
       const registeredAt = body.registeredAt ? new Date(body.registeredAt) : now;
-      if (checkStartedAt(registeredAt, now, startedChecks) === 'future') {
-        throw new ApiError(422, 'registered_at_in_future', 'Время регистрации ещё не наступило');
-      }
+      assertMoment(registeredAt, now, momentFloor(inc, 'registration'), 'Время регистрации раньше начала аварии');
       const result = await registerAds(ctx, { incident: inc, userId: principal.userId, number: body.number, registeredAt, source });
       if (result === 'too_late') {
         throw new ApiError(409, 'invalid_transition', 'УК уже отметила устранение', 'Если услуги нет — ответьте «Нет» на вопрос о восстановлении');
@@ -192,6 +212,8 @@ export function registerIncidentRoutes(app: FastifyInstance, deps: ApiDeps): voi
       const viaAds = body.viaAds
         ? { ...(body.viaAds.number ? { number: body.viaAds.number } : {}), ...(body.viaAds.at ? { at: new Date(body.viaAds.at) } : {}) }
         : undefined;
+      if (viaAds?.at) assertMoment(viaAds.at, ctx.clock.now(), momentFloor(inc, 'after_resolve'), 'Время раньше отметки «Устранено»');
+      assertAdsNumber(viaAds?.number);
       const saved = await answerCheck(ctx, { incidentId: inc.id, userId: principal.userId, answer, ...(viaAds ? { viaAds } : {}), source, fromHouseChat: false });
       if (saved.status === 'not_checking') throw new ApiError(409, 'invalid_transition', 'Проверка ещё не началась или уже завершена');
     }

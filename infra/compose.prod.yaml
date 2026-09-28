@@ -1,7 +1,24 @@
 # Стенд (VPS): docker compose -f compose.yaml -f infra/compose.prod.yaml up -d --build
 # Секреты и режим — только в .env на сервере (права 600): MAX_MODE=webhook, DEV_AUTH=false, NODE_ENV=production,
 # свои SESSION_SECRET, CHECKER_TOKEN_* и DEMO_UK_CODE (значения из .env.example в production не принимаются).
+# Для приложения — только production-режим и только свои секреты: без них compose не стартует.
+x-prod-env: &prod-env
+  NODE_ENV: production
+  DEV_AUTH: 'false'
+  SESSION_SECRET: ${SESSION_SECRET:?задайте SESSION_SECRET в .env}
+  MAX_WEBHOOK_SECRET: ${MAX_WEBHOOK_SECRET:?задайте MAX_WEBHOOK_SECRET в .env}
+  DATABASE_URL: postgres://app:${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD в .env}@db:5432/app
+
 services:
+  db:
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD в .env}
+  migrate:
+    environment: *prod-env
+  api:
+    environment: *prod-env
+  worker:
+    environment: *prod-env
   web:
     ports: !override
       - '80:80'

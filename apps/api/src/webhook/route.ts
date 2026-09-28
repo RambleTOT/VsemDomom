@@ -22,15 +22,21 @@ export function registerWebhookRoute(app: FastifyInstance, config: AppConfig, de
   // В режиме long polling события приходят не сюда.
   if (config.max.mode === 'polling') return;
 
-  app.post('/webhook/max', { logLevel: 'warn' }, async (req, reply) => {
+  const authorized = (header: string | string[] | undefined): boolean => {
     const expected = config.max.webhookSecret;
-    const header = req.headers['x-max-bot-api-secret'];
     const received = Array.isArray(header) ? header[0] : header;
-    // Без настроенного секрета webhook открыт только в симуляторе (конфигурация требует секрет для webhook).
-    if (expected ? !secretMatches(expected, received) : config.max.mode !== 'simulator') {
-      req.log.warn({ reason: 'secret' }, 'webhook: отклонён запрос с неверным секретом');
+    // Без настроенного секрета webhook открыт только в симуляторе (в production секрет обязателен всегда).
+    return expected ? secretMatches(expected, received) : config.max.mode === 'simulator';
+  };
+
+  app.post('/webhook/max', {
+    logLevel: 'warn',
+    // Секрет проверяется до разбора тела: чужие запросы не тратят разбор JSON и не пишут строку в лог на каждый вызов.
+    onRequest: async (req, reply) => {
+      if (authorized(req.headers['x-max-bot-api-secret'])) return;
       return sendProblem(req, reply, 401, 'unauthorized', 'Неверный секрет webhook');
-    }
+    },
+  }, async (req, reply) => {
     try {
       const result = await ingestUpdate(deps, req.body);
       if (result === 'duplicate') req.log.debug('webhook: повтор события');

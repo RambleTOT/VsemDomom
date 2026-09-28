@@ -15,6 +15,13 @@
       "when": 1790514581906,
       "tag": "0001_residency_public_id",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790574815402,
+      "tag": "0002_owner_invite_flat",
+      "breakpoints": true
     }
   ]
 }

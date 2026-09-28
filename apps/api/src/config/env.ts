@@ -10,6 +10,10 @@ import { readBuildInfo } from './build-info.ts';
 /** Тестовый секрет сессий из .env.example: допустим только локально. */
 export const LOCAL_SESSION_SECRET = 'local-only-session-secret-change-me-0123456789';
 
+/** Минимальная длина секрета webhook и демо-кода на стенде. */
+const PROD_SECRET_MIN = 32;
+const DEMO_CODE_MIN = 8;
+
 /** Демо-код УК из .env.example: известен всем, кто видел репозиторий, — на стенде нужен свой. */
 export const LOCAL_DEMO_UK_CODE = 'DEMO-UK-LOCAL';
 
@@ -221,6 +225,15 @@ export function loadConfig(source: Record<string, string | undefined> = process.
   const checkerTokens = [env.CHECKER_TOKEN_RESIDENT, env.CHECKER_TOKEN_RESIDENT_2, env.CHECKER_TOKEN_UK];
   if (env.NODE_ENV === 'production' && checkerTokens.some((tok) => tok !== undefined && LOCAL_CHECKER_TOKENS.includes(tok))) {
     problems.push('CHECKER_TOKEN_* из .env.example допустимы только локально — задайте свои (openssl rand -hex 24)');
+  }
+  if (env.NODE_ENV === 'production') {
+    if (!env.MAX_WEBHOOK_SECRET || env.MAX_WEBHOOK_SECRET.length < PROD_SECRET_MIN) {
+      problems.push(`MAX_WEBHOOK_SECRET обязателен в production (в любом режиме), не короче ${PROD_SECRET_MIN} символов: openssl rand -hex 32`);
+    }
+    if (!env.MAX_API_BASE.startsWith('https://')) problems.push('MAX_API_BASE должен начинаться с https://');
+    if (env.DEMO_MODE && env.DEMO_UK_CODE !== undefined && env.DEMO_UK_CODE.length < DEMO_CODE_MIN) {
+      problems.push(`DEMO_UK_CODE в production — не короче ${DEMO_CODE_MIN} символов`);
+    }
   }
   if (env.NODE_ENV === 'production' && env.DEMO_MODE && env.DEMO_UK_CODE === LOCAL_DEMO_UK_CODE) {
     problems.push('DEMO_UK_CODE из .env.example допустим только локально — задайте свой (он же на служебном слайде)');

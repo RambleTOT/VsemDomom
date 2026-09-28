@@ -188,11 +188,13 @@ export function registerUkRoutes(app: FastifyInstance, deps: ApiDeps): void {
         case 'house_not_found':
           throw notFound('Дом не найден');
         case 'forbidden':
-          throw new ApiError(403, 'not_staff', 'Дом другой УК');
+          throw new ApiError(403, 'not_staff', 'Нет прав на привязку', 'Дом другой УК или вы не участник этого чата');
         case 'token_used':
           throw new ApiError(410, 'token_used', 'Ссылка привязки уже использована');
         case 'token_expired':
           throw new ApiError(410, 'token_expired', 'Ссылка привязки устарела');
+        case 'already_bound':
+          throw new ApiError(409, 'already_bound', 'Дом или чат уже привязан', 'Демо-роль привязывает только свободный дом к свободному чату');
       }
     }
     return {

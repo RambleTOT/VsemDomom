@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  checkMomentInRange,
+  looksLikePhone,
   checkStartedAt,
   decodeCallback,
   parseLocalDateTime,
@@ -436,6 +438,29 @@ describe('начало аварии', () => {
     expect(checkStartedAt(new Date(now.getTime() + 30_000), now, options)).toBe('ok');
     expect(checkStartedAt(new Date(now.getTime() + 120_000), now, options)).toBe('future');
     expect(checkStartedAt(new Date(now.getTime() - 25 * 3_600_000), now, options)).toBe('old');
+    const bounded = { ...options, maxAgeMs: 31 * 24 * 3_600_000 };
+    expect(checkStartedAt(new Date(now.getTime() - 30 * 24 * 3_600_000), now, bounded)).toBe('old');
+    expect(checkStartedAt(new Date(now.getTime() - 32 * 24 * 3_600_000), now, bounded)).toBe('too_old');
+    expect(checkStartedAt(new Date('0001-01-01T00:00:00Z'), now, bounded)).toBe('too_old');
+  });
+
+  it('момент события — не раньше начала и не в будущем', () => {
+    const range = { notBefore: new Date(now.getTime() - 3_600_000), futureSkewMs: 60_000 };
+    expect(checkMomentInRange(new Date(now.getTime() - 60_000), now, range)).toBe('ok');
+    expect(checkMomentInRange(new Date(now.getTime() - 2 * 3_600_000), now, range)).toBe('before');
+    expect(checkMomentInRange(new Date(now.getTime() + 120_000), now, range)).toBe('future');
+    expect(checkMomentInRange(new Date('9999-12-31T00:00:00Z'), now, range)).toBe('future');
+  });
+
+  it('номер заявки не похож на телефон', () => {
+    for (const phone of ['89161234567', '+7 916 123-45-67', '8 (916) 123 45 67', '9161234567']) expect(looksLikePhone(phone), phone).toBe(true);
+    for (const ok of ['4127', 'А-5123', '2026/0927-15', '123456789']) expect(looksLikePhone(ok), ok).toBe(false);
+    expect(renderAdsNumberError('phone', t).text).toBe('Похоже на номер телефона — номер заявки видят соседи. Напишите номер заявки АДС');
+  });
+
+  it('тексты ошибок времени: «слишком давно» и «раньше начала»', () => {
+    expect(renderReportTimeError('too_old', t, { days: 31 }).text).toBe('Так давно не получится: укажите начало в пределах 31 дня');
+    expect(renderAdsNumberError('before', t).text).toBe('Это время раньше начала аварии. Проверьте и напишите ещё раз');
   });
 
   it('время текстом — в поясе дома', () => {

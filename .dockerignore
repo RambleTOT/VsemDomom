@@ -16,6 +16,10 @@ playwright-report
 test-results
 .env
 .env.*
+*.pem
+*.key
+id_*
+.mcp.json
 *.log
 **/*.test.ts
 **/test

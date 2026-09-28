@@ -22,7 +22,8 @@ describe.skipIf(!url)('привязка чата, панель и уровень
   beforeAll(async () => {
     h = await createHarness(url!, {
       chats: [
-        fakeChat(CHAT, { members: new Set([6001]) }),
+        // сотрудник, который привязывает чат, сам в нём состоит
+        fakeChat(CHAT, { members: new Set([6001, STAFF_ID]) }),
         fakeChat(OTHER_CHAT),
         fakeChat(NO_ADMIN_CHAT, { botIsAdmin: false, botPermissions: [] }),
       ],

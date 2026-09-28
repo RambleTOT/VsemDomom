@@ -34,7 +34,7 @@ describe('системные эндпоинты', () => {
     dbOk = false;
     const res = await app.inject({ method: 'GET', url: '/ready' });
     expect(res.statusCode).toBe(503);
-    expect(res.json()).toEqual({ status: 'fail', checks: { db: 'нет соединения' } });
+    expect(res.json()).toEqual({ status: 'fail', checks: { db: 'fail' } });
     dbOk = true;
   });
 

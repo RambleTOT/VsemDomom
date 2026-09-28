@@ -430,6 +430,8 @@ export const ownerInvite = pgTable(
     residencyId: bigint('residency_id', { mode: 'number' })
       .notNull()
       .references(() => residency.id, { onDelete: 'cascade' }),
+    /** Квартира жильца на момент приглашения: сменил квартиру — ссылка недействительна. */
+    flatNo: integer('flat_no'),
     expiresAt: tstz('expires_at').notNull(),
     usedAt: tstz('used_at'),
     result: text('result'),

@@ -47,8 +47,11 @@ export function renderReportAskTime(t: Translator): BotMessage {
   return msg(t.t('bot.dm.report.time.ask'), [[cancel(t)]]);
 }
 
-export function renderReportTimeError(kind: 'format' | 'future', t: Translator): BotMessage {
-  return msg(t.t(kind === 'future' ? 'bot.dm.report.time.future' : 'bot.dm.report.time.error'), [[cancel(t)]]);
+const TIME_ERROR_KEY = { format: 'bot.dm.report.time.error', future: 'bot.dm.report.time.future', too_old: 'bot.dm.report.time.too_old' } as const;
+
+export function renderReportTimeError(kind: keyof typeof TIME_ERROR_KEY, t: Translator, limits: { days: number } = { days: 0 }): BotMessage {
+  const text = kind === 'too_old' ? t.t(TIME_ERROR_KEY.too_old, { days: limits.days, days_word: t.plural(limits.days, 'days_gen') }) : t.t(TIME_ERROR_KEY[kind]);
+  return msg(text, [[cancel(t)]]);
 }
 
 /** Начало раньше суток назад — подтверждение. */
@@ -159,6 +162,13 @@ export function renderAskAdsNumber(t: Translator): BotMessage {
   return msg(t.t('bot.dm.ads.number.ask'), [[cancel(t)]]);
 }
 
-export function renderAdsNumberError(kind: 'format' | 'future', t: Translator): BotMessage {
-  return msg(t.t(kind === 'future' ? 'bot.dm.report.time.future' : 'bot.dm.ads.number.error'), [[cancel(t)]]);
+const ADS_ERROR_KEY = {
+  format: 'bot.dm.ads.number.error',
+  future: 'bot.dm.report.time.future',
+  before: 'bot.dm.ads.time.before',
+  phone: 'bot.dm.ads.number.phone',
+} as const;
+
+export function renderAdsNumberError(kind: keyof typeof ADS_ERROR_KEY, t: Translator): BotMessage {
+  return msg(t.t(ADS_ERROR_KEY[kind]), [[cancel(t)]]);
 }

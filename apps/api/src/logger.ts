@@ -1,4 +1,4 @@
-import { pino, type Logger, type LoggerOptions } from 'pino';
+import { pino, stdSerializers, type Logger, type LoggerOptions } from 'pino';
 
 /**
  * Пути, которые не должны попадать в логи: авторизация, initData, имена, телефоны,
@@ -31,10 +31,23 @@ export const REDACT_PATHS = [
   '*.*.*.name',
 ];
 
+/** Ошибки без параметров SQL-запроса: в них бывают данные событий MAX. */
+export function errSerializer(err: unknown): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...stdSerializers.err(err as Error) };
+  delete out.params;
+  if (out.cause && typeof out.cause === 'object') {
+    const cause = { ...(out.cause as Record<string, unknown>) };
+    delete cause.params;
+    out.cause = cause;
+  }
+  return out;
+}
+
 export function createLogger(level: LoggerOptions['level'], name: string): Logger {
   return pino({
     name,
     level,
+    serializers: { err: errSerializer },
     redact: { paths: REDACT_PATHS, censor: '[redacted]' },
     base: { service: name },
     timestamp: pino.stdTimeFunctions.isoTime,

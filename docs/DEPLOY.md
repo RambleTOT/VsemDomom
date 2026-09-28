@@ -98,6 +98,8 @@ nano /opt/app/.env
 
 Сохраните копию `.env` в менеджер паролей команды. В Git он не попадает: `git status` на сервере должен быть чистым.
 
+На стенде приложение всегда работает с `NODE_ENV=production` и `DEV_AUTH=false` (их задаёт `infra/compose.prod.yaml`), а без своих `SESSION_SECRET`, `MAX_WEBHOOK_SECRET` (не короче 32 символов) и `POSTGRES_PASSWORD` compose не стартует — в `.env.stand` они уже есть.
+
 ## 6. Первый запуск
 
 ```bash

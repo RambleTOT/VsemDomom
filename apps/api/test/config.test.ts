@@ -73,7 +73,7 @@ describe('loadConfig', () => {
       DEV_AUTH: 'true',
     };
     expect(problems(webhook).join('\n')).toMatch(/DEV_AUTH/);
-    expect(problems({ ...base, NODE_ENV: 'production', SESSION_SECRET: 'x'.repeat(40), DEV_AUTH: 'true' }).join('\n')).toMatch(
+    expect(problems({ ...base, NODE_ENV: 'production', SESSION_SECRET: 'x'.repeat(40), MAX_WEBHOOK_SECRET: 'w'.repeat(40), DEV_AUTH: 'true' }).join('\n')).toMatch(
       /DEV_AUTH/,
     );
   });
@@ -81,13 +81,23 @@ describe('loadConfig', () => {
   it('в production не принимает тестовые секреты из .env.example', () => {
     expect(problems({ ...base, NODE_ENV: 'production' }).join('\n')).toMatch(/SESSION_SECRET/);
     expect(
-      problems({ ...base, NODE_ENV: 'production', SESSION_SECRET: 'x'.repeat(40), CHECKER_TOKEN_UK: LOCAL_CHECKER_TOKENS[2]! }).join('\n'),
+      problems({ ...base, NODE_ENV: 'production', SESSION_SECRET: 'x'.repeat(40), MAX_WEBHOOK_SECRET: 'w'.repeat(40), CHECKER_TOKEN_UK: LOCAL_CHECKER_TOKENS[2]! }).join('\n'),
     ).toMatch(/CHECKER_TOKEN/);
     expect(
-      problems({ ...base, NODE_ENV: 'production', SESSION_SECRET: 'x'.repeat(40), DEMO_MODE: 'true', DEMO_UK_CODE: LOCAL_DEMO_UK_CODE }).join('\n'),
+      problems({ ...base, NODE_ENV: 'production', SESSION_SECRET: 'x'.repeat(40), MAX_WEBHOOK_SECRET: 'w'.repeat(40), DEMO_MODE: 'true', DEMO_UK_CODE: LOCAL_DEMO_UK_CODE }).join('\n'),
     ).toMatch(/DEMO_UK_CODE/);
-    expect(problems({ ...base, NODE_ENV: 'production', SESSION_SECRET: 'x'.repeat(40), DEMO_MODE: 'false', DEMO_UK_CODE: LOCAL_DEMO_UK_CODE })).toEqual([]);
+    expect(problems({ ...base, NODE_ENV: 'production', SESSION_SECRET: 'x'.repeat(40), MAX_WEBHOOK_SECRET: 'w'.repeat(40), DEMO_MODE: 'false', DEMO_UK_CODE: LOCAL_DEMO_UK_CODE })).toEqual([]);
     expect(problems({ ...base, DEMO_UK_CODE: LOCAL_DEMO_UK_CODE })).toEqual([]);
+  });
+
+  it('в production: секрет webhook в любом режиме (не короче 32), https для MAX API, демо-код не короче 8', () => {
+    const prod = { ...base, NODE_ENV: 'production', SESSION_SECRET: 'x'.repeat(40) };
+    expect(problems(prod).join('\n')).toMatch(/MAX_WEBHOOK_SECRET/);
+    expect(problems({ ...prod, MAX_WEBHOOK_SECRET: 'short-secret' }).join('\n')).toMatch(/32/);
+    const ok = { ...prod, MAX_WEBHOOK_SECRET: 'w'.repeat(40) };
+    expect(problems(ok)).toEqual([]);
+    expect(problems({ ...ok, MAX_API_BASE: 'http://platform-api2.max.ru' }).join('\n')).toMatch(/MAX_API_BASE/);
+    expect(problems({ ...ok, DEMO_UK_CODE: 'ABC' }).join('\n')).toMatch(/DEMO_UK_CODE/);
   });
 
   it('checker-токены не короче 24 символов', () => {
