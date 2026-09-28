@@ -10,6 +10,7 @@ import type { AppConfig } from '../config/env.ts';
 import type { Executor } from '../db/client.ts';
 import type { HouseChatRow, HouseRow } from '../db/queries.ts';
 import { incident, incidentEvent, residency } from '../db/schema.ts';
+import type { ActNorms } from './act-info.ts';
 import { incidentDetail, type IncidentBundle, type IncidentViewer } from './incident-view.ts';
 import { monthSummary } from './month.ts';
 import { pendingResidentWhere } from './residents.ts';
@@ -87,9 +88,10 @@ export function ukIncidentDetail(
   config: AppConfig,
   now: Date,
   mergeCandidates: IncidentSummary[],
+  actNorms: ActNorms | null = null,
 ): UkIncidentDetail {
   return {
-    ...incidentDetail(b, viewer, config, now),
+    ...incidentDetail(b, viewer, config, now, actNorms),
     grid: grid(b),
     people: people(b),
     allowedActions: allowedUkActions(b.incident.status),

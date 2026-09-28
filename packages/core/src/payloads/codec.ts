@@ -36,6 +36,9 @@ export const CALLBACK_ACTIONS = [
   'ads_later',
   'ads_again',
   'mute',
+  // акт без исполнителя (S09): «Я готов подписать», знакомство с готовыми подписать
+  'act_ready',
+  'act_intro',
   // опросы (волна 3)
   'poll',
   'heat',

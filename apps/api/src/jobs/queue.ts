@@ -21,6 +21,8 @@ export const QUEUES = {
   deadline: 'deadline-tick',
   /** Окно проверки после «Устранено» и предельный срок расхождения. */
   check: 'check-tick',
+  /** S09: срок проверки после повторного сообщения в АДС — предложение акта без исполнителя. */
+  act: 'act-tick',
   /** Личные уведомления присоединившимся. */
   notify: 'notify-participants',
   /** Одно напоминание ввести номер заявки АДС. */
@@ -57,6 +59,7 @@ const QUEUE_OPTIONS: Record<QueueName, QueueOptions & { deadLetter?: string }> =
   [QUEUES.panelRender]: { ...COMMON },
   [QUEUES.deadline]: { ...COMMON, deadLetter: QUEUES.failed },
   [QUEUES.check]: { ...COMMON, deadLetter: QUEUES.failed },
+  [QUEUES.act]: { ...COMMON, deadLetter: QUEUES.failed },
   [QUEUES.notify]: { ...COMMON },
   [QUEUES.adsReminder]: { ...COMMON },
   [QUEUES.demo]: { ...COMMON },

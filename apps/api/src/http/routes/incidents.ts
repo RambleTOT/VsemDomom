@@ -8,6 +8,7 @@ import { and, eq } from 'drizzle-orm';
 import { PARAMS } from '../../config/params.ts';
 import { incidentParticipant } from '../../db/schema.ts';
 import type { HouseRow } from '../../db/queries.ts';
+import { loadActNorms, setActReady } from '../../services/act.ts';
 import { observeBrigade } from '../../services/brigade.ts';
 import { answerCheck, rereportAds } from '../../services/check.ts';
 import { incidentDetail, loadIncidentBundle } from '../../services/incident-view.ts';
@@ -38,7 +39,9 @@ export function registerIncidentRoutes(app: FastifyInstance, deps: ApiDeps): voi
   const detail = async (viewer: Viewer, incidentId: number) => {
     const bundle = await loadIncidentBundle(ctx.db, incidentId);
     if (!bundle) throw notFound('Авария не найдена');
-    return incidentDetail(bundle, incidentViewer(viewer, bundle.house), config, ctx.clock.now());
+    const now = ctx.clock.now();
+    const actNorms = config.features.actTemplate ? await loadActNorms(ctx.db, bundle.house, bundle.incident, now) : null;
+    return incidentDetail(bundle, incidentViewer(viewer, bundle.house), config, now, actNorms);
   };
 
   /** Авария и её дом с проверкой доступа; «только квартира» видна автору и УК. */
@@ -194,6 +197,24 @@ export function registerIncidentRoutes(app: FastifyInstance, deps: ApiDeps): voi
       await scheduleAdsReminder(ctx, inc.id, principal.userId);
     }
     return { status: 200, body: await detail(viewer, inc.id) };
+  });
+
+  registerApiRoute(app, deps, 'actReady', async ({ principal, params, body }) => {
+    const viewer = await loadViewer(ctx.db, principal);
+    const { inc, house: h } = await load(viewer, params.id);
+    assertResident(viewer, h);
+    const saved = await setActReady(ctx, {
+      incidentId: inc.id,
+      userId: principal.userId,
+      ready: body.ready,
+      ...(body.introOptIn === undefined ? {} : { introOptIn: body.introOptIn }),
+      source: principal.kind === 'checker' ? 'api' : 'miniapp',
+    });
+    if (saved.status === 'not_participant') throw new ApiError(403, 'not_participant', 'Сначала отметьтесь в аварии', 'Подписать акт могут жители, у которых нет услуги');
+    if (saved.status === 'not_available') {
+      throw new ApiError(409, 'invalid_transition', 'Акт сейчас не нужен', 'Акт без исполнителя доступен, если проверки нет в срок после повторного сообщения в АДС');
+    }
+    return { status: 200, body: saved.info };
   });
 
   registerApiRoute(app, deps, 'postObservation', async ({ principal, params, body }) => {

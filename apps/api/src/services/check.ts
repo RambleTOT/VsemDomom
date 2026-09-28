@@ -31,6 +31,7 @@ import { chatCard, deadline, house, incident, incidentEvent, incidentParticipant
 import type { JobContext } from '../jobs/context.ts';
 import { enqueueOutbound } from '../jobs/outbound.ts';
 import { QUEUES, type JobQueue, type TxLike } from '../jobs/queue.ts';
+import { scheduleActJob } from './act.ts';
 import { loadIncidentBundle } from './incident-view.ts';
 import { notifyLater } from './notify.ts';
 import { checkWindowMs } from './policy.ts';
@@ -176,8 +177,8 @@ async function instructAnswerer(tx: Tx, ctx: JobContext, inc: IncidentRow, h: Ho
       service: inc.serviceType,
       adsPhone: uk?.adsPhone ?? '',
       actNorms: visitMs !== null && act ? { checkVisitMs: visitMs, actPersons: act.value } : null,
-      // Акт без исполнителя (S09) — волна 3: кнопка появится вместе с функцией.
-      withAct: false,
+      // «Как составить акт» (S09) — только при включённой функции.
+      withAct: ctx.config.features.actTemplate,
       telLinks: ctx.config.max.telLinks,
       isModel: h.isModel,
       botUsername: ctx.config.max.botUsername,
@@ -289,7 +290,7 @@ export async function checkTimerJob(ctx: JobContext, data: CheckJob): Promise<In
 
 /**
  * «Я сообщил в АДС» после ответа «Нет» (п. 108): номер и время повторного сообщения у участника,
- * событие в хронологии. Акт без исполнителя по истечении срока проверки — вместе с функцией акта.
+ * событие в хронологии, таймер срока проверки для предложения акта без исполнителя (S09).
  */
 export async function rereportAds(ctx: JobContext, input: { incidentId: number; userId: number; number: string | null; at: Date; source: EventSource }): Promise<'saved' | 'not_checking'> {
   const now = ctx.clock.now();
@@ -311,6 +312,9 @@ export async function rereportAds(ctx: JobContext, input: { incidentId: number; 
       payload: { ...(input.number ? { number: input.number } : {}), at: input.at.toISOString() },
       occurredAt: now,
     });
+    // Срок проверки по повторному сообщению (п. 108): нет отметки УК — предложение акта (S09).
+    const [h] = await tx.select().from(house).where(eq(house.id, inc.houseId));
+    if (h) await scheduleActJob(ctx, tx, { incident: inc, house: h, userId: input.userId, rereportAt: input.at });
     return 'saved';
   });
 }

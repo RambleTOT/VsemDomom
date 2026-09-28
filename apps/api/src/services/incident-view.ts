@@ -20,6 +20,7 @@ import { PARAMS } from '../config/params.ts';
 import type { Executor } from '../db/client.ts';
 import type { HouseRow, ResidencyRow, UserRow } from '../db/queries.ts';
 import { chatCard, deadline, house, incident, incidentEvent, incidentParticipant, managementCompany, norm, residency } from '../db/schema.ts';
+import { actInfo, type ActNorms } from './act-info.ts';
 import { checkWindowMs } from './policy.ts';
 import { iso, isoOrNull, normBasis, type NormRow } from './views.ts';
 
@@ -298,7 +299,8 @@ function myParticipation(b: IncidentBundle, viewer: IncidentViewer | null): Inci
   };
 }
 
-export function incidentDetail(b: IncidentBundle, viewer: IncidentViewer | null, config: AppConfig, now: Date): IncidentDetail {
+/** actNorms — нормы акта без исполнителя (S09); null — блок act не считается. */
+export function incidentDetail(b: IncidentBundle, viewer: IncidentViewer | null, config: AppConfig, now: Date, actNorms: ActNorms | null = null): IncidentDetail {
   const inc = b.incident;
   return {
     ...incidentSummary(b, viewer, now),
@@ -317,7 +319,7 @@ export function incidentDetail(b: IncidentBundle, viewer: IncidentViewer | null,
     })),
     me: myParticipation(b, viewer),
     check: checkInfo(b, config),
-    act: null,
+    act: config.features.actTemplate ? actInfo(inc, b.participants, viewer?.userId ?? null, actNorms, now) : null,
     brigadeOnSiteAt: isoOrNull(inc.brigadeOnSiteAt),
     localizedAt: isoOrNull(inc.localizedAt),
     resolvedAtUk: isoOrNull(inc.resolvedAtUk),

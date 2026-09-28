@@ -11,6 +11,7 @@ import { incident } from '../../db/schema.ts';
 import { incidentSummary, loadIncidentBundle, loadIncidentBundles, type IncidentBundle } from '../../services/incident-view.ts';
 import { activeDemoIncident } from '../../services/demo.ts';
 import { demoAllowed } from '../../services/demo-answers.ts';
+import { loadActNorms } from '../../services/act.ts';
 import { incidentByPublicId } from '../../services/incidents.ts';
 import { monthSummary } from '../../services/month.ts';
 import { applyUkStatus, mergeIncident } from '../../services/uk-status.ts';
@@ -58,7 +59,8 @@ export async function ukDetailFor(deps: ApiDeps, viewer: Viewer, incidentId: num
   const iv = incidentViewer(viewer, b.house);
   const now = ctx.clock.now();
   const candidates = mergeCandidateIds(others, b).flatMap((id) => others.filter((x) => x.incident.id === id)).map((x) => incidentSummary(x, iv, now));
-  return ukIncidentDetail(b, iv, config, now, candidates);
+  const actNorms = config.features.actTemplate ? await loadActNorms(ctx.db, b.house, b.incident, now) : null;
+  return ukIncidentDetail(b, iv, config, now, candidates, actNorms);
 }
 
 export function registerUkRoutes(app: FastifyInstance, deps: ApiDeps): void {
