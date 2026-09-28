@@ -26,6 +26,13 @@ describe('экран по payload запуска', () => {
     expect(routeForStart(payload, staff)).toBe(forStaff);
   });
 
+  it('сотрудник, который живёт в доме (демо-роль проверяющего): итог и акт — как житель', () => {
+    const both: Who = { ...staff, residencies: resident.residencies };
+    expect(routeForStart(`r_${ID}`, both)).toBe(`/incident/${ID}/result`);
+    expect(routeForStart(`a_${ID}`, both)).toBe(`/incident/${ID}/act`);
+    expect(routeForStart(`i_${ID}`, both)).toBe(`/uk/incident/${ID}`);
+  });
+
   it('без payload — корень роли', () => {
     expect(routeForStart(null, resident)).toBe('/house/dom1model1');
     expect(routeForStart(null, staff)).toBe('/uk');

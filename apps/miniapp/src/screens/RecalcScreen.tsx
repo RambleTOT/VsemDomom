@@ -294,7 +294,7 @@ function RecalcBody({ result, incident, house }: { result: Result; incident: Inc
       model={result.house.isModel}
       back={back}
       width="normal"
-      actionsReason={account === null ? t('screen.S08.account.disabled') : undefined}
+      actionsReason={account === null ? t('screen.S08.account.disabled') : account === 'yes' && fio.trim() === '' ? t('screen.S08.fio.required') : undefined}
       actions={
         account === 'no' ? (
           <>

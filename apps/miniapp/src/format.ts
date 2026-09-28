@@ -15,12 +15,6 @@ export const fullDateIn = (iso: string, tz: string): string =>
   new Intl.DateTimeFormat('ru-RU', { timeZone: tz, day: '2-digit', month: '2-digit', year: 'numeric' }).format(toDate(iso));
 /** «17:40», «вчера 22:10», «25.09 08:00» — относительно «сейчас». */
 export const whenIn = (iso: string, tz: string, now: Date = new Date()): string => formatChatTime(toDate(iso), now, tz);
-/** Интервал «17:40–23:20»; конец в другой день — с датой. today — начало сегодня (для подписи «сегодня»). */
-export function rangeIn(fromIso: string, toIso: string, tz: string, now: Date = new Date()): { range: string; today: boolean } {
-  const sameDay = dateIn(fromIso, tz) === dateIn(toIso, tz);
-  const to = sameDay ? timeIn(toIso, tz) : whenIn(toIso, tz, now);
-  return { range: `${whenIn(fromIso, tz, now)}–${to}`, today: dateIn(fromIso, tz) === formatDate(now, tz) };
-}
 export const minutesText = (minutes: number): string => formatDuration(minutes * MS_PER_MINUTE);
 export const msText = (ms: number): string => formatDuration(ms);
 export const rubles = (value: number): string => formatRubles(Math.round(value * 100));

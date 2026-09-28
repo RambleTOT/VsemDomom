@@ -355,6 +355,7 @@
   "screen.S08.account.yes": "Да, на меня",
   "screen.S08.account.no": "Нет, на собственника",
   "screen.S08.account.disabled": "Выберите ответ",
+  "screen.S08.fio.required": "Введите ФИО — оно попадёт в заявление",
   "screen.S08.fio": "Фамилия, имя, отчество",
   "screen.S08.phone": "Телефон",
   "screen.S08.phone.from_max": "Подставить телефон из MAX",

@@ -17,6 +17,8 @@ export function routeForStart(startParam: string | null, me: Pick<Me, 'staff' | 
   const payload = decodeStartApp(startParam);
   if (!payload) return '/error/expired';
   const staff = isStaff(me);
+  // Итог и акт адресованы жителю: сотрудник, который сам живёт в доме (демо-роль проверяющего), идёт как житель.
+  const staffOnly = staff && me.residencies.length === 0;
   const id = payload.value;
   switch (payload.kind) {
     case 'new_incident':
@@ -26,9 +28,9 @@ export function routeForStart(startParam: string | null, me: Pick<Me, 'staff' | 
     case 'house':
       return staff ? `/uk/houses/${id}` : `/house/${id}`;
     case 'result':
-      return staff ? `/uk/incident/${id}` : `/incident/${id}/result`;
+      return staffOnly ? `/uk/incident/${id}` : `/incident/${id}/result`;
     case 'act':
-      return staff ? `/uk/incident/${id}` : `/incident/${id}/act`;
+      return staffOnly ? `/uk/incident/${id}` : `/incident/${id}/act`;
     case 'owner_invite':
       return `/owner/${id}`;
     case 'chat_binding':

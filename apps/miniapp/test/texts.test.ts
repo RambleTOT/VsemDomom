@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import open from '@vsemdomom/shared/examples/incident-open.json' with { type: 'json' };
 import discrepancy from '@vsemdomom/shared/examples/incident-discrepancy.json' with { type: 'json' };
 import { heatState } from '../src/components/grid.tsx';
-import { eventText, headlineText } from '../src/texts.ts';
+import { eventText, headlineText, rangeLabel, whenLabel } from '../src/texts.ts';
 
 const NOW = new Date('2026-09-27T16:30:00Z');
 const openIncident = open as IncidentDetail;
@@ -69,5 +69,19 @@ describe('тепловая карта', () => {
     expect(heatState({ warm: 3, luke: 1, cold: 0 })).toBe('warm');
     expect(heatState({ warm: 1, luke: 1, cold: 0 })).toBe('luke');
     expect(heatState({ warm: 1, luke: 1, cold: 1 })).toBe('cold');
+  });
+});
+
+describe('подписи времени: «сегодня» и интервал через полночь', () => {
+  const TZ = 'Europe/Moscow';
+  const now = new Date('2026-09-29T01:30:00+03:00');
+  it('сегодняшнее время — с «сегодня», вчерашнее — с датой', () => {
+    expect(whenLabel('2026-09-29T01:03:00+03:00', TZ, now)).toBe('сегодня 01:03');
+    expect(whenLabel('2026-09-28T19:03:00+03:00', TZ, now)).toBe('28.09 19:03');
+  });
+  it('интервал в один день и через полночь', () => {
+    expect(rangeLabel('2026-09-29T00:10:00+03:00', '2026-09-29T01:10:00+03:00', TZ, now)).toBe('сегодня 00:10–01:10');
+    expect(rangeLabel('2026-09-28T19:03:00+03:00', '2026-09-29T01:10:00+03:00', TZ, now)).toBe('28.09 19:03 – сегодня 01:10');
+    expect(rangeLabel('2026-09-27T17:40:00+03:00', '2026-09-27T23:20:00+03:00', TZ, now)).toBe('27.09 17:40–23:20');
   });
 });

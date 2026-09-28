@@ -1,6 +1,6 @@
 /** Тексты аварии без React: первая строка «знает ли УК и когда» и строки хронологии. */
 import type { IncidentSummary, TimelineEvent } from '@vsemdomom/shared';
-import { dateIn, minutesText, rangeIn, whenIn } from './format.ts';
+import { dateIn, minutesText, timeIn, whenIn } from './format.ts';
 import { has, plural, restoreQuestion, serviceGen, t } from './i18n.ts';
 
 /** Текст первой строки по статусу: ответ на вопрос «знает ли УК и когда». */
@@ -93,8 +93,12 @@ export function whenLabel(iso: string, tz: string, now: Date = new Date()): stri
   return dateIn(iso, tz) === dateIn(now.toISOString(), tz) ? t('time.today', { time: when }) : when;
 }
 
-/** «сегодня 17:40–23:20» — интервал; начало в другой день — с датой. */
+/**
+ * Интервал: в один день — «сегодня 17:40–23:20» или «27.09 17:40–23:20»; через полночь — оба конца
+ * с датой или «сегодня»: «28.09 19:03 – сегодня 01:10».
+ */
 export function rangeLabel(fromIso: string, toIso: string, tz: string, now: Date = new Date()): string {
-  const { range, today } = rangeIn(fromIso, toIso, tz, now);
-  return today ? t('time.today', { time: range }) : range;
+  if (dateIn(fromIso, tz) !== dateIn(toIso, tz)) return `${whenLabel(fromIso, tz, now)} – ${whenLabel(toIso, tz, now)}`;
+  const range = `${whenIn(fromIso, tz, now)}–${timeIn(toIso, tz)}`;
+  return dateIn(fromIso, tz) === dateIn(now.toISOString(), tz) ? t('time.today', { time: range }) : range;
 }
