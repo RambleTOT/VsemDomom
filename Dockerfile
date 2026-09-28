@@ -41,10 +41,12 @@ WORKDIR /app
 ENV NODE_ENV=production \
     MIGRATIONS_DIR=/app/db/migrations \
     SEEDS_DIR=/app/seeds \
+    OPENAPI_FILE=/app/openapi.yaml \
     BUILD_INFO_FILE=/app/build.json
 COPY --from=build --chown=node:node /out/api /app
 COPY --chown=node:node db/migrations /app/db/migrations
 COPY --chown=node:node seeds /app/seeds
+COPY --chown=node:node docs/api/openapi.yaml /app/openapi.yaml
 USER node
 EXPOSE 3000
 CMD ["node", "dist/main.js"]

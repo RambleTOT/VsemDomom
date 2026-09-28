@@ -3,6 +3,7 @@ import helmet from '@fastify/helmet';
 import Fastify, { type FastifyBaseLogger, type FastifyError, type FastifyInstance } from 'fastify';
 import { registerWebhookRoute } from '../webhook/route.ts';
 import { registerAuth } from './auth.ts';
+import { registerDocs } from './docs.ts';
 import { ApiError, sendProblem } from './problem.ts';
 import { DEFAULT_RATE_LIMITS, registerRateLimit } from './rate-limit.ts';
 import { registerApiRoutes } from './routes/index.ts';
@@ -58,6 +59,9 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   }
   registerSystemRoutes(app, deps);
   if (deps.webhook) registerWebhookRoute(app, deps.config, deps.webhook);
-  if (deps.api) registerApiRoutes(app, { config: deps.config, ctx: deps.api, limits });
+  if (deps.api) {
+    registerApiRoutes(app, { config: deps.config, ctx: deps.api, limits });
+    await registerDocs(app, deps.config);
+  }
   return app;
 }

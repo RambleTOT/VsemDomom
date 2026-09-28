@@ -8,6 +8,7 @@ CLAUDE.local.md
 **/dist
 **/coverage
 docs
+!docs/api/openapi.yaml
 design
 tools
 apps/miniapp/e2e

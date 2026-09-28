@@ -17,7 +17,8 @@ export const DEFAULT_RATE_LIMITS: RateLimits = { userPerMinute: 60, authPerMinut
 
 const WINDOW = '1 minute';
 
-const UNLIMITED = /^\/api\/v1\/(health|version)(\?|$)/;
+/** Проверки и статика документации — без лимита. */
+const UNLIMITED = /^\/api\/(v1\/(health|version)(\?|$)|docs(\/|$|\?))/;
 
 function keyOf(req: FastifyRequest): string {
   return req.principal ? `${req.principal.kind}:${req.principal.userId}` : `ip:${req.ip}`;

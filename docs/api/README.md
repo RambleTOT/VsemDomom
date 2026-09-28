@@ -1,6 +1,7 @@
 # Контракт API «Всем домом»
 
 - `openapi.yaml` — OpenAPI 3.1, **генерируется** из zod-схем `packages/shared/src/api` (`pnpm openapi:gen`); CI проверяет, что закоммиченный файл совпадает со сгенерированным (`pnpm openapi:check`). Руками не править.
+- Swagger UI с этим же контрактом — `/api/docs` на стенде (https://app.vsemdomom.ru/api/docs) и локально (http://localhost:8080/api/docs); «Authorize» — Bearer-токен сессии или тестовый токен роли.
 - Типы и схемы для мини-приложения: `import { IncidentDetailSchema, type IncidentDetail } from '@vsemdomom/shared'`.
 - Примеры ответов для моков msw: `packages/shared/examples/*.json` (`@vsemdomom/shared/examples/incident-open.json`), проверяются тестом на соответствие схемам.
 - Словарь текстов: `packages/shared/i18n/ru.json` (ключи из пакета дизайна, не переименовываются).
