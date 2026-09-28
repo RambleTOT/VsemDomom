@@ -197,7 +197,10 @@ async function scenario(stand: Stand, flags: { brigadeConfirm: boolean }): Promi
   return id;
 }
 
-describe.skipIf(!url)('сквозной сценарий: два прогона подряд и третий после сброса демо', () => {
+// Прогон сценария — десятки запросов и задач: на нагруженной машине дольше 5 секунд по умолчанию.
+const SCENARIO_TIMEOUT_MS = 120_000;
+
+describe.skipIf(!url)('сквозной сценарий: два прогона подряд и третий после сброса демо', { timeout: SCENARIO_TIMEOUT_MS }, () => {
   let stand: Stand;
 
   beforeAll(async () => {
@@ -230,7 +233,7 @@ describe.skipIf(!url)('сквозной сценарий: два прогона 
   });
 });
 
-describe.skipIf(!url)('сквозной сценарий с выключенными флагами волн 2–3', () => {
+describe.skipIf(!url)('сквозной сценарий с выключенными флагами волн 2–3', { timeout: SCENARIO_TIMEOUT_MS }, () => {
   let stand: Stand;
 
   beforeAll(async () => {
