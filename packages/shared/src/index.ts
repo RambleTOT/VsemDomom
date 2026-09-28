@@ -11,6 +11,8 @@ export * from './api/owner.ts';
 export * from './api/route.ts';
 export * from './api/routes.ts';
 export * from './api/system.ts';
+export * from './api/types.ts';
 export * from './api/uk.ts';
 export * from './api/webhook.ts';
 export * from './i18n.ts';
+export * from './client.ts';

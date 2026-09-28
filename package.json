@@ -12,7 +12,7 @@
   "scripts": {
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
-    "lint": "eslint . && pnpm depcruise",
+    "lint": "eslint . && pnpm --filter @vsemdomom/miniapp lint && pnpm depcruise",
     "depcruise": "depcruise --config .dependency-cruiser.cjs packages apps",
     "test": "vitest run",
     "e2e:scenario": "pnpm --filter @vsemdomom/api e2e:scenario",
@@ -27,7 +27,7 @@
     "openapi:check": "pnpm --filter @vsemdomom/shared openapi:check",
     "data-api:run": "pnpm --filter @vsemdomom/api data-api:run",
     "gen:max-types": "pnpm --filter @vsemdomom/api gen:max-types",
-    "license-check": "license-checker-rseidelsohn --start apps/api --excludePrivatePackages --production --onlyAllow \"MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;0BSD;CC0-1.0;Unlicense;BlueOak-1.0.0;Python-2.0\"",
+    "license-check": "license-checker-rseidelsohn --start apps/api --excludePrivatePackages --production --onlyAllow \"MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;0BSD;CC0-1.0;Unlicense;BlueOak-1.0.0;Python-2.0\" && license-checker-rseidelsohn --start apps/miniapp --excludePrivatePackages --production --onlyAllow \"MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;0BSD;CC0-1.0;Unlicense;BlueOak-1.0.0;Python-2.0\"",
     "max:me": "pnpm --filter @vsemdomom/api max:me",
     "max:subscribe": "pnpm --filter @vsemdomom/api max:subscribe",
     "max:unsubscribe": "pnpm --filter @vsemdomom/api max:unsubscribe",

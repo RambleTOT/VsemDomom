@@ -20,6 +20,16 @@
       "source": "./src/i18n/translator.ts",
       "types": "./dist/i18n/translator.d.ts",
       "default": "./dist/i18n/translator.js"
+    },
+    "./format": {
+      "source": "./src/format/time.ts",
+      "types": "./dist/format/time.d.ts",
+      "default": "./dist/format/time.js"
+    },
+    "./payloads": {
+      "source": "./src/payloads/codec.ts",
+      "types": "./dist/payloads/codec.d.ts",
+      "default": "./dist/payloads/codec.js"
     }
   },
   "files": [

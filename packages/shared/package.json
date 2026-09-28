@@ -11,6 +11,11 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./browser": {
+      "source": "./src/browser.ts",
+      "types": "./dist/browser.d.ts",
+      "default": "./dist/browser.js"
+    },
     "./i18n/ru.json": "./i18n/ru.json",
     "./examples/*": "./examples/*"
   },
