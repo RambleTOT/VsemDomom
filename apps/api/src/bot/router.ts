@@ -41,6 +41,9 @@ export const registrationCallbacks: CallbackHandlers = {
 /** Текстовые шаги диалогов (регистрация, позже — номер АДС и время аварии). Возвращают true, если обработали. */
 export type DialogInput = (ctx: JobContext, userId: number, text: string, meta: UpdateMeta) => Promise<boolean>;
 
+/** Дополнительная команда лички: «/uk», «/democode <код>». */
+export type DmCommand = (ctx: JobContext, userId: number, arg: string | null, meta: UpdateMeta) => Promise<void>;
+
 export interface BotRouting {
   callbacks: CallbackHandlers;
   dialogInputs: DialogInput[];
@@ -48,6 +51,8 @@ export interface BotRouting {
   onReportCommand?: (ctx: JobContext, userId: number, meta: UpdateMeta) => Promise<void>;
   /** F13: сообщение группы с ключевыми словами. */
   onKeywordHit?: (u: NormalizedUpdate, ctx: JobContext, meta: UpdateMeta) => Promise<void>;
+  /** Команды лички сверх базовых (ключ — команда в нижнем регистре). */
+  commands?: Partial<Record<string, DmCommand>>;
 }
 
 async function handleCallback(u: NormalizedUpdate, ctx: JobContext, meta: UpdateMeta, routing: BotRouting): Promise<void> {
@@ -119,8 +124,14 @@ async function handleDmText(u: NormalizedUpdate, ctx: JobContext, meta: UpdateMe
           return;
         }
         break;
-      default:
+      default: {
+        const extra = routing.commands?.[(command ?? '').toLowerCase()];
+        if (extra) {
+          await extra(ctx, u.userId, arg ?? null, meta);
+          return;
+        }
         break;
+      }
     }
   }
   for (const input of [onFlatInput, ...routing.dialogInputs]) {

@@ -200,7 +200,9 @@ dc exec api node dist/scripts/max.js commands
 dc exec db psql -U app -d app -c "select id, created_at from max_user order by created_at desc limit 5;"
 ```
 
-Впишите ID в `.env`: `SEED_UK_STAFF_MAX_IDS=111,222` (роль сотрудника «УК Модельная») и `ALERT_USER_ID=111` (кому бот пишет о проблемах: пропала подписка, задачи падают, `/ready` не проходит). Примените:
+Роль УК можно получить и без правки `.env`: в личке с ботом `/democode <DEMO_UK_CODE>` — демо-роль «УК Модельная»; `/uk` — пульт открытых аварий с кнопками статусов (работает при `DEMO_MODE=true`, в том числе без мини-приложения).
+
+Постоянная роль — впишите ID в `.env`: `SEED_UK_STAFF_MAX_IDS=111,222` (роль сотрудника «УК Модельная») и `ALERT_USER_ID=111` (кому бот пишет о проблемах: пропала подписка, задачи падают, `/ready` не проходит). Примените:
 
 ```bash
 dc up -d

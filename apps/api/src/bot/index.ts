@@ -33,6 +33,7 @@ import {
   startReport,
 } from './report.ts';
 import { answerCallbackJob, createBotHandlers, registrationCallbacks, type BotRouting } from './router.ts';
+import { onDemoCodeCommand, onUkCommand, onUkStatus } from './uk-console.ts';
 
 export const botRouting: BotRouting = {
   callbacks: {
@@ -49,6 +50,7 @@ export const botRouting: BotRouting = {
     poll: onWaterPoll,
     heat: onHeatPoll,
     heat_ent: onHeatEntrance,
+    uk_status: onUkStatus,
     rep_service: onReportService,
     rep_when: onReportWhen,
     rep_where: onReportWhere,
@@ -58,6 +60,8 @@ export const botRouting: BotRouting = {
   dialogInputs: [onReportTimeInput, onAdsNumberInput],
   onReportCommand: (ctx, userId, meta) => startReport(ctx, userId, null, meta),
   onKeywordHit,
+  // Демо-пульт УК в личке (DEMO_MODE): работает и без мини-приложения.
+  commands: { '/uk': onUkCommand, '/democode': onDemoCodeCommand },
 };
 
 /** Порядок важен: сначала отметка «диалог открыт», затем сценарий. */

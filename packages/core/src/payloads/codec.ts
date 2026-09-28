@@ -36,6 +36,8 @@ export const CALLBACK_ACTIONS = [
   'ads_later',
   'ads_again',
   'mute',
+  // демо-пульт УК в личке: следующий статус аварии (arg — accepted | brigade_on_site | localized | resolved)
+  'uk_status',
   // акт без исполнителя (S09): «Я готов подписать», знакомство с готовыми подписать
   'act_ready',
   'act_intro',

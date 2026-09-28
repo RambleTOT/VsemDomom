@@ -819,5 +819,20 @@
   "bot.answer.poll.closed": "Опрос уже завершён",
   "bot.answer.heat.entrance": "Ответ сохранён. Нажмите номер своего подъезда — так УК увидит, какой стояк затронут",
   "bot.answer.heat.entrance_saved": "Подъезд {entrance} сохранён",
-  "bot.answer.heat.first": "Сначала ответьте, тепло ли у вас"
+  "bot.answer.heat.first": "Сначала ответьте, тепло ли у вас",
+  "bot.dm.uk.title": "Пульт УК (демо): открытые аварии ваших домов. Основной экран УК — в мини-приложении",
+  "bot.dm.uk.none": "Открытых аварий в ваших домах нет",
+  "bot.dm.uk.incident": "Дом {house} · {service}",
+  "bot.dm.uk.incident.l2": "{status}, с {time}",
+  "bot.dm.uk.not_staff": "Эта команда — для сотрудников УК. Демо-роль: /democode и код со служебного слайда",
+  "bot.dm.uk.off": "Демо-режим выключен",
+  "bot.dm.uk.btn.accepted": "Принято +2 ч",
+  "bot.dm.uk.btn.brigade_on_site": "Бригада на месте",
+  "bot.dm.uk.btn.localized": "Локализовано",
+  "bot.dm.uk.btn.resolved": "Устранено",
+  "bot.answer.uk.done": "Статус: {status}",
+  "bot.answer.uk.failed": "Не получилось: {reason}",
+  "bot.answer.uk.not_staff": "Это авария дома другой УК",
+  "bot.dm.democode.ok": "Готово: у вас демо-роль сотрудника «УК Модельная». Пульт аварий — /uk",
+  "bot.dm.democode.bad": "Код не подошёл. Проверьте код и отправьте /democode <код> ещё раз"
 }

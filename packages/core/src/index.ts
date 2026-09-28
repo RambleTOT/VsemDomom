@@ -32,5 +32,6 @@ export * from './render/act.ts';
 export * from './render/poll.ts';
 export * from './render/month.ts';
 export * from './render/keyword.ts';
+export * from './render/uk-console.ts';
 export * from './incident/counts.ts';
 export * from './incident/started.ts';
