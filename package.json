@@ -17,6 +17,7 @@
     "test": "vitest run",
     "e2e:scenario": "pnpm --filter @vsemdomom/api e2e:scenario",
     "e2e:load": "pnpm --filter @vsemdomom/api e2e:load",
+    "examples": "pnpm --filter @vsemdomom/api examples",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "dev": "docker compose up --build",
