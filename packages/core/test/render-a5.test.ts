@@ -268,7 +268,7 @@ describe('C02 — карточка аварии', () => {
 
   it('отметки без подъезда: только общее число', () => {
     const m = renderCard(card({ counts: participantCounts([{ entrance: null, trustLevel: 1, affected: true }]) }), t);
-    expect(m.text).toContain('С 17:40 · отметились 1 житель\n');
+    expect(m.text).toContain('С 17:40 · отметился 1 житель\n');
   });
 
   it('срок локализации истёк после «Принято»', () => {
@@ -349,6 +349,8 @@ describe('C04 — итог', () => {
     const plain = renderResult({ ...base, house: { ...base.house, isModel: false }, late: null, overNorm: null }, t);
     expect(plain.text.split('\n').at(-1)).toBe('Это расчёт по нормам');
     expect(plain.text).toContain('Отметились 11 квартир\n');
+    const single = renderResult({ ...base, flats: 1, late: null, overNorm: null }, t);
+    expect(single.text).toContain('Отметилась 1 квартира\n');
   });
 });
 
@@ -400,7 +402,7 @@ describe('C05 — «Сообщить об аварии» в личке', () => {
     expect(m.text).toMatchInlineSnapshot(`
       "Авария отмечена. Соседи видят карточку в чате дома
       Сообщите в аварийно-диспетчерскую службу (АДС) — так аварию зарегистрируют официально
-      Телефон: \\+7 (000) 000-00-01
+      Телефон: +7 (000) 000-00-01
       Назовите ФИО, адрес «ул. Модельная, 1, кв. 57» и «нет горячей воды с 17:40». Вам скажут номер заявки
       Модельные данные"
     `);

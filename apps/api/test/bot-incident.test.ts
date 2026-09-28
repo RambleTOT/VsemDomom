@@ -92,7 +92,7 @@ describe.skipIf(!url)('авария: личка, живая карточка, о
       [
         '**🔴 Нет горячей воды · УК ещё не ответила**',
         'Срок ответа УК по нормативу — до 12:30 (ПП № 416, п. 13)',
-        'С 11:00 · отметились 1 житель: подъезд 2 — 1',
+        'С 11:00 · отметился 1 житель: подъезд 2 — 1',
         'У вас тоже нет воды? Нажмите свой подъезд:',
         'Обновлено 12:00 · Модельные данные',
       ].join('\n'),
@@ -102,7 +102,7 @@ describe.skipIf(!url)('авария: личка, живая карточка, о
 
     const done = lastDm(h, A);
     expect(done.text).toContain('Авария отмечена. Соседи видят карточку в чате дома');
-    expect(done.text).toContain('Телефон: \\+7 (000) 000-00-01');
+    expect(done.text).toContain('Телефон: +7 (000) 000-00-01');
     expect(done.text).toContain('«ул. Модельная, 1, кв. 57»');
     expect(button(done, 'Скопировать номер АДС')).toMatchObject({ type: 'clipboard', payload: '+7 (000) 000-00-01' });
     expect(h.delayed().filter((j) => j.queue === QUEUES.adsReminder)).toEqual([
@@ -195,7 +195,7 @@ describe.skipIf(!url)('авария: личка, живая карточка, о
     expect(heat).toMatchObject({ scope: 'entrance', entrance: 3, startedSource: 'custom', startedAt: msk('10:00', '2026-09-26') });
     const text = (await cardOf(heat!.id)).message?.message.text ?? '';
     expect(text).toContain('**🔴 Нет отопления · УК ещё не ответила**');
-    expect(text).toContain('С 26.09 10:00 · отметились 1 житель: подъезд 3 — 1');
+    expect(text).toContain('С 26.09 10:00 · отметился 1 житель: подъезд 3 — 1');
     expect(text).toContain('У вас тоже нет отопления? Нажмите свой подъезд:');
   });
 

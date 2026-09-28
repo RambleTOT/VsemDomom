@@ -9,9 +9,9 @@ import { RateLimiter } from './rate-limiter.ts';
 import type { MaxApi } from './types.ts';
 
 /** Чаты симулятора: демо-чаты домов 1 и 4. Бот — администратор, участником считается любой. */
-export const SIMULATOR_CHATS: readonly { chatId: number; title: string }[] = [
-  { chatId: -1001, title: 'Дом 1 (демо, симулятор)' },
-  { chatId: -1004, title: 'Дом 4 (демо, симулятор)' },
+export const SIMULATOR_CHATS: readonly { chatId: number; title: string; housePublicId: string }[] = [
+  { chatId: -1001, title: 'Дом 1 (демо, симулятор)', housePublicId: 'dom1model1' },
+  { chatId: -1004, title: 'Дом 4 (демо, симулятор)', housePublicId: 'dom4model4' },
 ];
 
 const SIMULATOR_PARTICIPANTS = 312;

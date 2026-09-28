@@ -164,7 +164,8 @@ function sinceLine(input: CardInput, t: Translator): string {
   const time = formatChatTime(input.incident.startedAt, input.now, input.house.timezone);
   const { residents, byEntrance } = input.counts;
   if (residents === 0) return t.t('bot.card.since.none', { time });
-  const base = { time, count: residents, residents: t.plural(residents, 'residents') };
+  // «отметился 1 житель», «отметились 2 жителя»: глагол согласуется с числом.
+  const base = { time, count: residents, residents: t.plural(residents, 'residents'), joined: t.plural(residents, 'joined') };
   if (byEntrance.length === 0) return t.t('bot.card.since.short', base);
   const list = byEntrance.map((e) => t.t('bot.card.entrance_count', { entrance: e.entrance, count: e.count })).join(', ');
   return t.t('bot.card.since', { ...base, by_entrance: list });

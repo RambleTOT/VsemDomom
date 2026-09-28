@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import helmet from '@fastify/helmet';
 import Fastify, { LogController, type FastifyBaseLogger, type FastifyError, type FastifyInstance } from 'fastify';
+import { registerDevChat } from '../dev/sim-chat.ts';
 import { registerWebhookRoute } from '../webhook/route.ts';
 import { registerAuth } from './auth.ts';
 import { registerDocs } from './docs.ts';
@@ -79,6 +80,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   if (deps.api) {
     registerApiRoutes(app, { config: deps.config, ctx: deps.api, limits });
     await registerDocs(app, deps.config);
+    // Симулятор чата — только MAX_MODE=simulator (иначе маршрутов нет и /dev/chat отвечает 404).
+    if (deps.webhook) registerDevChat(app, { config: deps.config, ctx: deps.api, ingest: deps.webhook });
   }
   return app;
 }

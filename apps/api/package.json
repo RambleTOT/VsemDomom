@@ -6,7 +6,8 @@
   "license": "MIT",
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    "public"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

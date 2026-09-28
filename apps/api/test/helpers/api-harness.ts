@@ -36,7 +36,7 @@ const NO_LIMITS: RateLimits = { userPerMinute: 100_000, authPerMinute: 100_000 }
 
 export async function createApiHarness(
   url: string,
-  options: { env?: Record<string, string>; chats?: FakeChat[]; rateLimits?: RateLimits } = {},
+  options: { env?: Record<string, string>; chats?: FakeChat[]; rateLimits?: RateLimits; dbJournal?: boolean } = {},
 ): Promise<ApiHarness> {
   const h = await createHarness(url, {
     env: {
@@ -49,6 +49,7 @@ export async function createApiHarness(
       ...options.env,
     },
     ...(options.chats ? { chats: options.chats } : {}),
+    ...(options.dbJournal ? { dbJournal: true } : {}),
   });
   const app = await buildApp({
     config: h.ctx.config,

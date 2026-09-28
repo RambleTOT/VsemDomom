@@ -12,7 +12,8 @@ import { runSeeds } from '../../src/db/seed.ts';
 import type { JobContext } from '../../src/jobs/context.ts';
 import { processUpdate } from '../../src/jobs/process-update.ts';
 import { MemoryJobQueue, QUEUES } from '../../src/jobs/queue.ts';
-import { FakeMaxApi, MemoryFakeCallStore, type FakeChat } from '../../src/max/fake.ts';
+import { FakeMaxApi, MemoryFakeCallStore, type FakeCallStore, type FakeChat } from '../../src/max/fake.ts';
+import { DbFakeCallStore } from '../../src/max/fake-store.ts';
 import type { OutgoingMessage } from '../../src/max/types.ts';
 import { ingestUpdate, type UpdateJob } from '../../src/webhook/ingest.ts';
 import { freshDb, seedsDir } from './test-db.ts';
@@ -51,7 +52,10 @@ export function fakeChat(chatId: number, overrides: Partial<FakeChat> = {}): Fak
   };
 }
 
-export async function createHarness(url: string, options: { env?: Record<string, string>; chats?: FakeChat[] } = {}): Promise<Harness> {
+export async function createHarness(
+  url: string,
+  options: { env?: Record<string, string>; chats?: FakeChat[]; /** Журнал симулятора ещё и в fake_max_call (страница /dev/chat). */ dbJournal?: boolean } = {},
+): Promise<Harness> {
   const handle = await freshDb(url);
   const clock = new ManualClock(new Date('2026-09-27T09:00:00Z'));
   const log = pino({ level: 'silent' });
@@ -64,7 +68,16 @@ export async function createHarness(url: string, options: { env?: Record<string,
     ...options.env,
   });
   const calls = new MemoryFakeCallStore();
-  const max = new FakeMaxApi({ clock, store: calls, botUsername: BOT_USERNAME, chats: options.chats ?? [fakeChat(-1001), fakeChat(-1004)] });
+  const dbJournal = options.dbJournal ? new DbFakeCallStore(handle.db) : null;
+  const store: FakeCallStore = dbJournal
+    ? {
+        async record(call) {
+          await calls.record(call);
+          await dbJournal.record(call);
+        },
+      }
+    : calls;
+  const max = new FakeMaxApi({ clock, store, botUsername: BOT_USERNAME, chats: options.chats ?? [fakeChat(-1001), fakeChat(-1004)] });
   const queue = new MemoryJobQueue();
   const ctx: JobContext = { config, db: handle.db, queue, max, log, clock, i18n: ruTranslator };
 

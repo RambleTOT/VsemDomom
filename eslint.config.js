@@ -110,6 +110,11 @@ export default defineConfig(
       ],
     },
   },
+  // Страница симулятора чата (/dev/chat) выполняется в браузере.
+  {
+    files: ['apps/api/public/**/*.js'],
+    languageOptions: { sourceType: 'script', globals: { ...globals.browser } },
+  },
   {
     files: ['**/test/**/*.ts', '**/*.test.ts', '**/scripts/**/*.ts', 'scripts/**/*.ts', '**/vitest.config.ts', '**/drizzle.config.ts'],
     rules: {

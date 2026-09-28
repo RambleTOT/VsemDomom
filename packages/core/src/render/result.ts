@@ -32,14 +32,16 @@ export function renderResult(input: ResultInput, t: Translator): BotMessage {
   const tz = input.house.timezone;
   const time = (at: Date) => formatChatTime(at, input.now, tz);
   const flatsWord = (n: number) => t.plural(n, 'flats');
+  // «Отметилась 1 квартира», «Отметились 2 квартиры».
+  const joinedWord = (n: number) => t.plural(n, 'flats_joined');
   const water = WATER.includes(input.service);
   const late = input.late && input.late.flats > 0 ? input.late : null;
   const flatsLine =
     input.flats === 0
       ? null
       : late
-        ? t.t(water ? 'bot.result.flats' : 'bot.result.flats.other', { count: input.flats, flats: flatsWord(input.flats), late: late.flats, time: time(late.lastAt) })
-        : t.t('bot.result.flats.all', { count: input.flats, flats: flatsWord(input.flats) });
+        ? t.t(water ? 'bot.result.flats' : 'bot.result.flats.other', { joined: joinedWord(input.flats), count: input.flats, flats: flatsWord(input.flats), late: late.flats, time: time(late.lastAt) })
+        : t.t('bot.result.flats.all', { joined: joinedWord(input.flats), count: input.flats, flats: flatsWord(input.flats) });
   const over = input.overNorm && input.overNorm.flats > 0 ? input.overNorm : null;
   const one = over?.flats === 1;
   const monthLines = over

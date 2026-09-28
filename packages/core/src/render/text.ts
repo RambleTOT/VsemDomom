@@ -2,9 +2,17 @@
 import { SERVICE_I18N_KEY, type ServiceType } from '../domain/enums.ts';
 import type { Translator } from '../i18n/translator.ts';
 
-/** Экранирование разметки MAX (CommonMark): данные из БД не должны ломать форматирование. */
+/**
+ * Экранирование разметки MAX: данные из БД не должны ломать форматирование. Экранируем только то,
+ * что может стать разметкой: обратную косую черту и ` * _ [ ], парные ~~ ++ ^^, # и > в начале строки.
+ * Одиночный «+» (телефон +7 …) разметкой не станет — его не трогаем: так текст читается,
+ * даже если клиент не обработает обратную косую черту.
+ */
 export function escapeMarkdown(text: string): string {
-  return text.replace(/([\\`*_~+^#>[\]])/g, '\\$1');
+  return text
+    .replace(/[\\`*_[\]]/g, '\\$&')
+    .replace(/~~|\+\+|\^\^/g, (pair) => pair.replace(/./g, '\\$&'))
+    .replace(/^[#>]/gm, '\\$&');
 }
 
 export function bold(text: string): string {

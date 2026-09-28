@@ -47,6 +47,7 @@ COPY --from=build --chown=node:node /out/api /app
 COPY --chown=node:node db/migrations /app/db/migrations
 COPY --chown=node:node seeds /app/seeds
 COPY --chown=node:node docs/api/openapi.yaml /app/openapi.yaml
+COPY --chown=node:node apps/api/public /app/public
 USER node
 EXPOSE 3000
 CMD ["node", "dist/main.js"]

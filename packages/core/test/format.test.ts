@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatChatTime, formatDate, formatDuration, formatPercent, formatRubles, formatTime, monthName, pluralForm } from '../src/index.ts';
+import { escapeMarkdown, formatChatTime, formatDate, formatDuration, formatPercent, formatRubles, formatTime, monthName, pluralForm } from '../src/index.ts';
 import { t } from './helpers/i18n.ts';
 
 const TZ = 'Europe/Moscow';
@@ -44,5 +44,15 @@ describe('время и числа по правилам стиля', () => {
     expect(t.plural(3, 'flats')).toBe('квартиры');
     expect(t.plural(11, 'residents')).toBe('жителей');
     expect(() => t.t('no.such.key')).toThrow();
+  });
+});
+
+describe('экранирование разметки MAX', () => {
+  it('экранирует только то, что может стать разметкой', () => {
+    expect(escapeMarkdown('+7 (000) 000-00-01')).toBe('+7 (000) 000-00-01');
+    expect(escapeMarkdown('ул. Модельная, 1')).toBe('ул. Модельная, 1');
+    expect(escapeMarkdown('a*b_c`d[e]f\\g')).toBe('a\\*b\\_c\\`d\\[e\\]f\\\\g');
+    expect(escapeMarkdown('x ++y++ ~~z~~ ^^w^^')).toBe('x \\+\\+y\\+\\+ \\~\\~z\\~\\~ \\^\\^w\\^\\^');
+    expect(escapeMarkdown('# заголовок\n> цитата\nа # и > в середине')).toBe('\\# заголовок\n\\> цитата\nа # и > в середине');
   });
 });

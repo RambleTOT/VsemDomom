@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Всем домом</title>
+    <link rel="stylesheet" href="/dev/chat/app.css" />
+    <script src="/dev/chat/app.js" defer></script>
+  </head>
+  <body>
+    <header class="top">
+      <h1 id="title"></h1>
+      <p id="note" class="muted"></p>
+      <div class="controls">
+        <label><span id="l-chat"></span> <select id="chat"></select></label>
+        <label><span id="l-as"></span> <select id="user"></select></label>
+      </div>
+      <p id="help" class="help"></p>
+    </header>
+    <main class="grid">
+      <section class="panel" aria-labelledby="h-chat">
+        <div class="panel-head">
+          <h2 id="h-chat"></h2>
+          <button type="button" id="clear" class="link"></button>
+        </div>
+        <p id="house" class="muted"></p>
+        <div id="chat-feed" class="feed"></div>
+        <form id="chat-form" class="composer">
+          <input id="chat-text" maxlength="200" autocomplete="off" />
+          <button type="submit" id="chat-send"></button>
+        </form>
+      </section>
+      <section class="panel" aria-labelledby="h-dm">
+        <div class="panel-head">
+          <h2 id="h-dm"></h2>
+        </div>
+        <p id="me" class="muted"></p>
+        <button type="button" id="start" class="secondary"></button>
+        <div id="notices" class="notices" aria-live="polite"></div>
+        <div id="dm-feed" class="feed"></div>
+        <form id="dm-form" class="composer">
+          <input id="dm-text" maxlength="200" autocomplete="off" />
+          <button type="submit" id="dm-send"></button>
+        </form>
+      </section>
+      <section class="panel" aria-labelledby="h-uk">
+        <div class="panel-head">
+          <h2 id="h-uk"></h2>
+        </div>
+        <p id="bind-state" class="muted"></p>
+        <button type="button" id="bind" hidden></button>
+        <div id="incidents" class="incidents"></div>
+        <div id="demo-tools" class="tools"></div>
+      </section>
+    </main>
+    <div id="toast" class="toast" role="status" hidden></div>
+  </body>
+</html>
