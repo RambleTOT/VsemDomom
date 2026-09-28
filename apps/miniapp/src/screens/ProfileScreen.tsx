@@ -9,7 +9,7 @@ import { Icon } from '../components/Icon.tsx';
 import { Screen } from '../components/Screen.tsx';
 import { ConfirmDialog } from '../components/Sheet.tsx';
 import { useToast } from '../components/Toast.tsx';
-import { Card, Chip, Muted, SectionTitle } from '../components/ui.tsx';
+import { Card, Chip, Muted } from '../components/ui.tsx';
 import { lowerFirst, plural, roleName, t } from '../i18n.ts';
 import { homePath, onboardingFor } from '../app/start.ts';
 import { useSession } from '../app/session.tsx';
@@ -78,16 +78,18 @@ export function ProfileScreen() {
   return (
     <Screen title={t('screen.S11.title')} back={session.home} model={residency?.house.isModel ?? me.staff?.uk.isModel ?? false}>
       {me.staff ? (
-        <Card>
-          <SectionTitle>{t('screen.S11.staff')}</SectionTitle>
-          <p className="banner-title">{me.staff.uk.name}</p>
-          {me.staff.isDemo ? <Chip tone="info">{t('role.demo')}</Chip> : null}
-          <div>
-            <Button size="medium" variant="secondary" onClick={() => void navigate('/uk')}>
-              {t('screen.U01.title')}
-            </Button>
-          </div>
-        </Card>
+        <div className="list-card">
+          <button type="button" className="list-row plain-button" onClick={() => void navigate('/uk')}>
+            <span className="list-row-text">
+              <span className="muted small">{t('screen.S11.staff')}</span>
+              <span className="list-row-title">{me.staff.uk.name}</span>
+            </span>
+            <span className="row">
+              {me.staff.isDemo ? <Chip tone="neutral">{t('role.demo')}</Chip> : null}
+              <Icon name="chevron-right" size={16} className="muted" />
+            </span>
+          </button>
+        </div>
       ) : null}
 
       {residency ? (

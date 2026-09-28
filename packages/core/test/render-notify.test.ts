@@ -63,6 +63,8 @@ describe('личные уведомления присоединившимся (
       'Отопление, Дом 1. Батареи снова тёплые? Ответьте в чате дома или в «Подробнее»',
       'Модельные данные',
     ]);
+    // Закрыта — только «Подробнее» на итог: уведомлений больше не будет.
+    expect(renderStatusNotice({ ...base, status: 'closed' }, t).keyboard).toEqual([[expect.objectContaining({ type: 'open_app', payload: 'r_K3f9QpZ2aB' })]]);
     // Чат дома не подключён — отвечать только в «Подробнее».
     expect(lines({ status: 'checking', statusAt: at('19:10'), house: { ...base.house, hasChat: false } })[1]).toBe('Горячая вода, Дом 1. Горячая вода вернулась? Ответьте в «Подробнее»');
   });

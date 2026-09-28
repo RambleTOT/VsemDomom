@@ -164,7 +164,15 @@ export function ActScreen() {
           <ActBody incident={incident} act={incident.act} />
         ) : (
           <Screen title={t('screen.S09.title')} model={incident.isModel} back={`/incident/${incident.id}`}>
-            <Muted>{t('screen.S09.not_available')}</Muted>
+            {incident.act?.checkDueAt ? (
+              // Проверку ещё ждём: когда акт понадобится и на каком основании.
+              <Card>
+                <p>{t('screen.S09.wait', { time: whenIn(incident.act.checkDueAt, incident.house.timezone) })}</p>
+                <NormBasisLink norm={incident.act.norm} />
+              </Card>
+            ) : (
+              <Muted>{t('screen.S09.not_available')}</Muted>
+            )}
           </Screen>
         )
       }

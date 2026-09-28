@@ -7,7 +7,7 @@ import { SERVICE_I18N_KEY } from '../domain/enums.ts';
 import { formatChatTime, formatDuration } from '../format/time.ts';
 import type { Translator } from '../i18n/translator.ts';
 import { encodeCallback, encodeStartApp } from '../payloads/codec.ts';
-import type { BotMessage, Keyboard } from './message.ts';
+import type { BotMessage, Keyboard, KeyboardButton } from './message.ts';
 import { bold, escapeMarkdown, lines, lowerFirst, serviceName, serviceNo, serviceOk } from './text.ts';
 
 interface NoticeHouse {
@@ -43,12 +43,10 @@ const MARKER: Record<StatusNoticeInput['status'], string> = {
 };
 
 function keyboard(incidentPublicId: string, botUsername: string, t: Translator, screen: 'i' | 'r' = 'i'): Keyboard {
-  return [
-    [
-      { type: 'open_app', text: t.t('bot.dm.btn.details'), webApp: botUsername, payload: encodeStartApp(screen, incidentPublicId) },
-      { type: 'callback', text: t.t('bot.dm.btn.mute'), payload: encodeCallback('mute', incidentPublicId) },
-    ],
-  ];
+  const details: KeyboardButton = { type: 'open_app', text: t.t('bot.dm.btn.details'), webApp: botUsername, payload: encodeStartApp(screen, incidentPublicId) };
+  // После закрытия уведомлений по аварии больше не будет — «Не присылать» не нужна.
+  if (screen === 'r') return [[details]];
+  return [[details, { type: 'callback', text: t.t('bot.dm.btn.mute'), payload: encodeCallback('mute', incidentPublicId) }]];
 }
 
 export function renderStatusNotice(input: StatusNoticeInput, t: Translator): BotMessage {

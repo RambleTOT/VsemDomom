@@ -818,6 +818,12 @@ h3 {
   cursor: default;
 }
 
+/* Хвост строки (чип и шеврон) — не сжимается и не переносится. */
+.list-row > .row {
+  flex: none;
+  flex-wrap: nowrap;
+}
+
 .list-row.static:hover,
 .list-row:disabled:hover {
   background: none;
