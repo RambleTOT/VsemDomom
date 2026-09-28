@@ -8,6 +8,7 @@ import {
   flatLocation,
   isEntranceInRange,
   isFloorInRange,
+  MS_PER_HOUR,
   OPEN_STATUSES,
   type DeadlinePlan,
   type EventSource,
@@ -17,7 +18,7 @@ import {
   type StartedPreset,
   type TrustLevel,
 } from '@vsemdomom/core';
-import { and, eq, inArray, ne } from 'drizzle-orm';
+import { and, count, eq, gt, inArray, ne } from 'drizzle-orm';
 import { cardLater, renderCardFor } from '../chat/card.ts';
 import { panelLater } from '../chat/panel.ts';
 import { PARAMS } from '../config/params.ts';
@@ -96,7 +97,20 @@ export interface CreateIncidentInput {
   source: EventSource;
 }
 
-export type CreateIncidentResult = { status: 'created'; incident: IncidentRow } | { status: 'duplicate'; incident: IncidentRow };
+export type CreateIncidentResult =
+  | { status: 'created'; incident: IncidentRow }
+  | { status: 'duplicate'; incident: IncidentRow }
+  /** Житель уже сообщил о PARAMS.incidentsPerUserHour авариях за час (кроме песочницы). */
+  | { status: 'too_many' };
+
+/** Сколько аварий житель создал за последний час. */
+async function recentIncidentsBy(db: JobContext['db'], userId: number, now: Date): Promise<number> {
+  const [row] = await db
+    .select({ n: count() })
+    .from(incident)
+    .where(and(eq(incident.createdBy, userId), gt(incident.createdAt, new Date(now.getTime() - MS_PER_HOUR))));
+  return row?.n ?? 0;
+}
 
 /**
  * Новая авария. Уже открыта авария того же вида (не «квартира») — дубль: вызывающий
@@ -108,8 +122,12 @@ export async function createIncident(ctx: JobContext, input: CreateIncidentInput
     const existing = await openIncidentOf(ctx.db, h.id, input.service);
     if (existing) return { status: 'duplicate', incident: existing };
   }
-  const norms: NormRecord[] = await loadNorms(ctx.db);
   const now = ctx.clock.now();
+  // Защита экрана УК и чатов дома от засорения; присоединиться к открытой аварии можно всегда.
+  if (!h.isSandbox && (await recentIncidentsBy(ctx.db, input.reporter.userId, now)) >= PARAMS.incidentsPerUserHour) {
+    return { status: 'too_many' };
+  }
+  const norms: NormRecord[] = await loadNorms(ctx.db);
   const loc = locate(h, input.reporter.residency, { entrance: input.entrance, floor: input.floor ?? null, preferExplicit: true });
   try {
     const created = await ctx.db.transaction(async (tx) => {

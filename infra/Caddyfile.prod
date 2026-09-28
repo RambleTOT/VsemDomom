@@ -2,6 +2,14 @@
 # (требование webhook MAX: HTTPS, порт 443, доверенный сертификат).
 {
 	admin off
+	# Против медленных соединений (slowloris): заголовки и тело запроса — за ограниченное время.
+	servers {
+		timeouts {
+			read_header 10s
+			read_body 30s
+			idle 2m
+		}
+	}
 }
 
 # REDIRECT_DOMAINS — дополнительные адреса через пробел (например корневой домен и www):

@@ -117,8 +117,9 @@ describe.skipIf(!url)('безопасность: границы, доступ, �
       (await api.call<{ link: string }>('POST', '/api/v1/owner-invites', { token, body: { incidentId } })).body.link;
 
     it('два аккаунта не подтверждают друг друга', async () => {
-      const heat = await create({ service: 'heating', startedPreset: 'now' });
-      await api.call('POST', `/api/v1/incidents/${heat.body.id}/join`, { token: tokens[B], body: {} });
+      // A уже сообщил о пяти авариях за час (лимит); эту создаёт B, A присоединяется.
+      const heat = await create({ service: 'heating', startedPreset: 'now' }, tokens[B]);
+      await api.call('POST', `/api/v1/incidents/${heat.body.id}/join`, { token: tokens[A], body: {} });
       const fromA = await invite(tokens[A]!, heat.body.id);
       const fromB = await invite(tokens[B]!, heat.body.id);
       expect((await api.call('POST', `/api/v1/owner-invites/${tokenOf(fromA)}/confirm`, { token: tokens[B] })).status).toBe(200);

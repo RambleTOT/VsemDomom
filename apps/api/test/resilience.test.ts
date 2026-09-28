@@ -211,6 +211,7 @@ describe.skipIf(!url || !process.env.E2E_LOAD)('нагрузка: 30 нажат�
       reporter: { userId: 8500, residency: null },
       source: 'bot',
     });
+    if (created.status === 'too_many') throw new Error('лимит аварий в тесте нагрузки');
     const inc = created.incident;
     const cardMid = await waitFor('карточка в чате', async () => (await stand.handle.db.select().from(chatCard).where(eq(chatCard.incidentId, inc.id)))[0]?.mid);
 

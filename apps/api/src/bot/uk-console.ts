@@ -4,8 +4,9 @@
  *   /uk — открытые аварии домов сотрудника с кнопками следующих статусов.
  * Статусы ставятся тем же сервисом, что REST УК (ориентир «Принято» — через 2 часа).
  */
-import { isOneOf, MS_PER_HOUR, OPEN_STATUSES, renderText, renderUkConsoleIncident, statusText, UK_CONSOLE_STATUSES } from '@vsemdomom/core';
+import { isOneOf, MS_PER_HOUR, MS_PER_MINUTE, OPEN_STATUSES, renderText, renderUkConsoleIncident, statusText, UK_CONSOLE_STATUSES } from '@vsemdomom/core';
 import { and, desc, eq, inArray } from 'drizzle-orm';
+import { PARAMS } from '../config/params.ts';
 import { houseById, staffOf } from '../db/queries.ts';
 import { house, incident } from '../db/schema.ts';
 import type { JobContext } from '../jobs/context.ts';
@@ -13,6 +14,7 @@ import { demoCodeMatches, grantDemoRole } from '../services/demo.ts';
 import { ServiceError } from '../services/errors.ts';
 import { incidentByPublicId } from '../services/incidents.ts';
 import { applyUkStatus } from '../services/uk-status.ts';
+import { FailureWindow } from '../util/limits.ts';
 import { sendDm } from './dm.ts';
 import type { CallbackHandler, UpdateMeta } from './types.ts';
 
@@ -21,19 +23,29 @@ const CONSOLE_LIMIT = 5;
 /** Ориентир для «Принято» из пульта. */
 const ETA_AHEAD_MS = 2 * MS_PER_HOUR;
 
-async function reply(ctx: JobContext, userId: number, key: string, meta: UpdateMeta, suffix: string): Promise<void> {
-  await ctx.db.transaction(async (tx) => sendDm(tx, ctx, userId, renderText(key, ctx.i18n), `${meta.dedupeKey}:${suffix}`));
+async function reply(ctx: JobContext, userId: number, key: string, meta: UpdateMeta, suffix: string, params?: Record<string, string | number>): Promise<void> {
+  await ctx.db.transaction(async (tx) => sendDm(tx, ctx, userId, renderText(key, ctx.i18n, params), `${meta.dedupeKey}:${suffix}`));
 }
 
 async function staffUkIds(ctx: JobContext, userId: number): Promise<number[]> {
   return (await staffOf(ctx.db, userId)).map((s) => s.uk.id);
 }
 
+/** Против перебора демо-кода: после PARAMS.demoCodeAttempts неверных кодов ввод закрыт до конца окна. */
+const demoCodeFailures = new FailureWindow(PARAMS.demoCodeAttempts, PARAMS.demoCodeWindowMin * MS_PER_MINUTE);
+
 export async function onDemoCodeCommand(ctx: JobContext, userId: number, arg: string | null, meta: UpdateMeta): Promise<void> {
   if (!ctx.config.demo.enabled) return reply(ctx, userId, 'bot.dm.uk.off', meta, 'democode');
-  if (!arg || !demoCodeMatches(arg, ctx.config.demo.ukCode) || !(await grantDemoRole(ctx, userId))) {
+  const now = ctx.clock.now().getTime();
+  if (demoCodeFailures.blocked(userId, now)) {
+    return reply(ctx, userId, 'bot.dm.democode.too_many', meta, 'democode', { minutes: PARAMS.demoCodeWindowMin });
+  }
+  if (!arg || !demoCodeMatches(arg, ctx.config.demo.ukCode)) {
+    demoCodeFailures.fail(userId, now);
     return reply(ctx, userId, 'bot.dm.democode.bad', meta, 'democode');
   }
+  demoCodeFailures.reset(userId);
+  if (!(await grantDemoRole(ctx, userId))) return reply(ctx, userId, 'bot.dm.democode.bad', meta, 'democode');
   await reply(ctx, userId, 'bot.dm.democode.ok', meta, 'democode');
 }
 

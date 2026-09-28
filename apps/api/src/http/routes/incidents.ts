@@ -113,6 +113,9 @@ export function registerIncidentRoutes(app: FastifyInstance, deps: ApiDeps): voi
         reporter: { userId: principal.userId, residency },
         source: principal.kind === 'checker' ? 'api' : 'miniapp',
       });
+      if (created.status === 'too_many') {
+        throw new ApiError(429, 'rate_limited', 'Слишком много аварий за час', 'Новую аварию можно отметить позже; к открытой аварии можно присоединиться');
+      }
       if (created.status === 'duplicate') {
         throw new ApiError(409, 'duplicate_incident', 'Такая авария уже открыта', 'Отметьтесь в ней: «У меня тоже»', {
           duplicateOf: created.incident.publicId,

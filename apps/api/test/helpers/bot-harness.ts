@@ -16,7 +16,7 @@ import { MemoryJobQueue, QUEUES } from '../../src/jobs/queue.ts';
 import { FakeMaxApi, MemoryFakeCallStore, type FakeCallStore, type FakeChat } from '../../src/max/fake.ts';
 import { DbFakeCallStore } from '../../src/max/fake-store.ts';
 import type { OutgoingMessage } from '../../src/max/types.ts';
-import { ingestUpdate, type UpdateJob } from '../../src/webhook/ingest.ts';
+import { ingestUpdate, type IngestResult, type UpdateJob } from '../../src/webhook/ingest.ts';
 import { freshDb, seedsDir } from './test-db.ts';
 
 export const STAFF_ID = 9001;
@@ -30,7 +30,7 @@ export interface Harness {
   calls: MemoryFakeCallStore;
   clock: ManualClock;
   /** Принять событие как webhook и выполнить задачи до пустой очереди. */
-  deliver(raw: object): Promise<'accepted' | 'duplicate'>;
+  deliver(raw: object): Promise<IngestResult>;
   /** Выполнить задачи, срок которых наступил (startAfter ≤ часов стенда). */
   drain(): Promise<number>;
   /** Сдвинуть часы и выполнить наступившие задачи. */

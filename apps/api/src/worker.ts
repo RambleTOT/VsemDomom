@@ -17,7 +17,7 @@ import { createLogger } from './logger.ts';
 import { createMaxApi } from './max/factory.ts';
 import { runPolling } from './max/polling.ts';
 import { systemClock } from './util/clock.ts';
-import { ingestUpdate } from './webhook/ingest.ts';
+import { ingestUpdate, userUpdateThrottle } from './webhook/ingest.ts';
 
 const HEARTBEAT_FILE = process.env.WORKER_HEARTBEAT_FILE ?? '/tmp/vsemdomom-worker.alive';
 const HEARTBEAT_EVERY_MS = 10_000;
@@ -39,9 +39,10 @@ async function main(): Promise<void> {
   const polling = new AbortController();
   if (config.max.mode === 'polling') {
     const matcher = config.features.keywordReply ? keywordMatcher(KEYWORD_PHRASES) : null;
+    const throttle = userUpdateThrottle(log);
     void runPolling({
       max,
-      ingest: (u) => ingestUpdate({ db: handle.db, queue, keywordMatcher: matcher }, u),
+      ingest: (u) => ingestUpdate({ db: handle.db, queue, keywordMatcher: matcher, throttle }, u),
       log,
       signal: polling.signal,
     });

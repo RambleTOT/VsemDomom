@@ -4361,6 +4361,8 @@ paths:
         Авария создаётся после шага «где». Если в доме уже открыта авария того же вида не уровня «квартира» — 409 `duplicate_incident` с `duplicateOf`: клиент предлагает присоединиться (при гонке — присоединяет автоматически).
 
         Время в будущем → 422 `started_at_in_future`; старше 24 часов без `confirmOld` → 422 `confirm_old_required`.
+
+        Житель уже сообщил о нескольких авариях за последний час → 429 `rate_limited` (защита от засорения; дом-песочница не ограничен, присоединение к открытой аварии — всегда).
       tags:
         - incidents
       security:
@@ -4450,6 +4452,17 @@ paths:
                 $ref: "#/components/schemas/Problem"
         "422":
           description: Ошибка бизнес-валидации
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "429":
+          description: Превышен лимит запросов
           headers:
             X-Request-Id:
               description: Идентификатор запроса

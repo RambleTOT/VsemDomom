@@ -285,13 +285,14 @@ export const incidentRoutes = defineRoutes([
     description: [
       'Авария создаётся после шага «где». Если в доме уже открыта авария того же вида не уровня «квартира» — 409 `duplicate_incident` с `duplicateOf`: клиент предлагает присоединиться (при гонке — присоединяет автоматически).',
       'Время в будущем → 422 `started_at_in_future`; старше 24 часов без `confirmOld` → 422 `confirm_old_required`.',
+      'Житель уже сообщил о нескольких авариях за последний час → 429 `rate_limited` (защита от засорения; дом-песочница не ограничен, присоединение к открытой аварии — всегда).',
     ].join('\n\n'),
     tags: ['incidents'],
     auth: 'resident',
     headers: IdempotencyHeaders,
     body: CreateIncidentRequestSchema,
     responses: { 201: { description: 'Авария создана', schema: IncidentDetailSchema } },
-    errors: [400, 401, 403, 404, 409, 422],
+    errors: [400, 401, 403, 404, 409, 422, 429],
   },
   {
     operationId: 'getIncident',

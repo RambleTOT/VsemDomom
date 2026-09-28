@@ -209,6 +209,13 @@ export const onReportWhere: CallbackHandler = async (e, ctx) => {
     reporter: { userId: e.userId, residency: r.residency },
     source: 'bot',
   });
+  if (created.status === 'too_many') {
+    await ctx.db.transaction(async (tx) => {
+      await setDialogState(tx, ctx, e.userId, null);
+      await sendDm(tx, ctx, e.userId, renderText('bot.dm.report.too_many', ctx.i18n), e.meta.dedupeKey);
+    });
+    return ok(ctx);
+  }
   let outcome: ReportOutcome;
   if (created.status === 'duplicate') {
     await joinIncident(ctx, { incident: created.incident, userId: e.userId, entrance: null, source: 'bot', fromHouseChat: false });

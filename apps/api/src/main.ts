@@ -12,6 +12,7 @@ import { createMaxApi } from './max/factory.ts';
 import { maxCheck } from './max/readiness.ts';
 import { systemClock } from './util/clock.ts';
 import { resolveDataDir } from './util/paths.ts';
+import { userUpdateThrottle } from './webhook/ingest.ts';
 
 const STOP_TIMEOUT_MS = 10_000;
 
@@ -34,6 +35,7 @@ async function main(): Promise<void> {
       db: handle.db,
       queue,
       keywordMatcher: config.features.keywordReply ? keywordMatcher(KEYWORD_PHRASES) : null,
+      throttle: userUpdateThrottle(log),
     },
     api: { config, db: handle.db, queue, max, log, clock: systemClock, i18n: ruTranslator },
   });
