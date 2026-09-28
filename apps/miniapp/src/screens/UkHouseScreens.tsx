@@ -168,7 +168,7 @@ function DemoTools({ house }: { house: UkHouseDetail }) {
           <p>{t('demo.neighbors.title')}</p>
           <p className="muted small">{activeId ? t('demo.neighbors.sub') : t('demo.no_incident')}</p>
         </div>
-        <Button size="small" variant="secondary" disabled={!activeId || busy !== null} loading={busy === 'neighbours'} onClick={() => void run('neighbours', async () => (await api.demoNeighbours(house.id), t('demo.neighbors.done')))}>
+        <Button size="small" variant="secondary" disabled={!activeId || busy !== null} loading={busy === 'neighbours'} onClick={() => void run('neighbours', async () => (await api.demoNeighbours(house.id), t(house.chat?.bound ? 'demo.neighbors.done' : 'demo.neighbors.done.no_chat')))}>
           {t('demo.neighbors.cta')}
         </Button>
       </div>

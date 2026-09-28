@@ -64,7 +64,8 @@ function ResultBody({ result }: { result: Result }) {
   const my = result.my;
   const ukTime = timeIn(result.uk.resolvedAt, tz);
   const ukDuration = minutesText(result.uk.durationMinutes);
-  const canApply = my !== null && result.month !== null && !result.month.withinNorm && !session.staff;
+  // Перерасчёт — всякому участнику аварии, в том числе сотруднику УК, который живёт в доме (демо-роль проверяющего).
+  const canApply = my !== null && result.month !== null && !result.month.withinNorm;
 
   const copyTimeline = async () => {
     try {

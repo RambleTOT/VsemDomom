@@ -198,6 +198,8 @@ function EtaSheet({ incident, open, busy, onClose, onSend }: { incident: UkIncid
     return new Date(Date.now() + Number(value.slice(1)) * MS_PER_HOUR);
   };
   const eta = etaFor(choice);
+  // Без карточки в чате (чат не привязан) «Отправить в чат» обманывает — ориентир просто сохраняется.
+  const hasCard = incident.cardUpdate === 'queued';
 
   return (
     <Sheet
@@ -206,11 +208,11 @@ function EtaSheet({ incident, open, busy, onClose, onSend }: { incident: UkIncid
       title={t('uk.eta.title')}
       footer={
         <Button size="large" stretched disabled={!eta} loading={busy} onClick={() => eta && onSend(eta)}>
-          {t('uk.eta.send')}
+          {t(hasCard ? 'uk.eta.send' : 'uk.eta.save')}
         </Button>
       }
     >
-      <Muted>{t('uk.eta.text')}</Muted>
+      <Muted>{t(hasCard ? 'uk.eta.text' : 'uk.eta.text.no_card')}</Muted>
       <div className="chip-radios" role="radiogroup" aria-label={t('uk.eta.title')}>
         {ETA_PLUS_HOURS.map((h) => (
           <button type="button" role="radio" key={h} className="chip-radio" aria-checked={choice === `+${h}`} onClick={() => setChoice(`+${h}`)}>
@@ -229,7 +231,7 @@ function EtaSheet({ incident, open, busy, onClose, onSend }: { incident: UkIncid
       {choice === 'custom' ? (
         <input className="native-input" type="datetime-local" aria-label={t('uk.eta.custom')} value={custom} min={localInputValue(now)} onChange={(e) => setCustom(e.currentTarget.value)} />
       ) : null}
-      {eta ? <p className="banner-title">{whenIn(eta.toISOString(), tz)}</p> : null}
+      {eta ? <p className="banner-title">{t('uk.eta.value', { time: whenIn(eta.toISOString(), tz) })}</p> : null}
       {localize ? (
         <div className="stack tight">
           <p className="muted small">{t('uk.eta.norm', { time: whenIn(localize.dueAt, tz) })}</p>

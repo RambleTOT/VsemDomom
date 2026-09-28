@@ -2,6 +2,7 @@
 import { Button, Typography } from '@maxhub/max-ui';
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { pushBackOverride } from '../bridge/webapp.ts';
 import { t } from '../i18n.ts';
 
 /** Токены MAX UI заданы на корне <MaxUI>, поэтому шторки рендерим внутрь него, а не в body. */
@@ -31,6 +32,12 @@ export function Sheet({ open, onClose, title, children, footer, role = 'dialog',
   useEffect(() => {
     closeRef.current = onClose;
   }, [onClose]);
+
+  // Нативная «Назад» MAX, пока шторка открыта, закрывает её, а не уводит с экрана.
+  useEffect(() => {
+    if (!open) return;
+    return pushBackOverride(() => closeRef.current());
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;

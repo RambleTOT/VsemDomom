@@ -86,20 +86,41 @@ export function disableVerticalSwipes(): void {
   }
 }
 
-let backHandler: (() => void) | null = null;
+/** Обработчик «Назад» экрана; перехваты (открытые шторки) важнее, последний — главный. */
+let screenBack: (() => void) | null = null;
+const backOverrides: (() => void)[] = [];
+/** Обработчик, подписанный в MAX сейчас: его снимаем перед сменой. */
+let activeBack: (() => void) | null = null;
 
-/** Нативная «Назад»: показываем на вложенных экранах, на корневом — скрываем. */
-export function setBackButton(handler: (() => void) | null): void {
+function applyBack(): void {
   const button = webApp()?.BackButton;
   if (!button) return;
-  if (backHandler) button.offClick?.(backHandler);
-  backHandler = handler;
-  if (handler) {
-    button.onClick?.(handler);
+  const next = backOverrides.at(-1) ?? screenBack;
+  if (activeBack) button.offClick?.(activeBack);
+  activeBack = next;
+  if (next) {
+    button.onClick?.(next);
     button.show?.();
   } else {
     button.hide?.();
   }
+}
+
+/** Нативная «Назад»: показываем на вложенных экранах, на корневом — скрываем. */
+export function setBackButton(handler: (() => void) | null): void {
+  screenBack = handler;
+  applyBack();
+}
+
+/** «Назад» закрывает открытую шторку, а не уходит с экрана; возвращает снятие перехвата. */
+export function pushBackOverride(handler: () => void): () => void {
+  backOverrides.push(handler);
+  applyBack();
+  return () => {
+    const i = backOverrides.lastIndexOf(handler);
+    if (i >= 0) backOverrides.splice(i, 1);
+    applyBack();
+  };
 }
 
 /** Подтверждение закрытия, пока форма заполнена частично. */
