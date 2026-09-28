@@ -6,7 +6,7 @@ import type { Me } from '@vsemdomom/shared';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ApiError, setSessionToken, setUnauthorizedHandler } from '../api/client.ts';
 import { api } from '../api/endpoints.ts';
-import { getInitData, getStartParam, ready } from '../bridge/webapp.ts';
+import { disableVerticalSwipes, getInitData, getStartParam, ready } from '../bridge/webapp.ts';
 import { errorKind, type ErrorKind } from '../components/errors.tsx';
 import { homePath, isStaff } from './start.ts';
 
@@ -78,6 +78,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       clearTimeout(slow);
       // MAX убирает свой экран загрузки: показываем и главный экран, и экран ошибки входа.
       ready();
+      disableVerticalSwipes();
     }
   }, []);
 

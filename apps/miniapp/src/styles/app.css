@@ -126,17 +126,6 @@ h3 {
   max-width: 100%;
 }
 
-/* На телефоне плашка «Модельные данные» в шапке — только значок (подпись остаётся для диктора). */
-@media (max-width: 479px) {
-  .screen-header-after .model-badge > span {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-  }
-}
 
 .screen-content {
   display: flex;

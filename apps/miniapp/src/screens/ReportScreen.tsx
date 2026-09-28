@@ -6,7 +6,7 @@ import { Button, Input, Radio } from '@maxhub/max-ui';
 import { SERVICE_TYPES, STARTED_PRESETS } from '@vsemdomom/shared/browser';
 import type { IncidentDetail, IncidentScope, ServiceType, StartedPreset } from '@vsemdomom/shared';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { ApiError, newIdempotencyKey } from '../api/client.ts';
 import { api } from '../api/endpoints.ts';
@@ -90,6 +90,8 @@ export function ReportScreen() {
   const [adsNumber, setAdsNumber] = useState('');
   const [adsTime, setAdsTime] = useState(() => localInputValue(new Date()));
   const floorId = useId();
+  // Шаг назад — и для кнопки «Назад» внизу, и для нативной «Назад» MAX (стабильная ссылка: без мигания кнопки).
+  const stepBack = useCallback(() => setStep((s) => (s === 2 ? 1 : s === 3 ? 2 : s === 'duplicate' ? 3 : s)), []);
 
   const now = new Date();
   const customDate = new Date(custom);
@@ -151,9 +153,10 @@ export function ReportScreen() {
     if (!duplicate) return;
     setBusy(true);
     try {
-      await api.join(duplicate.id, entrance !== null ? { entrance } : {});
+      const joined = await api.join(duplicate.id, entrance !== null ? { entrance } : {});
       setClosingConfirmation(false);
-      toast(entrance !== null ? t('join.done.dm', { entrance }) : t('join.done.no_entrance'));
+      const at = joined.me?.entrance ?? null;
+      toast(joined.joinResult === 'already_joined' ? t('join.already') : at !== null ? t('join.done.dm', { entrance: at }) : t('join.done.no_entrance'));
       void navigate(`/incident/${duplicate.id}`, { replace: true });
     } catch (err) {
       toast(errorText(err, t('error.network.title')), 'error');
@@ -216,8 +219,6 @@ export function ReportScreen() {
     );
   }
 
-  const stepBack = () => setStep((s) => (s === 2 ? 1 : s === 3 ? 2 : s === 'duplicate' ? 3 : s));
-
   // ---------- шаг 2: с какого времени ----------
   if (step === 2) {
     const blocked = customFuture || (customOld && !confirmOld);
@@ -225,6 +226,7 @@ export function ReportScreen() {
       <Screen
         title={title}
         model={houseInfo?.isModel ?? false}
+        back={stepBack}
         actionsReason={customFuture ? t('screen.S04.step2.error.future', { time: timeIn(now.toISOString(), tz) }) : undefined}
         actions={
           <>
@@ -283,6 +285,7 @@ export function ReportScreen() {
       <Screen
         title={title}
         model={houseInfo?.isModel ?? false}
+        back={stepBack}
         actionsReason={needEntrance ? t('screen.S04.step3.disabled') : undefined}
         actions={
           <>
@@ -340,6 +343,7 @@ export function ReportScreen() {
       <Screen
         title={t('screen.S04.dup.title')}
         model={duplicate.isModel}
+        back={stepBack}
         actions={
           <>
             <Button size="large" stretched loading={busy} onClick={() => void joinDuplicate()}>

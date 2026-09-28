@@ -7,18 +7,21 @@ import { t } from '../i18n.ts';
 import { Icon } from './Icon.tsx';
 import { ModelDataBadge } from './ui.tsx';
 
+/** Куда ведёт «Назад»: адрес экрана или действие (например, предыдущий шаг формы); null — корневой экран. */
+export type BackTarget = string | (() => void) | null;
+
 /**
  * Нативная «Назад» MAX: на вложенных экранах ведёт на `to`, на корневом (null) скрыта.
  * Экран, открытый по ссылке, возвращает на корень роли, а не закрывает приложение.
  */
-export function useBack(to: string | null): void {
+export function useBack(to: BackTarget): void {
   const navigate = useNavigate();
   useEffect(() => {
     if (!to) {
       setBackButton(null);
       return;
     }
-    setBackButton(() => void navigate(to));
+    setBackButton(typeof to === 'function' ? to : () => void navigate(to));
     return () => setBackButton(null);
   }, [to, navigate]);
 }
@@ -30,7 +33,7 @@ export interface ScreenProps {
   model?: boolean;
   headerAfter?: ReactNode;
   /** Куда ведёт «Назад»; null — корневой экран. */
-  back?: string | null;
+  back?: BackTarget;
   width?: 'narrow' | 'normal' | 'wide';
   actions?: ReactNode;
   /** Почему главная кнопка неактивна — строкой над ней. */
@@ -44,7 +47,7 @@ export function Screen({ title, sub, model = false, headerAfter, back = null, wi
   return (
     <div className={`screen width-${width} ${actions ? 'with-actions' : ''}`}>
       {back && isWebPlatform() ? (
-        <button type="button" className="back-link" onClick={() => void navigate(back)}>
+        <button type="button" className="back-link" onClick={() => (typeof back === 'function' ? back() : void navigate(back))}>
           <Icon name="chevron-right" size={16} className="flip" />
           {t('common.back')}
         </button>

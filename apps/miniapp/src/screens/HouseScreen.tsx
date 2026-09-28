@@ -42,7 +42,7 @@ function HouseBody({ house }: { house: HouseDetail }) {
   return (
     <Screen
       title={t('screen.S03.title', { house: house.label })}
-      sub={t('screen.S03.sub', { address: house.address, flats })}
+      sub={t('screen.S03.sub', { address: house.address, flats, flats_word: plural(flats, 'flats') })}
       model={house.isModel}
       width="wide"
       headerAfter={

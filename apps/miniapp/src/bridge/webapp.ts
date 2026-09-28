@@ -27,6 +27,8 @@ interface WebAppLike {
   openMaxLink?: (url: string) => void;
   shareMaxContent?: (params: { text?: string; link?: string }) => Promise<unknown>;
   requestContact?: () => Promise<{ phone?: string }>;
+  /** Есть в скрипте моста, в документации dev.max.ru не описан (проверка 22.28). */
+  disableVerticalSwipes?: () => unknown;
 }
 
 const webApp = (): WebAppLike | undefined => (globalThis as { WebApp?: WebAppLike }).WebApp;
@@ -68,6 +70,20 @@ export function inMax(): boolean {
 
 export function ready(): void {
   webApp()?.ready?.();
+}
+
+/**
+ * Вертикальный свайп в MAX сворачивает мини-приложение: при прокрутке к началу экран закрывался.
+ * Метод не описан в документации — вызываем, только если он есть, и не ждём ответа.
+ */
+export function disableVerticalSwipes(): void {
+  const wa = webApp();
+  if (!inMax() || typeof wa?.disableVerticalSwipes !== 'function') return;
+  try {
+    void Promise.resolve(wa.disableVerticalSwipes()).catch(() => undefined);
+  } catch {
+    // метода нет в этой версии MAX
+  }
 }
 
 let backHandler: (() => void) | null = null;

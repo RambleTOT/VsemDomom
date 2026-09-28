@@ -227,7 +227,7 @@ function IncidentBody({ incident }: { incident: IncidentDetail }) {
             <p>{scopeText}</p>
             <EntranceCounter byEntrance={incident.counters.byEntrance} unknown={incident.counters.unknownEntrance} />
             {incident.counters.unconfirmed > 0 ? (
-              <p className="muted small">{t('screen.S05.where.unconfirmed', { count: incident.counters.unconfirmed, residents: plural(incident.counters.unconfirmed, 'residents') })}</p>
+              <p className="muted small">{t('screen.S05.where.unconfirmed', { count: incident.counters.unconfirmed })}</p>
             ) : null}
           </Card>
           {me ? (
