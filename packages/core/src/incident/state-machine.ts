@@ -157,9 +157,10 @@ export function transition(from: IncidentStatus, command: IncidentCommand): Tran
     case 'resolve': {
       const repeated = from === 'discrepancy';
       const skipped = repeated ? [] : skippedBetween(from, 'resolved');
+      // Срок ответа тоже: после «Устранено» «сообщить сроки» уже не нужно (до срока — выполнен, после — истёк).
       const common: TransitionEffect[] = [
         { type: 'set_resolved_at_uk' },
-        { type: 'mark_deadlines_met', kinds: ['localize', 'clog', 'fix', 'single_limit'] },
+        { type: 'mark_deadlines_met', kinds: ['answer', 'localize', 'clog', 'fix', 'single_limit'] },
       ];
       if (command.sandbox && !repeated) {
         // Песочница API: «Устранено» сразу закрывает аварию без окна проверки и без сообщений.

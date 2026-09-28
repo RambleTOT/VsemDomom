@@ -96,6 +96,14 @@ describe('машина состояний аварии', () => {
     expect(ok.ok && ok.transition.events).toEqual(['uk_resolved', 'check_asked']);
   });
 
+  it('«Устранено» без «Принято» закрывает и срок ответа: после устранения «сообщить сроки» уже не нужно', () => {
+    const r = transition('open', { type: 'resolve' });
+    expect(r.ok && r.transition.effects.find((e) => e.type === 'mark_deadlines_met')).toEqual({
+      type: 'mark_deadlines_met',
+      kinds: ['answer', 'localize', 'clog', 'fix', 'single_limit'],
+    });
+  });
+
   it('«Устранено» публикует вопрос C03 — второе новое сообщение', () => {
     const r = transition('localized', { type: 'resolve' });
     expect(r.ok && r.transition.effects.map((e) => e.type)).toEqual([

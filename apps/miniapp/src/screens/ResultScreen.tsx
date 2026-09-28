@@ -94,7 +94,7 @@ function ResultBody({ result }: { result: Result }) {
       title={t('screen.S07.title')}
       sub={t('screen.S07.sub', { service: serviceName(result.service), house: result.house.label, date: dayMonthIn(result.startedAt, tz) })}
       model={result.house.isModel}
-      back={session.staff ? `/uk/incident/${result.incidentId}` : `/incident/${result.incidentId}`}
+      back={session.staff && !my ? `/uk/incident/${result.incidentId}` : `/incident/${result.incidentId}`}
       actions={actions}
     >
       <Card>

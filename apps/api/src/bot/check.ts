@@ -49,7 +49,7 @@ export const onAdsAgain: CallbackHandler = async (e, ctx) => {
   const user = await userById(ctx.db, e.userId);
   if (!p || !user) return ctx.i18n.t('bot.answer.expired');
   await ctx.db.transaction(async (tx) => {
-    await setDialogState(tx, ctx, e.userId, { flow: 'ads', incidentId: inc.publicId, kind: 'rereport' });
+    await setDialogState(tx, ctx, e.userId, { flow: 'ads', incidentId: inc.publicId, kind: 'rereport', promptKey: e.meta.dedupeKey });
     await sendDm(tx, ctx, e.userId, renderText('bot.dm.ads.rereport.ask', ctx.i18n), e.meta.dedupeKey);
   });
   return ctx.i18n.t('bot.answer.ok');

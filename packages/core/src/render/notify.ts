@@ -14,6 +14,8 @@ interface NoticeHouse {
   label: string;
   timezone: string;
   isModel: boolean;
+  /** Чат дома подключён: на вопрос о восстановлении можно ответить в нём. Не задано — подключён. */
+  hasChat?: boolean;
 }
 
 export interface StatusNoticeInput {
@@ -76,7 +78,10 @@ export function renderStatusNotice(input: StatusNoticeInput, t: Translator): Bot
       break;
     case 'checking':
       l1 = t.t('bot.dm.status.resolved', { marker, time: statusAt });
-      l2 = t.t('bot.dm.status.l2.resolved', { ...where, restore_question: t.t(`restore.question.${SERVICE_I18N_KEY[input.service]}`) });
+      l2 = t.t(input.house.hasChat === false ? 'bot.dm.status.l2.resolved.no_chat' : 'bot.dm.status.l2.resolved', {
+        ...where,
+        restore_question: t.t(`restore.question.${SERVICE_I18N_KEY[input.service]}`),
+      });
       break;
     case 'closed':
       l1 = input.unresolved ? t.t('bot.dm.status.closed_disc', { marker }) : t.t('bot.dm.status.closed', { marker, service_ok: serviceOk(t, input.service) });

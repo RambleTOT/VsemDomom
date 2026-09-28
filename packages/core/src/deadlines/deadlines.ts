@@ -87,7 +87,7 @@ export interface DeadlineProgress {
 export function deadlineDone(kind: DeadlineKind, p: DeadlineProgress): boolean {
   switch (kind) {
     case 'answer':
-      return p.etaAt !== null;
+      return p.etaAt !== null || p.resolvedAtUk !== null;
     case 'localize':
       return p.localizedAt !== null || p.resolvedAtUk !== null;
     case 'clog':
@@ -99,11 +99,11 @@ export function deadlineDone(kind: DeadlineKind, p: DeadlineProgress): boolean {
 
 /**
  * Ближайший невыполненный срок УК — в том числе уже истёкший («срок по нормативу истёк в 18:10»).
- * Истёкший, но уже выполненный срок (progress) не показываем. Единовременный лимит — не срок УК.
+ * Срок, который по отметкам УК уже выполнен (progress), не показываем. Единовременный лимит — не срок УК.
  */
 export function nextDeadline<T extends DeadlineRow>(deadlines: readonly T[], progress?: DeadlineProgress): T | null {
   const open = deadlines
-    .filter((d) => d.kind !== 'single_limit' && (d.status === 'pending' || (d.status === 'breached' && !(progress && deadlineDone(d.kind, progress)))))
+    .filter((d) => d.kind !== 'single_limit' && (d.status === 'pending' || d.status === 'breached') && !(progress && deadlineDone(d.kind, progress)))
     .sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime());
   return open[0] ?? null;
 }

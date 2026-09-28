@@ -6,6 +6,7 @@
 import { renderDeadlineNotice, renderStatusNotice, type BotMessage, type StatusNoticeInput } from '@vsemdomom/core';
 import { and, eq, isNotNull } from 'drizzle-orm';
 import { deadline, house, incident, incidentParticipant, maxUser, norm } from '../db/schema.ts';
+import { chatOfHouse } from '../db/queries.ts';
 import type { JobContext } from '../jobs/context.ts';
 import { enqueueOutbound } from '../jobs/outbound.ts';
 import { QUEUES, type JobQueue, type TxLike } from '../jobs/queue.ts';
@@ -41,7 +42,7 @@ export async function notifyJob(ctx: JobContext, job: NotifyJob): Promise<number
   const [row] = await ctx.db.select({ incident, house }).from(incident).innerJoin(house, eq(house.id, incident.houseId)).where(eq(incident.id, job.incidentId));
   if (!row) return 0;
   const { incident: inc, house: h } = row;
-  const noticeHouse = { label: h.label, timezone: h.timezone, isModel: h.isModel };
+  const noticeHouse = { label: h.label, timezone: h.timezone, isModel: h.isModel, hasChat: (await chatOfHouse(ctx.db, h.id)) !== null };
   const now = ctx.clock.now();
   let message: BotMessage;
   let ref: string;

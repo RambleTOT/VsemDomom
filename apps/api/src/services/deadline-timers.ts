@@ -5,7 +5,7 @@
  * Истечение ставит флаг overdue (или single_limit_exceeded), пишет событие, правит карточку
  * и уведомляет присоединившихся нейтральным текстом.
  */
-import { breachFlag, isOpenStatus } from '@vsemdomom/core';
+import { breachFlag, deadlineDone, isOpenStatus } from '@vsemdomom/core';
 import { eq } from 'drizzle-orm';
 import { cardLater } from '../chat/card.ts';
 import type { Executor } from '../db/client.ts';
@@ -46,6 +46,8 @@ export async function deadlineJob(ctx: JobContext, data: DeadlineJob): Promise<D
     if (d?.status !== 'pending') return 'skipped';
     const [inc] = await tx.select().from(incident).where(eq(incident.id, d.incidentId));
     if (!inc || !isOpenStatus(inc.status)) return 'skipped';
+    // Срок уже выполнен по отметкам УК (например, «Устранено» без «Принято») — не предупреждаем и не истекаем.
+    if (deadlineDone(d.kind, inc)) return 'skipped';
 
     if (data.kind === 'warn') {
       if (d.warnedAt) return 'skipped';

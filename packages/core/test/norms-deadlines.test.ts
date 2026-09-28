@@ -118,6 +118,10 @@ describe('сроки по нормативам (F04)', () => {
     expect(deadlineDone('answer', late)).toBe(true);
     expect(deadlineDone('localize', late)).toBe(false);
     expect(deadlineDone('localize', { ...late, resolvedAtUk: at('2026-09-27T17:00:00Z') })).toBe(true);
+    // УК сразу отметила «Устранено» без ориентира: срок ответа (ещё не истёкший) тоже не показываем.
+    const resolved = { etaAt: null, localizedAt: null, resolvedAtUk: at('2026-09-27T15:05:00Z') };
+    expect(deadlineDone('answer', resolved)).toBe(true);
+    expect(nextDeadline([{ ...d, status: 'pending' as const }], resolved)).toBeNull();
     expect(resolveDeadlineAt(d, at('2026-09-27T15:00:00Z'))).toBe('met');
     expect(resolveDeadlineAt(d, at('2026-09-27T15:20:00Z'))).toBe('breached');
   });

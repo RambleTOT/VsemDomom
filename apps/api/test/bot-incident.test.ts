@@ -220,6 +220,9 @@ describe.skipIf(!url)('авария: личка, живая карточка, о
     expect(lastDm(h, A).text).toContain('Не понял номер');
     await h.deliver(updates.dmText(A, '4127 11:40'));
     expect(lastDm(h, A).text).toBe('Номер заявки сохранён. Он виден в хронологии');
+    // Просьба ввести номер правится: «Номер заявки — 4127» без «Отмена».
+    const prompt = h.max.messagesIn({ userId: A }).find((m) => m.message.text.startsWith('Номер заявки —'));
+    expect(prompt?.message).toMatchObject({ text: 'Номер заявки — **4127**', keyboard: [] });
     const [inc] = await h.handle.db.select().from(incident).where(eq(incident.id, hotId));
     expect(inc).toMatchObject({ adsRegNumber: '4127', adsRegAt: msk('11:40') });
     const dls = await h.handle.db.select().from(deadline).where(eq(deadline.incidentId, hotId));

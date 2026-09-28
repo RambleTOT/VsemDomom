@@ -15,7 +15,13 @@ export type DialogState =
       source: ResidencySource;
     }
   | { flow: 'report'; step: string; houseId: string; data: Record<string, string | number | boolean | null> }
-  | { flow: 'ads'; incidentId: string; kind: 'register' | 'rereport' };
+  | {
+      flow: 'ads';
+      incidentId: string;
+      kind: 'register' | 'rereport';
+      /** Ключ сообщения-просьбы «Напишите номер заявки»: после ввода оно правится в «Номер заявки — 4127». */
+      promptKey?: string;
+    };
 
 export interface CallbackEvent {
   update: NormalizedUpdate;

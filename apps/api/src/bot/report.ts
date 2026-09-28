@@ -47,7 +47,7 @@ import {
   scheduleAdsReminder,
   type IncidentRow,
 } from '../services/incidents.ts';
-import { activeDialogState, sendDm, setDialogState } from './dm.ts';
+import { activeDialogState, answerDmPrompt, sendDm, setDialogState } from './dm.ts';
 import { chatOfHouse, residenciesOf, userById, type HouseRow, type ResidencyRow } from '../db/queries.ts';
 import { sendMenu } from './registration.ts';
 import type { CallbackHandler, CallbackReply, DialogState, UpdateMeta } from './types.ts';
@@ -271,7 +271,7 @@ export const onAdsNumber: CallbackHandler = async (e, ctx) => {
   const inc = await participantIncident(ctx, e.payload.id, e.userId);
   if (!inc) return ctx.i18n.t('bot.answer.expired');
   await ctx.db.transaction(async (tx) => {
-    await setDialogState(tx, ctx, e.userId, { flow: 'ads', incidentId: inc.publicId, kind: 'register' });
+    await setDialogState(tx, ctx, e.userId, { flow: 'ads', incidentId: inc.publicId, kind: 'register', promptKey: e.meta.dedupeKey });
     await sendDm(tx, ctx, e.userId, renderAskAdsNumber(ctx.i18n), e.meta.dedupeKey);
   });
   return ok(ctx);
@@ -316,6 +316,7 @@ export async function onAdsNumberInput(ctx: JobContext, userId: number, text: st
     await setDialogState(tx, ctx, userId, null);
     await sendDm(tx, ctx, userId, renderText(key, ctx.i18n), meta.dedupeKey);
   });
+  if (s.promptKey) await answerDmPrompt(ctx, userId, s.promptKey, renderAnsweredStep(ctx.i18n.t('bot.dm.ads.number.label'), number));
   return true;
 }
 

@@ -1,8 +1,9 @@
 /** Отправка в личку через журнал исходящих и ответы на нажатия. */
 import type { BotMessage } from '@vsemdomom/core';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNotNull } from 'drizzle-orm';
 import type { Db } from '../db/client.ts';
-import { maxUser } from '../db/schema.ts';
+import { maxUser, outboundMessage } from '../db/schema.ts';
+import { MaxApiError } from '../max/types.ts';
 import type { JobContext } from '../jobs/context.ts';
 import { enqueueOutbound } from '../jobs/outbound.ts';
 import { QUEUES, type TxLike } from '../jobs/queue.ts';
@@ -13,6 +14,24 @@ type Tx = Pick<Db, 'insert' | 'select' | 'update'> & TxLike;
 /** Сообщение в личку; key — стабильный ключ идемпотентности (от события). */
 export async function sendDm(tx: Tx, ctx: JobContext, userId: number, message: BotMessage, key: string): Promise<void> {
   await enqueueOutbound(tx, ctx.queue, { kind: 'dm', idempotencyKey: `dm:${userId}:${key}`, target: { userId }, message });
+}
+
+/**
+ * Сообщение-просьба в личке («Напишите номер заявки») после ответа текстом правится в «вопрос — ответ»:
+ * его «Отмена» больше не нужна. Лучшее усилие: не нашли или MAX не дал править — сообщение просто остаётся.
+ */
+export async function answerDmPrompt(ctx: JobContext, userId: number, promptKey: string, message: BotMessage): Promise<void> {
+  const [row] = await ctx.db
+    .select({ mid: outboundMessage.mid })
+    .from(outboundMessage)
+    .where(and(eq(outboundMessage.idempotencyKey, `dm:${userId}:${promptKey}`), isNotNull(outboundMessage.mid)));
+  if (!row?.mid) return;
+  try {
+    await ctx.max.editMessage(row.mid, message);
+  } catch (err) {
+    if (!(err instanceof MaxApiError)) throw err;
+    ctx.log.warn({ kind: err.kind }, 'просьба в личке не исправлена');
+  }
 }
 
 export interface CallbackAnswerJob {
