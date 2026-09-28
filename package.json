@@ -16,6 +16,7 @@
     "depcruise": "depcruise --config .dependency-cruiser.cjs packages apps",
     "test": "vitest run",
     "e2e:scenario": "pnpm --filter @vsemdomom/api e2e:scenario",
+    "e2e:load": "pnpm --filter @vsemdomom/api e2e:load",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "dev": "docker compose up --build",

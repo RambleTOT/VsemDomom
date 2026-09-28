@@ -23,7 +23,8 @@
     "max:subscriptions": "node --conditions=source src/scripts/max.ts subscriptions",
     "max:commands": "node --conditions=source src/scripts/max.ts commands",
     "data-api:run": "node --conditions=source src/scripts/data-api.ts",
-    "e2e:scenario": "E2E_SCENARIO=1 vitest run test/scenario.test.ts"
+    "e2e:scenario": "E2E_SCENARIO=1 vitest run test/scenario.test.ts",
+    "e2e:load": "E2E_LOAD=1 vitest run test/resilience.test.ts"
   },
   "dependencies": {
     "@date-fns/tz": "1.5.0",
