@@ -185,7 +185,7 @@ function IncidentBody({ incident }: { incident: IncidentDetail }) {
 
       {incident.status === 'discrepancy' && answer === 'no' ? (
         <Card>
-          <div className="row between">
+          <div className="row between top nowrap-row">
             <p className="banner-title">{t('screen.S05.disc.title')}</p>
             <button type="button" className="link-button" onClick={() => setShowHelp((v) => !v)}>
               {showHelp ? t('incident.headline.action.hide') : t('incident.headline.action.what_to_do')}

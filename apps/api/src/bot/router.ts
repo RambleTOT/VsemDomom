@@ -14,7 +14,7 @@ import { onBotAdded, onBotPermissionsChanged, onBotRemoved, onChatTitleChanged, 
 import { answerCallbackLater, sendDm, type CallbackAnswerJob } from './dm.ts';
 import { onUserAdded, onUserRemoved } from './membership.ts';
 import { onConsent, onFlatInput, onHouseChosen, onMenu, onRoleChosen, sendMenu, startDialog } from './registration.ts';
-import type { CallbackEvent, CallbackHandler, UpdateMeta } from './types.ts';
+import type { CallbackEvent, CallbackHandler, CallbackReply, UpdateMeta } from './types.ts';
 
 export type CallbackHandlers = Partial<Record<CallbackAction, CallbackHandler>>;
 
@@ -61,14 +61,15 @@ async function handleCallback(u: NormalizedUpdate, ctx: JobContext, meta: Update
   if (u.chatType === 'dialog') await markDialogStarted(u, ctx, meta);
   const payload = decodeCallback(u.payload);
   const handler = payload ? routing.callbacks[payload.action] : undefined;
-  let notification: string;
+  let reply: CallbackReply;
   if (!payload || !handler) {
-    notification = ctx.i18n.t('bot.answer.expired');
+    reply = { notification: ctx.i18n.t('bot.answer.expired') };
   } else {
     const event: CallbackEvent = { update: u, payload, callbackId: u.callbackId, userId: u.userId, chatId: u.chatId, meta };
-    notification = await handler(event, ctx);
+    const result = await handler(event, ctx);
+    reply = typeof result === 'string' ? { notification: result } : result;
   }
-  const job: CallbackAnswerJob = { callbackId: u.callbackId, chatId: u.chatId, notification };
+  const job: CallbackAnswerJob = { callbackId: u.callbackId, chatId: u.chatId, notification: reply.notification, ...(reply.message ? { message: reply.message } : {}) };
   await ctx.db.transaction(async (tx) => answerCallbackLater(tx, ctx, job));
 }
 
@@ -168,10 +169,10 @@ export function createBotHandlers(routing: BotRouting): UpdateHandlers {
   };
 }
 
-/** Задача callback-answer: уведомление нажавшему. Устаревший callback — не повторять. */
+/** Задача callback-answer: уведомление нажавшему и правка сообщения с кнопкой. Устаревший callback — не повторять. */
 export async function answerCallbackJob(ctx: JobContext, job: CallbackAnswerJob): Promise<void> {
   try {
-    await ctx.max.answerCallback(job.callbackId, { notification: job.notification }, { chatId: job.chatId });
+    await ctx.max.answerCallback(job.callbackId, { notification: job.notification, ...(job.message ? { message: job.message } : {}) }, { chatId: job.chatId });
   } catch (err) {
     if (err instanceof MaxApiError && !err.retryable) {
       ctx.log.warn({ kind: err.kind }, 'ответ на нажатие не доставлен');

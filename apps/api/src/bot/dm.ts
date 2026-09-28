@@ -19,6 +19,8 @@ export interface CallbackAnswerJob {
   callbackId: string;
   chatId: number | null;
   notification: string;
+  /** Новая версия сообщения с нажатой кнопкой (MAX заменит его). */
+  message?: BotMessage;
 }
 
 export async function answerCallbackLater(tx: TxLike, ctx: JobContext, job: CallbackAnswerJob): Promise<void> {

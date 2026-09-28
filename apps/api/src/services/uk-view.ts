@@ -166,5 +166,5 @@ export async function monthlySummaryView(db: Reader, h: HouseRow, now: Date, mon
 
 /** Следующий срок для сортировки внутри группы. */
 export function nextDueAt(b: IncidentBundle): number {
-  return nextDeadline(b.deadlines)?.dueAt.getTime() ?? Number.MAX_SAFE_INTEGER;
+  return nextDeadline(b.deadlines, b.incident)?.dueAt.getTime() ?? Number.MAX_SAFE_INTEGER;
 }

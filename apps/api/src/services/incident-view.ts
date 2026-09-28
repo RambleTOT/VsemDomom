@@ -157,7 +157,7 @@ function statusAt(inc: IncidentRow): Date | null {
 
 function headline(b: IncidentBundle, now: Date): IncidentSummary['headline'] {
   const inc = b.incident;
-  const next = nextDeadline(b.deadlines);
+  const next = nextDeadline(b.deadlines, inc);
   const flats = discrepancyFlats(b);
   const closedDuration = inc.status === 'closed' && inc.resolvedAtUk ? Math.max(0, Math.floor((inc.resolvedAtUk.getTime() - inc.startedAt.getTime()) / MS_PER_MINUTE)) : null;
   return {

@@ -358,14 +358,16 @@ function ResidentRow({ item, decided, busy, onDecide }: { item: ResidentRequest;
   const from = item.source === 'chat' ? 'chat' : item.source === 'qr' ? 'qr' : item.source === 'owner_link' ? 'owner' : item.source ? 'app' : null;
   return (
     <Card>
-      <div className="row between">
-        <div>
+      <div className="row between top nowrap-row">
+        <div className="stack tight">
           <p className="banner-title">
             {t('screen.S11.flat', { flat: item.flatNo })} · {lowerFirst(roleName(item.role))}
           </p>
-          <Muted>{from ? t(`screen.U04.from.${from}`, { date }) : `${houseTitle(item.house)} · ${date}`}</Muted>
+          <p className="muted small">{from ? t(`screen.U04.from.${from}`, { date }) : `${houseTitle(item.house)} · ${date}`}</p>
         </div>
-        <Chip tone={item.trustLevel === 1 ? 'info' : 'neutral'}>{t(`trust.${item.trustLevel}`)}</Chip>
+        <Chip className="chip-nowrap" tone={item.trustLevel === 1 ? 'info' : 'neutral'}>
+          {t(`trust.${item.trustLevel}`)}
+        </Chip>
       </div>
       {decided ? (
         <Chip tone={decided === 'confirmed' ? 'positive' : 'neutral'} icon={decided === 'confirmed' ? 'circle-check' : 'x'}>
@@ -463,21 +465,24 @@ function HeatBody({ map, house }: { map: HeatMap; house: UkHouseDetail }) {
       toast(t('screen.U05.started'));
       await client.invalidateQueries({ queryKey: ['heatmap', house.id] });
     } catch (err) {
-      toast(err instanceof ApiError && err.status === 409 ? t('screen.U05.running') : errorText(err, t('error.network.title')), err instanceof ApiError && err.status === 409 ? 'info' : 'error');
+      // 409 — нет чата или опрос уже был: API объясняет причину, показываем её.
+      toast(errorText(err, t('error.network.title')), err instanceof ApiError && err.status === 409 ? 'info' : 'error');
     } finally {
       setBusy(false);
     }
   };
   const pollOpen = map.poll !== null && map.poll.closedAt === null;
+  const noChat = !house.chat?.bound;
   return (
     <Screen
       title={t('screen.U05.title')}
       sub={map.poll ? t('screen.U05.sub', { house: house.label, date: whenIn(map.poll.startedAt, house.timezone) }) : houseTitle(house)}
       model={house.isModel}
       back={`/uk/houses/${house.id}`}
+      actionsReason={pollOpen || !noChat ? undefined : t('screen.U05.no_chat')}
       actions={
         pollOpen ? undefined : (
-          <Button size="large" stretched loading={busy} onClick={() => void start()}>
+          <Button size="large" stretched disabled={noChat} loading={busy} onClick={() => void start()}>
             {t('screen.U05.start')}
           </Button>
         )

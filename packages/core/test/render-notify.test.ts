@@ -50,6 +50,8 @@ describe('личные уведомления присоединившимся (
   it('остальные шаги УК', () => {
     const lines = (input: Partial<StatusNoticeInput>) => renderStatusNotice({ ...base, ...input }, t).text.split('\n');
     expect(lines({ eta: null, localize: null })).toEqual(['🟠 УК приняла аварию', 'Горячая вода, Дом 1', 'Модельные данные']);
+    // Срок локализации уже прошёл: ориентир — только в первой строке, без повтора.
+    expect(lines({ localize: null })).toEqual(['🟠 УК приняла аварию, ориентир 18:00', 'Горячая вода, Дом 1', 'Модельные данные']);
     expect(lines({ status: 'brigade_on_site', statusAt: at('18:05') })).toEqual([
       '🟠 Бригада УК на месте с 18:05',
       'Горячая вода, Дом 1. Ориентир УК 18:00',

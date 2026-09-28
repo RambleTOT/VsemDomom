@@ -12,7 +12,7 @@ import { house, incident } from '../db/schema.ts';
 import type { JobContext } from '../jobs/context.ts';
 import { demoCodeMatches, grantDemoRole } from '../services/demo.ts';
 import { ServiceError } from '../services/errors.ts';
-import { incidentByPublicId } from '../services/incidents.ts';
+import { incidentByPublicId, type IncidentRow } from '../services/incidents.ts';
 import { applyUkStatus } from '../services/uk-status.ts';
 import { FailureWindow } from '../util/limits.ts';
 import { sendDm } from './dm.ts';
@@ -90,6 +90,12 @@ export const onUkStatus: CallbackHandler = async (e, ctx) => {
   if (!ctx.config.demo.enabled || !inc || !isOneOf(UK_CONSOLE_STATUSES, target)) return ctx.i18n.t('bot.answer.expired');
   const h = await houseById(ctx.db, inc.houseId);
   if (!h || h.isSandbox || !(await staffUkIds(ctx, e.userId)).includes(h.ukId)) return ctx.i18n.t('bot.answer.uk.not_staff');
+  // Сообщение пульта правится ответом на нажатие: текущий статус и только допустимые следующие кнопки.
+  const consoleMessage = (row: IncidentRow) =>
+    renderUkConsoleIncident(
+      { publicId: row.publicId, houseLabel: h.label, service: row.serviceType, status: row.status, startedAt: row.startedAt, timezone: h.timezone, isModel: h.isModel, now: ctx.clock.now() },
+      ctx.i18n,
+    );
   try {
     const updated = await applyUkStatus(ctx, {
       incidentId: inc.id,
@@ -99,9 +105,12 @@ export const onUkStatus: CallbackHandler = async (e, ctx) => {
       expectedVersion: null,
       source: 'bot',
     });
-    return ctx.i18n.t('bot.answer.uk.done', { status: statusText(updated.status, updated.discrepancyUnresolved, ctx.i18n) });
+    return { notification: ctx.i18n.t('bot.answer.uk.done', { status: statusText(updated.status, updated.discrepancyUnresolved, ctx.i18n) }), message: consoleMessage(updated) };
   } catch (err) {
-    if (err instanceof ServiceError) return ctx.i18n.t('bot.answer.uk.failed', { reason: err.message });
-    throw err;
+    if (!(err instanceof ServiceError)) throw err;
+    // Статус уже сменили (в мини-приложении или другой кнопкой) — показываем актуальный.
+    const current = await incidentByPublicId(ctx.db, inc.publicId);
+    const notification = ctx.i18n.t('bot.answer.uk.failed', { reason: err.message });
+    return current ? { notification, message: consoleMessage(current) } : notification;
   }
 };

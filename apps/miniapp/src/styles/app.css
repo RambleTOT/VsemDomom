@@ -1642,3 +1642,19 @@ h3 {
 .deadline-row > .chip {
   align-self: flex-start;
 }
+
+/* Текст слева переносится, чип справа — всегда в одну строку (U04). */
+.row.nowrap-row {
+  flex-wrap: nowrap;
+}
+
+.row.nowrap-row > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.chip.chip-nowrap,
+.nowrap-row > .link-button {
+  flex: none;
+  white-space: nowrap;
+}

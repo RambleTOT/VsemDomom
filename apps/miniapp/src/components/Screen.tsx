@@ -10,6 +10,9 @@ import { ModelDataBadge } from './ui.tsx';
 /** Куда ведёт «Назад»: адрес экрана или действие (например, предыдущий шаг формы); null — корневой экран. */
 export type BackTarget = string | (() => void) | null;
 
+/** Через сколько повторно показать «Назад»: клиент MAX изредка применяет «скрыть» прошлого экрана позже. */
+const BACK_RESYNC_MS = 300;
+
 /**
  * Нативная «Назад» MAX: на вложенных экранах ведёт на `to`, на корневом (null) скрыта.
  * Экран, открытый по ссылке, возвращает на корень роли, а не закрывает приложение.
@@ -21,8 +24,14 @@ export function useBack(to: BackTarget): void {
       setBackButton(null);
       return;
     }
-    setBackButton(typeof to === 'function' ? to : () => void navigate(to));
-    return () => setBackButton(null);
+    const handler = typeof to === 'function' ? to : () => void navigate(to);
+    setBackButton(handler);
+    // 28.09, Android: после перехода между экранами УК один раз осталась «✕» — повторяем показ.
+    const resync = setTimeout(() => setBackButton(handler), BACK_RESYNC_MS);
+    return () => {
+      clearTimeout(resync);
+      setBackButton(null);
+    };
   }, [to, navigate]);
 }
 

@@ -58,6 +58,7 @@ export function renderStatusNotice(input: StatusNoticeInput, t: Translator): Bot
   let l2: string;
   switch (input.status) {
     case 'accepted':
+      // Ориентир уже в первой строке — во второй не повторяем.
       l1 = input.eta ? t.t('bot.dm.status', { marker, eta: time(input.eta) }) : t.t('bot.dm.status.accepted_no_eta', { marker });
       l2 = input.localize
         ? t.t('bot.dm.status.l2', {
@@ -66,9 +67,7 @@ export function renderStatusNotice(input: StatusNoticeInput, t: Translator): Bot
             doc: escapeMarkdown(input.localize.basisDoc),
             point: escapeMarkdown(input.localize.basisPoint),
           })
-        : input.eta
-          ? t.t('bot.dm.status.l2.eta', { ...where, eta: time(input.eta) })
-          : t.t('bot.dm.status.l2.plain', where);
+        : t.t('bot.dm.status.l2.plain', where);
       break;
     case 'brigade_on_site':
     case 'localized':

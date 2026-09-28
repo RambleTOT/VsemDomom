@@ -73,13 +73,37 @@ export function deadlineState(d: DeadlineRow, now: Date): DeadlineState {
   return 'pending';
 }
 
+/** Что УК уже сделала по аварии — по отметкам в самой аварии. */
+export interface DeadlineProgress {
+  etaAt: Date | null;
+  localizedAt: Date | null;
+  resolvedAtUk: Date | null;
+}
+
+/**
+ * Срок выполнен, пусть и после истечения: истёкший по таймеру срок остаётся «истёк»,
+ * но УК уже назвала ориентир, локализовала или отметила устранение.
+ */
+export function deadlineDone(kind: DeadlineKind, p: DeadlineProgress): boolean {
+  switch (kind) {
+    case 'answer':
+      return p.etaAt !== null;
+    case 'localize':
+      return p.localizedAt !== null || p.resolvedAtUk !== null;
+    case 'clog':
+    case 'fix':
+    case 'single_limit':
+      return p.resolvedAtUk !== null;
+  }
+}
+
 /**
  * Ближайший невыполненный срок УК — в том числе уже истёкший («срок по нормативу истёк в 18:10»).
- * Единовременный лимит — не срок УК, в заголовок не идёт.
+ * Истёкший, но уже выполненный срок (progress) не показываем. Единовременный лимит — не срок УК.
  */
-export function nextDeadline<T extends DeadlineRow>(deadlines: readonly T[]): T | null {
+export function nextDeadline<T extends DeadlineRow>(deadlines: readonly T[], progress?: DeadlineProgress): T | null {
   const open = deadlines
-    .filter((d) => d.kind !== 'single_limit' && (d.status === 'pending' || d.status === 'breached'))
+    .filter((d) => d.kind !== 'single_limit' && (d.status === 'pending' || (d.status === 'breached' && !(progress && deadlineDone(d.kind, progress)))))
     .sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime());
   return open[0] ?? null;
 }

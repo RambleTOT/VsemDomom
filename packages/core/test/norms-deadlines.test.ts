@@ -3,6 +3,7 @@ import {
   computeDeadlines,
   deadlineState,
   isNormValidAt,
+  deadlineDone,
   nextDeadline,
   normDurationMs,
   resolveDeadlineAt,
@@ -111,6 +112,12 @@ describe('сроки по нормативам (F04)', () => {
       { ...d, status: 'breached' as const },
     ];
     expect(nextDeadline(list)?.kind).toBe('answer');
+    // УК назвала ориентир уже после срока: истёкший срок ответа выполнен — следующим становится «устранить».
+    const late = { etaAt: at('2026-09-27T16:00:00Z'), localizedAt: null, resolvedAtUk: null };
+    expect(nextDeadline(list, late)?.kind).toBe('fix');
+    expect(deadlineDone('answer', late)).toBe(true);
+    expect(deadlineDone('localize', late)).toBe(false);
+    expect(deadlineDone('localize', { ...late, resolvedAtUk: at('2026-09-27T17:00:00Z') })).toBe(true);
     expect(resolveDeadlineAt(d, at('2026-09-27T15:00:00Z'))).toBe('met');
     expect(resolveDeadlineAt(d, at('2026-09-27T15:20:00Z'))).toBe('breached');
   });

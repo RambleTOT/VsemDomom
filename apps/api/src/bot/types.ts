@@ -1,4 +1,4 @@
-import type { CallbackPayload, ResidencyRole, ResidencySource } from '@vsemdomom/core';
+import type { BotMessage, CallbackPayload, ResidencyRole, ResidencySource } from '@vsemdomom/core';
 import type { JobContext } from '../jobs/context.ts';
 import type { UpdateMeta } from '../jobs/process-update.ts';
 import type { NormalizedUpdate } from '../max/update.ts';
@@ -26,5 +26,11 @@ export interface CallbackEvent {
   meta: UpdateMeta;
 }
 
-/** Обработчик нажатия: возвращает текст уведомления нажавшему (POST /answers). */
-export type CallbackHandler = (event: CallbackEvent, ctx: JobContext) => Promise<string>;
+/** Ответ на нажатие (POST /answers): уведомление нажавшему и, если нужно, новая версия сообщения с кнопкой. */
+export interface CallbackReply {
+  notification: string;
+  message?: BotMessage;
+}
+
+/** Обработчик нажатия: текст уведомления нажавшему или ответ с правкой сообщения. */
+export type CallbackHandler = (event: CallbackEvent, ctx: JobContext) => Promise<string | CallbackReply>;

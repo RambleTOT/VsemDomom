@@ -46,9 +46,14 @@ describe.skipIf(!url)('демо-пульт УК в личке: /democode и /uk'
     const row = await hot();
     expect(row.status).toBe('accepted');
     expect(row.etaAt?.getTime()).toBe(h.clock.now().getTime() + 2 * 3_600_000);
-    // Повтор той же кнопки — отказ машины состояний, без падения.
+    // Сообщение пульта правится ответом на нажатие: новый статус и только следующие кнопки.
+    const edited = h.max.callbacks.at(-1)?.answer.message;
+    expect(edited?.text.split('\n')[1]).toMatch(/^Принята, с /);
+    expect(edited?.keyboard.flat().map((b) => b.text)).toEqual(['Бригада на месте', 'Локализовано', 'Устранено']);
+    // Повтор той же кнопки — отказ машины состояний, без падения; сообщение показывает текущий статус.
     await h.deliver(updates.callback(STAFF_ID, callbackPayload(console, 'Принято +2 ч'), dm(STAFF_ID)));
     expect(answers(h).at(-1)).toMatch(/^Не получилось: /);
+    expect(h.max.callbacks.at(-1)?.answer.message?.keyboard.flat().map((b) => b.text)).toEqual(['Бригада на месте', 'Локализовано', 'Устранено']);
   });
 
   it('кнопку пульта нажал не сотрудник — отказ, статус не меняется', async () => {
