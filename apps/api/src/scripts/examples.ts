@@ -106,8 +106,8 @@ export function examplesMarkdown(): string {
   return parts.join('\n');
 }
 
-const target = `${resolveDataDir(undefined, 'docs')}/EXAMPLES.md`;
 if (process.argv[1]?.endsWith('examples.ts')) {
+  const target = `${resolveDataDir(undefined, 'docs')}/EXAMPLES.md`;
   const text = examplesMarkdown();
   if (process.argv.includes('--check')) {
     const current = readFileSync(target, 'utf8');
