@@ -1,19 +1,22 @@
 /**
- * Лимиты запросов (раздел 11 ТЗ): 60 в минуту на пользователя (без входа — на IP),
- * 10 в минуту на вход с одного IP. Проверка — после разбора авторизации (preHandler).
- * Системные маршруты и webhook MAX не ограничиваются.
+ * Лимиты запросов (раздел 11 ТЗ): 60 в минуту на пользователя (без входа — на IP), вход с одного IP —
+ * 60 в минуту (по ТЗ 10: подняли, жюри может открывать приложение из одной сети), ввод кода — 10 в минуту
+ * на пользователя. Проверка — после разбора авторизации (preHandler). Системные маршруты и webhook MAX
+ * не ограничиваются.
  */
 import rateLimit from '@fastify/rate-limit';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { ApiError } from './problem.ts';
 
-/** Запросов в минуту: на пользователя и на вход с одного IP (раздел 11 ТЗ). */
+/** Запросов в минуту: на пользователя, на вход с одного IP и на ввод кода пользователем. */
 export interface RateLimits {
   userPerMinute: number;
   authPerMinute: number;
+  /** Ввод кодов (демо-код УК) на пользователя; не задан — как вход. */
+  codePerMinute?: number;
 }
 
-export const DEFAULT_RATE_LIMITS: RateLimits = { userPerMinute: 60, authPerMinute: 10 };
+export const DEFAULT_RATE_LIMITS: RateLimits = { userPerMinute: 60, authPerMinute: 60, codePerMinute: 10 };
 
 const WINDOW = '1 minute';
 const MS_PER_SECOND = 1000;
@@ -45,7 +48,7 @@ export function authRateLimit(limits: RateLimits) {
   return { max: limits.authPerMinute, timeWindow: WINDOW, keyGenerator: ipKey };
 }
 
-/** Ввод кодов (демо-код УК): тот же строгий лимит, но на пользователя — против перебора. */
+/** Ввод кодов (демо-код УК): строгий лимит на пользователя — против перебора. */
 export function codeRateLimit(limits: RateLimits) {
-  return { max: limits.authPerMinute, timeWindow: WINDOW, keyGenerator: keyOf };
+  return { max: limits.codePerMinute ?? limits.authPerMinute, timeWindow: WINDOW, keyGenerator: keyOf };
 }

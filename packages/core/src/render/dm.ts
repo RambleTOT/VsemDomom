@@ -3,9 +3,17 @@ import { RESIDENCY_ROLE_I18N_KEY, RESIDENCY_ROLES, type ResidencyRole } from '..
 import type { Translator } from '../i18n/translator.ts';
 import { encodeCallback, encodeStartApp } from '../payloads/codec.ts';
 import type { BotMessage, KeyboardButton } from './message.ts';
-import { escapeMarkdown, lines } from './text.ts';
+import { bold, escapeMarkdown, lines } from './text.ts';
 
 const msg = (text: string, keyboard: BotMessage['keyboard'] = []): BotMessage => ({ text, format: 'markdown', keyboard });
+
+/**
+ * Шаг, на который уже ответили: вопрос и выбранный ответ без кнопок. Им правится сообщение шага
+ * при нажатии (ответ на нажатие с message) — в личке не остаются старые кнопки.
+ */
+export function renderAnsweredStep(question: string, answer: string, footer: string | null = null): BotMessage {
+  return msg(lines(`${question} — ${bold(escapeMarkdown(answer))}`, footer));
+}
 
 export interface DmHouse {
   publicId: string;

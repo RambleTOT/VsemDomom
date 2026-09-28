@@ -9,6 +9,7 @@ import {
   isOneOf,
   parseLocalDateTime,
   renderAdsNumberError,
+  renderAnsweredStep,
   renderAdsReminder,
   renderAskAdsNumber,
   renderReportAskTime,
@@ -19,10 +20,14 @@ import {
   renderReportWhen,
   renderReportWhere,
   renderText,
+  reportQuestion,
   SERVICE_TYPES,
+  serviceName,
   startedAtFromPreset,
+  STARTED_PRESET_I18N_KEY,
   STARTED_PRESETS,
   type AdsBlockInput,
+  type IncidentScope,
   type ReportOutcome,
   type ServiceType,
   type StartedPreset,
@@ -45,7 +50,7 @@ import {
 import { activeDialogState, sendDm, setDialogState } from './dm.ts';
 import { chatOfHouse, residenciesOf, userById, type HouseRow, type ResidencyRow } from '../db/queries.ts';
 import { sendMenu } from './registration.ts';
-import type { CallbackHandler, DialogState, UpdateMeta } from './types.ts';
+import type { CallbackHandler, CallbackReply, DialogState, UpdateMeta } from './types.ts';
 
 type ReportState = Extract<DialogState, { flow: 'report' }>;
 type Step = 'what' | 'when' | 'when_custom' | 'confirm_old' | 'where';
@@ -79,6 +84,11 @@ async function step(ctx: JobContext, userId: number, next: ReportState, message:
 const ok = (ctx: JobContext) => ctx.i18n.t('bot.answer.ok');
 const serviceOf = (s: ReportState): ServiceType | null => (isOneOf(SERVICE_TYPES, s.data.service) ? s.data.service : null);
 
+/** Нажатие принято: сообщение шага становится «вопрос — ответ» без кнопок. */
+const answered = (ctx: JobContext, question: string, answer: string): CallbackReply => ({ notification: ok(ctx), message: renderAnsweredStep(question, answer) });
+
+const SCOPE_BUTTON: Record<IncidentScope, string> = { flat: 'bot.dm.btn.flat', entrance: 'bot.dm.btn.entrance', house: 'bot.dm.btn.house' };
+
 /** /report и «Сообщить об аварии» в меню: шаг «что случилось». */
 export async function startReport(ctx: JobContext, userId: number, housePublicId: string | null, meta: UpdateMeta): Promise<void> {
   const r = await reporterHouse(ctx, userId, housePublicId);
@@ -103,7 +113,7 @@ export const onReportService: CallbackHandler = async (e, ctx) => {
     renderReportWhen({ housePublicId: r.house.publicId, service }, ctx.i18n),
     e.meta.dedupeKey,
   );
-  return ok(ctx);
+  return answered(ctx, reportQuestion('what', null, ctx.i18n), serviceName(ctx.i18n, service));
 };
 
 async function toWhere(ctx: JobContext, userId: number, s: ReportState, startedAt: Date, source: StartedPreset, key: string): Promise<void> {
@@ -125,19 +135,25 @@ async function toWhere(ctx: JobContext, userId: number, s: ReportState, startedA
 export const onReportWhen: CallbackHandler = async (e, ctx) => {
   const s = await reportState(ctx, e.userId);
   const arg = e.payload.arg;
-  if (!s || s.houseId !== e.payload.id || !serviceOf(s)) {
+  const service = s ? serviceOf(s) : null;
+  if (!s || s.houseId !== e.payload.id || !service) {
     await startReport(ctx, e.userId, e.payload.id, e.meta);
     return ok(ctx);
   }
+  const question = reportQuestion('when', service, ctx.i18n);
   if (arg === 'custom') {
     await step(ctx, e.userId, { ...s, step: 'when_custom' }, renderReportAskTime(ctx.i18n), e.meta.dedupeKey);
-  } else if (arg === 'old_ok' && s.step === 'confirm_old' && typeof s.data.startedAt === 'string') {
-    await toWhere(ctx, e.userId, s, new Date(s.data.startedAt), 'custom', e.meta.dedupeKey);
-  } else if (isOneOf(STARTED_PRESETS, arg) && arg !== 'custom') {
-    await toWhere(ctx, e.userId, s, startedAtFromPreset(arg, ctx.clock.now()), arg, e.meta.dedupeKey);
-  } else {
-    await startReport(ctx, e.userId, s.houseId, e.meta);
+    return answered(ctx, question, ctx.i18n.t('since.custom'));
   }
+  if (arg === 'old_ok' && s.step === 'confirm_old' && typeof s.data.startedAt === 'string') {
+    await toWhere(ctx, e.userId, s, new Date(s.data.startedAt), 'custom', e.meta.dedupeKey);
+    return answered(ctx, ctx.i18n.t('screen.S04.step2.confirm.old'), ctx.i18n.t('bot.dm.btn.confirm_old'));
+  }
+  if (isOneOf(STARTED_PRESETS, arg) && arg !== 'custom') {
+    await toWhere(ctx, e.userId, s, startedAtFromPreset(arg, ctx.clock.now()), arg, e.meta.dedupeKey);
+    return answered(ctx, question, ctx.i18n.t(`since.${STARTED_PRESET_I18N_KEY[arg]}`));
+  }
+  await startReport(ctx, e.userId, s.houseId, e.meta);
   return ok(ctx);
 };
 
@@ -198,6 +214,7 @@ export const onReportWhere: CallbackHandler = async (e, ctx) => {
     await startReport(ctx, e.userId, e.payload.id, e.meta);
     return ok(ctx);
   }
+  const reply = answered(ctx, reportQuestion('where', service, ctx.i18n), ctx.i18n.t(SCOPE_BUTTON[scope]));
   const startedSource = isOneOf(STARTED_PRESETS, s.data.startedSource) ? s.data.startedSource : 'custom';
   const created = await createIncident(ctx, {
     house: r.house,
@@ -214,7 +231,7 @@ export const onReportWhere: CallbackHandler = async (e, ctx) => {
       await setDialogState(tx, ctx, e.userId, null);
       await sendDm(tx, ctx, e.userId, renderText('bot.dm.report.too_many', ctx.i18n), e.meta.dedupeKey);
     });
-    return ok(ctx);
+    return reply;
   }
   let outcome: ReportOutcome;
   if (created.status === 'duplicate') {
@@ -234,7 +251,7 @@ export const onReportWhere: CallbackHandler = async (e, ctx) => {
     }
     if (inc.adsRegNumber === null) await scheduleAdsReminder(ctx, inc.id, e.userId, tx);
   });
-  return ok(ctx);
+  return reply;
 };
 
 // ---------- номер заявки АДС ----------

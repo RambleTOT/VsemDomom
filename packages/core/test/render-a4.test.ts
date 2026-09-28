@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   renderAskFlat,
+  renderAnsweredStep,
   renderAskRole,
   renderBotAdded,
   renderChooseHouse,
@@ -9,7 +10,9 @@ import {
   renderHelp,
   renderMenu,
   renderPanel,
+  renderReportWhen,
   renderResidencyConfirmed,
+  reportQuestion,
   renderUnregisteredMenu,
   renderWelcome,
   validateBotMessage,
@@ -100,5 +103,17 @@ describe('C05 — проживание подтверждено (уровень 
     expect(uk.text).toBe('УК подтвердила ваше проживание в кв. 57. Уровень доверия — «подтверждён»\nМодельные данные');
     expect(uk.keyboard).toEqual([]);
     expect(validateBotMessage(uk)).toEqual([]);
+  });
+});
+
+describe('C05 — ответ на шаг в личке', () => {
+  it('вопрос и выбранный ответ, без кнопок: прошлые кнопки больше не нажимаются', () => {
+    const m = renderAnsweredStep(reportQuestion('when', 'cold_water', t), 'Сейчас');
+    expect(m.text).toBe('С какого времени нет холодной воды? — **Сейчас**');
+    expect(m.keyboard).toEqual([]);
+    expect(validateBotMessage(m)).toEqual([]);
+    // Вопрос шага — тот же текст, что в сообщении с кнопками.
+    expect(renderReportWhen({ housePublicId: 'dom1model1', service: 'cold_water' }, t).text).toBe(reportQuestion('when', 'cold_water', t));
+    expect(renderAnsweredStep('Где?', 'Дом *1*').text).toBe('Где? — **Дом \\*1\\***');
   });
 });

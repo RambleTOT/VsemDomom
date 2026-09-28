@@ -29,6 +29,12 @@ export function renderReportWhat(housePublicId: string, t: Translator): BotMessa
   return msg(lines(t.t('bot.dm.report.what'), t.t('bot.dm.report.what.sub')), rows);
 }
 
+/** Вопрос шага — один текст для сообщения с кнопками и для «отвеченного» шага. */
+export function reportQuestion(step: 'what' | 'when' | 'where', service: ServiceType | null, t: Translator): string {
+  if (step === 'what' || !service) return t.t('bot.dm.report.what');
+  return t.t(step === 'when' ? 'bot.dm.report.when' : 'bot.dm.report.where', { service_no_lower: noLower(t, service) });
+}
+
 /** Шаг 2: «Сейчас», «1 ч назад», «3 ч назад», «12 ч назад», «Указать время». */
 export function renderReportWhen(input: { housePublicId: string; service: ServiceType }, t: Translator): BotMessage {
   const btn = (preset: StartedPreset): KeyboardButton => ({
@@ -36,7 +42,7 @@ export function renderReportWhen(input: { housePublicId: string; service: Servic
     text: t.t(`since.${STARTED_PRESET_I18N_KEY[preset]}`),
     payload: encodeCallback('rep_when', input.housePublicId, preset),
   });
-  return msg(t.t('bot.dm.report.when', { service_no_lower: noLower(t, input.service) }), [
+  return msg(reportQuestion('when', input.service, t), [
     [btn('now'), btn('1h')],
     [btn('3h'), btn('12h')],
     [btn('custom'), cancel(t)],
@@ -75,7 +81,7 @@ export function renderReportWhere(input: { housePublicId: string; service: Servi
     text: t.t(key),
     payload: encodeCallback('rep_where', input.housePublicId, scope),
   });
-  return msg(t.t('bot.dm.report.where', { service_no_lower: noLower(t, input.service) }), [
+  return msg(reportQuestion('where', input.service, t), [
     [btn('flat', 'bot.dm.btn.flat'), btn('entrance', 'bot.dm.btn.entrance'), btn('house', 'bot.dm.btn.house')],
     [cancel(t)],
   ]);

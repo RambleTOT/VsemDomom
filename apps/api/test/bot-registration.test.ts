@@ -35,6 +35,7 @@ describe.skipIf(!url)('регистрация в личке (A4, PostgreSQL + с
 
     await h.deliver(updates.callback(U, callbackPayload(lastDm(h, U), 'Собственник'), dm(U)));
     expect(lastDm(h, U).text).toContain('номер квартиры');
+    expect(h.max.callbacks.at(-1)?.answer.message).toMatchObject({ text: 'Кто вы в квартире? — **Собственник**', keyboard: [] });
 
     await h.deliver(updates.dmText(U, '999'));
     expect(lastDm(h, U).text).toContain('Квартиры в этом доме: 1–144. Проверьте номер');

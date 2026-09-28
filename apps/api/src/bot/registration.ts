@@ -7,6 +7,7 @@ import {
   decodeBotStart,
   isFlatInRange,
   isOneOf,
+  renderAnsweredStep,
   renderAskFlat,
   renderAskRole,
   renderChooseHouse,
@@ -15,6 +16,7 @@ import {
   renderText,
   renderUnregisteredMenu,
   renderWelcome,
+  RESIDENCY_ROLE_I18N_KEY,
   RESIDENCY_ROLES,
   type ResidencySource,
 } from '@vsemdomom/core';
@@ -25,7 +27,7 @@ import type { JobContext } from '../jobs/context.ts';
 import { activeDialogState, sendDm, setDialogState } from './dm.ts';
 import { saveResidency } from '../services/residency.ts';
 import { chatOfHouse, dmHouse, houseByPublicId, listResidentialHouses, residenciesOf, userById, type HouseRow } from '../db/queries.ts';
-import type { CallbackHandler, DialogState, UpdateMeta } from './types.ts';
+import type { CallbackHandler, CallbackReply, DialogState, UpdateMeta } from './types.ts';
 
 export function privacyUrl(ctx: JobContext): string {
   return `${ctx.config.publicBaseUrl}/privacy`;
@@ -115,6 +117,12 @@ export async function startDialog(ctx: JobContext, userId: number, startPayload:
 
 const answered = (ctx: JobContext) => ctx.i18n.t('bot.answer.ok');
 
+/** Нажатие принято: сообщение шага становится «вопрос — ответ» без кнопок. */
+const answeredStep = (ctx: JobContext, question: string, answer: string, footer: string | null = null): CallbackReply => ({
+  notification: answered(ctx),
+  message: renderAnsweredStep(question, answer, footer),
+});
+
 export const onConsent: CallbackHandler = async (e, ctx) => {
   const state = await currentState(ctx, e.userId);
   await ctx.db
@@ -139,7 +147,7 @@ export const onHouseChosen: CallbackHandler = async (e, ctx) => {
   }
   const state = await currentState(ctx, e.userId);
   await nextAfterConsent(ctx, e.userId, h.publicId, state?.flow === 'registration' ? state.source : 'dm', e.meta.dedupeKey);
-  return answered(ctx);
+  return answeredStep(ctx, ctx.i18n.t('bot.dm.house.choose'), ctx.i18n.t('bot.dm.house.btn', { house: h.label, address: h.address }), h.isModel ? ctx.i18n.t('bot.footer') : null);
 };
 
 export const onRoleChosen: CallbackHandler = async (e, ctx) => {
@@ -158,7 +166,7 @@ export const onRoleChosen: CallbackHandler = async (e, ctx) => {
     await setDialogState(tx, ctx, e.userId, { ...state, step: 'flat', role });
     await sendDm(tx, ctx, e.userId, renderAskFlat(dmHouse(h), ctx.i18n), e.meta.dedupeKey);
   });
-  return answered(ctx);
+  return answeredStep(ctx, ctx.i18n.t('bot.dm.role'), ctx.i18n.t(`bot.dm.btn.${RESIDENCY_ROLE_I18N_KEY[role]}`));
 };
 
 /** «Отмена» и «Главное меню»; menu:register — начать регистрацию. */
@@ -170,7 +178,9 @@ export const onMenu: CallbackHandler = async (e, ctx) => {
   const state = await currentState(ctx, e.userId);
   await sendMenu(ctx, e.userId, e.meta.dedupeKey);
   if (e.payload.action !== 'cancel') return answered(ctx);
-  return ctx.i18n.t(state?.flow === 'registration' ? 'bot.dm.cancelled' : 'bot.answer.cancelled');
+  // «Отмена» есть только на сообщениях-шагах: шаг становится «Отменили» без кнопок.
+  const key = state?.flow === 'registration' ? 'bot.dm.cancelled' : 'bot.answer.cancelled';
+  return { notification: ctx.i18n.t(key), message: renderText(key, ctx.i18n) };
 };
 
 async function currentState(ctx: JobContext, userId: number): Promise<DialogState | null> {

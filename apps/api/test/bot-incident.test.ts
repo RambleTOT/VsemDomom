@@ -68,11 +68,16 @@ describe.skipIf(!url)('авария: личка, живая карточка, о
   it('житель сообщает в личке: что → когда → где; карточка в чате, сроки, панель, инструкция АДС', async () => {
     await h.deliver(updates.dmText(A, '/report'));
     expect(lastDm(h, A).text).toContain('Что случилось?');
+    // Каждый пройденный шаг правится ответом на нажатие: «вопрос — ответ» без кнопок.
+    const edited = () => h.max.callbacks.at(-1)?.answer.message;
     await h.deliver(updates.callback(A, callbackPayload(lastDm(h, A), 'Горячая вода'), dm(A)));
     expect(lastDm(h, A).text).toBe('С какого времени нет горячей воды?');
+    expect(edited()).toMatchObject({ text: 'Что случилось? — **Горячая вода**', keyboard: [] });
     await h.deliver(updates.callback(A, callbackPayload(lastDm(h, A), '1 ч назад'), dm(A)));
     expect(lastDm(h, A).text).toBe('Где нет горячей воды?');
+    expect(edited()?.text).toBe('С какого времени нет горячей воды? — **1 ч назад**');
     await h.deliver(updates.callback(A, callbackPayload(lastDm(h, A), 'Дом'), dm(A)));
+    expect(edited()?.text).toBe('Где нет горячей воды? — **Дом**');
 
     const [inc] = await reported('hot_water');
     expect(inc).toMatchObject({ status: 'open', scope: 'house', startedSource: '1h', createdBy: A, startedAt: msk('11:00') });
@@ -203,6 +208,7 @@ describe.skipIf(!url)('авария: личка, живая карточка, о
     await h.deliver(updates.dmText(A, '/report'));
     await h.deliver(updates.callback(A, callbackPayload(lastDm(h, A), 'Отмена'), dm(A)));
     expect(answers(h).at(-1)).toBe('Отменили');
+    expect(h.max.callbacks.at(-1)?.answer.message).toMatchObject({ text: 'Отменили', keyboard: [] });
     expect(lastDm(h, A).text).toContain('кв. 57');
   });
 
