@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Всем домом API
-  version: 1.0.0
+  version: 1.1.0
   license:
     name: MIT
     identifier: MIT
@@ -3804,6 +3804,17 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "403":
+          description: Нет прав
+          headers:
+            X-Request-Id:
+              description: Идентификатор запроса
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /api/v1/me/consent:
     post:
       operationId: giveConsent
@@ -4683,6 +4694,7 @@ paths:
     post:
       operationId: registerAds
       summary: Номер и время заявки АДС или «не дозвонился»
+      description: Только участник аварии (нажал «У меня тоже» или сообщил о ней), иначе 403 `not_participant`. Время — не раньше начала аварии и не в будущем; номер, похожий на телефон, — 422 `ads_number_invalid`.
       tags:
         - incidents
       security:

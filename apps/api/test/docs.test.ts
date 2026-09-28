@@ -14,12 +14,12 @@ describe('Swagger UI (/api/docs)', () => {
     await app.close();
   });
 
-  it('отдаёт контракт 1.0.0 со всеми операциями и схемой авторизации', async () => {
+  it('отдаёт контракт 1.1.0 со всеми операциями и схемой авторизации', async () => {
     const res = await app.inject({ method: 'GET', url: `${DOCS_PREFIX}/json` });
     expect(res.statusCode).toBe(200);
     const doc = res.json<{ openapi: string; info: { version: string }; paths: Record<string, Record<string, { operationId?: string }>>; components: { securitySchemes: Record<string, unknown> } }>();
     expect(doc.openapi).toBe('3.1.0');
-    expect(doc.info.version).toBe('1.0.0');
+    expect(doc.info.version).toBe('1.1.0');
     const operations = Object.values(doc.paths).flatMap((methods) => Object.values(methods).map((op) => op.operationId));
     for (const route of apiRoutes) expect(operations, route.operationId).toContain(route.operationId);
     expect(doc.components.securitySchemes).toHaveProperty('bearerAuth');

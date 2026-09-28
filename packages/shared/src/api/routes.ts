@@ -188,7 +188,7 @@ export const meRoutes = defineRoutes([
     tags: ['me'],
     auth: 'user',
     responses: { 204: { description: 'Данные удалены' } },
-    errors: [401],
+    errors: [401, 403],
   },
   {
     operationId: 'demoUkRole',
@@ -333,6 +333,8 @@ export const incidentRoutes = defineRoutes([
     method: 'post',
     path: '/api/v1/incidents/{id}/ads-registration',
     summary: 'Номер и время заявки АДС или «не дозвонился»',
+    description:
+      'Только участник аварии (нажал «У меня тоже» или сообщил о ней), иначе 403 `not_participant`. Время — не раньше начала аварии и не в будущем; номер, похожий на телефон, — 422 `ads_number_invalid`.',
     tags: ['incidents'],
     auth: 'resident',
     params: IncidentIdParams,

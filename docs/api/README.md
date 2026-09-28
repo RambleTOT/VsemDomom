@@ -5,7 +5,7 @@
 - Типы и схемы для мини-приложения: `import { IncidentDetailSchema, type IncidentDetail } from '@vsemdomom/shared'`.
 - Примеры ответов для моков msw: `packages/shared/examples/*.json` (`@vsemdomom/shared/examples/incident-open.json`), проверяются тестом на соответствие схемам.
 - Словарь текстов: `packages/shared/i18n/ru.json` (ключи из пакета дизайна, не переименовываются).
-- Статус: **версия 1.0.0** — полный контракт к сдаче: все эндпоинты описаны, реализованные перечислены ниже. Каждое изменение — отдельным коммитом с обновлением `openapi.yaml` (`info.version`: новые поля и эндпоинты — минорная версия, несовместимые изменения — мажорная) и записью в `CHANGELOG.md`.
+- Статус: **версия 1.1.0** — полный контракт к сдаче: все эндпоинты описаны, реализованные перечислены ниже. Каждое изменение — отдельным коммитом с обновлением `openapi.yaml` (`info.version`: новые поля и эндпоинты — минорная версия, несовместимые изменения — мажорная) и записью в `CHANGELOG.md`.
 
 ## Соглашения
 
@@ -28,11 +28,11 @@
 |---|---|---|
 | 400 | `validation_error` (+`errors[]`: `path`, `message`) | Неверный формат запроса |
 | 401 | `unauthorized`, `session_expired`, `invalid_init_data` | Нет сессии, сессия истекла, подпись initData не сошлась или она старше часа |
-| 403 | `forbidden`, `not_resident`, `not_staff`, `consent_required`, `demo_code_invalid` | Нет прав (`not_resident` — нет проживания в доме; `consent_required` — сначала `POST /me/consent`) |
+| 403 | `forbidden`, `not_resident`, `not_staff`, `not_participant`, `consent_required`, `demo_code_invalid` | Нет прав (`not_resident` — нет проживания в доме; `not_participant` — сначала «У меня тоже»; `consent_required` — сначала `POST /me/consent`; `forbidden` — в том числе тестовым токенам на смену и удаление профиля) |
 | 404 | `not_found`, `feature_disabled` | Нет объекта или функция выключена флагом |
 | 409 | `duplicate_incident` (+`duplicateOf`), `version_conflict` (+`currentVersion`), `invalid_transition`, `incident_not_open` (+`mergedInto`), `incident_not_closed`, `dialog_not_started` (+`botLink`), `already_bound` | Конфликт состояния |
 | 410 | `token_expired`, `token_used` | Ссылка собственнику или токен привязки чата больше не действуют |
-| 422 | `started_at_in_future`, `confirm_old_required`, `entrance_required`, `entrance_out_of_range`, `floor_out_of_range`, `flat_out_of_range` (+`flatFrom`, `flatTo`), `registered_at_in_future`, `consent_version_mismatch`, `eta_required`, `eta_in_past`, `monthly_charge_invalid`, `text_too_long` | Бизнес-валидация |
+| 422 | `started_at_in_future`, `started_at_too_old` (старше 31 дня), `confirm_old_required`, `entrance_required`, `entrance_out_of_range`, `floor_out_of_range`, `flat_out_of_range` (+`flatFrom`, `flatTo`), `registered_at_in_future`, `registered_at_before_start` (раньше начала аварии или отметки «Устранено»), `ads_number_invalid` (похоже на телефон), `consent_version_mismatch`, `eta_required`, `eta_in_past`, `monthly_charge_invalid`, `text_too_long` | Бизнес-валидация |
 | 429 | `rate_limited` | Лимит запросов |
 | 502 | `max_unavailable` | MAX не ответил (например, при отправке заявления в личку) |
 

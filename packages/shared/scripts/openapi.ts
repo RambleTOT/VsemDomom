@@ -79,7 +79,7 @@ export function buildDocument(): string {
     openapi: '3.1.0',
     info: {
       title: 'Всем домом API',
-      version: '1.0.0',
+      version: '1.1.0',
       license: { name: 'MIT', identifier: 'MIT' },
       description: [
         'REST API мини-приложения «Всем домом» и webhook бота MAX.',
