@@ -25,8 +25,5 @@ export function registerApiRoutes(app: FastifyInstance, deps: ApiDeps): void {
   registerSandboxRoutes(app, deps);
 }
 
-/** Операции контракта, которые ещё не реализованы, и задача, в которой появятся (docs/STREAM_A.md). */
-export const PENDING_OPERATIONS: Partial<Record<OperationId, string>> = {
-  ukHeatmap: 'A13',
-  ukStartHeatingPoll: 'A13',
-};
+/** Операции контракта, которые ещё не реализованы, и задача, в которой появятся (docs/STREAM_A.md). Сейчас — все реализованы. */
+export const PENDING_OPERATIONS: Partial<Record<OperationId, string>> = {};

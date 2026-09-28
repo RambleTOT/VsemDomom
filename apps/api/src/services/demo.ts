@@ -22,7 +22,7 @@ import { PARAMS } from '../config/params.ts';
 import type { Executor } from '../db/client.ts';
 import { loadNorms } from '../db/norms.ts';
 import type { HouseRow } from '../db/queries.ts';
-import { deadline, house, incident, incidentEvent, incidentParticipant, managementCompany, maxUser, residency, staff } from '../db/schema.ts';
+import { deadline, house, incident, incidentEvent, incidentParticipant, managementCompany, maxUser, poll, residency, staff } from '../db/schema.ts';
 import { modelUserId, reseedHouseHistory } from '../db/seed.ts';
 import type { JobContext } from '../jobs/context.ts';
 import { audit, staffActor, userActor } from './audit.ts';
@@ -216,6 +216,8 @@ export async function resetDemoHouse(ctx: JobContext, input: { house: HouseRow; 
     const rows = await tx.select({ id: incident.id }).from(incident).where(and(eq(incident.houseId, h.id), eq(incident.isModel, false)));
     const ids = rows.map((r) => r.id);
     await removeIncidents(tx, ids);
+    // Опросы дома тоже демо-данные: «Тепло ли у вас?» после сброса можно запустить снова.
+    await tx.delete(poll).where(eq(poll.houseId, h.id));
     const history = await reseedHouseHistory(tx, { seedsDir: input.seedsDir, house: h, now, log: ctx.log });
     await panelLater(ctx.queue, h.id, tx);
     await audit(tx, { actor: staffActor(input.staffUserId), action: 'demo_reset', entity: 'house', entityId: h.publicId, at: now });

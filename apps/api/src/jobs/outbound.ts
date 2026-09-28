@@ -10,7 +10,7 @@ import { INCIDENT_BUDGET_KINDS, type OutboundKind } from '@vsemdomom/core';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { PARAMS } from '../config/params.ts';
 import type { Db } from '../db/client.ts';
-import { chatCard, houseChat, maxUser, outboundMessage } from '../db/schema.ts';
+import { chatCard, houseChat, maxUser, outboundMessage, poll } from '../db/schema.ts';
 import { MaxApiError, type MaxTarget, type OutgoingMessage } from '../max/types.ts';
 import type { JobContext } from './context.ts';
 import { QUEUES, type JobQueue, type TxLike } from './queue.ts';
@@ -21,6 +21,7 @@ export type AfterSend =
   | { type: 'card'; incidentId: number }
   | { type: 'check_question'; incidentId: number }
   | { type: 'result'; incidentId: number }
+  | { type: 'poll'; pollId: number }
   | { type: 'none' };
 
 export interface OutboundInput {
@@ -148,6 +149,9 @@ async function afterSend(tx: Pick<Db, 'update' | 'insert'>, ctx: JobContext, act
       return;
     case 'result':
       await tx.update(chatCard).set({ resultMid: mid }).where(eq(chatCard.incidentId, action.incidentId));
+      return;
+    case 'poll':
+      await tx.update(poll).set({ mid }).where(eq(poll.id, action.pollId));
       return;
     case 'none':
       return;

@@ -16,6 +16,7 @@ export type AuditAction =
   | 'demo_reset'
   | 'resident_confirm'
   | 'resident_reject'
+  | 'heating_poll'
   | 'sandbox_reset';
 
 export interface AuditEntry {

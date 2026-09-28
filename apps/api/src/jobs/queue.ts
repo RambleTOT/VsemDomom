@@ -23,6 +23,8 @@ export const QUEUES = {
   check: 'check-tick',
   /** S09: срок проверки после повторного сообщения в АДС — предложение акта без исполнителя. */
   act: 'act-tick',
+  /** F14: опросы в чате дома — отправка, счётчик ответов, завершение. */
+  poll: 'poll-tick',
   /** Личные уведомления присоединившимся. */
   notify: 'notify-participants',
   /** Одно напоминание ввести номер заявки АДС. */
@@ -60,6 +62,7 @@ const QUEUE_OPTIONS: Record<QueueName, QueueOptions & { deadLetter?: string }> =
   [QUEUES.deadline]: { ...COMMON, deadLetter: QUEUES.failed },
   [QUEUES.check]: { ...COMMON, deadLetter: QUEUES.failed },
   [QUEUES.act]: { ...COMMON, deadLetter: QUEUES.failed },
+  [QUEUES.poll]: { ...COMMON },
   [QUEUES.notify]: { ...COMMON },
   [QUEUES.adsReminder]: { ...COMMON },
   [QUEUES.demo]: { ...COMMON },

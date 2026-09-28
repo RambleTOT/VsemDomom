@@ -181,6 +181,14 @@ export type RoundMode = (typeof ROUND_MODES)[number];
 export const POLL_TYPES = ['water_quality', 'heating'] as const;
 export type PollType = (typeof POLL_TYPES)[number];
 
+/** Ответы опроса «Как вода сейчас?»: нормально, ржавая, слабый напор. */
+export const WATER_POLL_VALUES = ['ok', 'rust', 'low'] as const;
+export type WaterPollValue = (typeof WATER_POLL_VALUES)[number];
+
+/** Ответы опроса «Тепло ли у вас?»: тепло, чуть тёплые, холодные. */
+export const HEAT_POLL_VALUES = ['warm', 'luke', 'cold'] as const;
+export type HeatPollValue = (typeof HEAT_POLL_VALUES)[number];
+
 /** Статус исходящего сообщения в журнале outbound_message. */
 export const OUTBOUND_STATUSES = ['pending', 'sent', 'failed', 'skipped'] as const;
 export type OutboundStatus = (typeof OUTBOUND_STATUSES)[number];

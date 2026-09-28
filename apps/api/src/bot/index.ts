@@ -13,10 +13,12 @@ import { checkTimerJob, type CheckJob } from '../services/check.ts';
 import { deadlineJob, type DeadlineJob } from '../services/deadline-timers.ts';
 import { demoAnswersJob, type DemoAnswersJob } from '../services/demo-answers.ts';
 import { notifyJob, type NotifyJob } from '../services/notify.ts';
+import { pollJob, type PollJob } from '../services/polls.ts';
 import { onActIntro, onActReady } from './act.ts';
 import { onAdsAgain, onCrewNo, onCrewYes, onRestore } from './check.ts';
 import type { CallbackAnswerJob } from './dm.ts';
 import { onJoin, onMute, onNotMe } from './incident.ts';
+import { onHeatEntrance, onHeatPoll, onWaterPoll } from './poll.ts';
 import {
   adsReminderJob,
   onAdsFail,
@@ -42,6 +44,9 @@ export const botRouting: BotRouting = {
     ads_again: onAdsAgain,
     act_ready: onActReady,
     act_intro: onActIntro,
+    poll: onWaterPoll,
+    heat: onHeatPoll,
+    heat_ent: onHeatEntrance,
     rep_service: onReportService,
     rep_when: onReportWhen,
     rep_where: onReportWhere,
@@ -65,5 +70,6 @@ export const botJobHandlers: JobHandlers = {
   [QUEUES.notify]: (data: NotifyJob, ctx) => notifyJob(ctx, data),
   [QUEUES.check]: (data: CheckJob, ctx) => checkTimerJob(ctx, data),
   [QUEUES.act]: (data: ActJob, ctx) => actTimerJob(ctx, data),
+  [QUEUES.poll]: (data: PollJob, ctx) => pollJob(ctx, data),
   [QUEUES.demo]: (data: DemoAnswersJob, ctx) => demoAnswersJob(ctx, data),
 };

@@ -34,6 +34,7 @@ import { QUEUES, type JobQueue, type TxLike } from '../jobs/queue.ts';
 import { scheduleActJob } from './act.ts';
 import { loadIncidentBundle } from './incident-view.ts';
 import { notifyLater } from './notify.ts';
+import { scheduleWaterPoll } from './polls.ts';
 import { checkWindowMs } from './policy.ts';
 import { computeResult } from './result.ts';
 
@@ -156,7 +157,10 @@ async function applyCheckCommand(tx: Tx, ctx: JobContext, inc: IncidentRow, h: H
     t.events.map((type) => ({ incidentId: inc.id, type, actorType: 'system' as const, source: 'system' as const, payload: reason ? { reason } : {}, occurredAt: now })),
   );
   for (const run of after) await run(tx);
-  if (t.to === 'closed') await panelLater(ctx.queue, h.id, tx);
+  if (t.to === 'closed') {
+    await panelLater(ctx.queue, h.id, tx);
+    await scheduleWaterPoll(ctx, tx, inc, now);
+  }
   return t.to;
 }
 

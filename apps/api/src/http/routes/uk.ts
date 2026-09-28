@@ -14,6 +14,7 @@ import { demoAllowed } from '../../services/demo-answers.ts';
 import { loadActNorms } from '../../services/act.ts';
 import { incidentByPublicId } from '../../services/incidents.ts';
 import { monthSummary } from '../../services/month.ts';
+import { heatmapView, startHeatingPoll } from '../../services/polls.ts';
 import { applyUkStatus, mergeIncident } from '../../services/uk-status.ts';
 import {
   isExpired,
@@ -161,6 +162,23 @@ export function registerUkRoutes(app: FastifyInstance, deps: ApiDeps): void {
         demo,
       },
     };
+  });
+
+  registerApiRoute(app, deps, 'ukHeatmap', async ({ principal, params }) => {
+    const viewer = await loadViewer(ctx.db, principal);
+    const h = await visibleHouse(ctx.db, viewer, params.id);
+    assertStaffOf(viewer, h);
+    return { status: 200, body: await heatmapView(ctx.db, h) };
+  });
+
+  registerApiRoute(app, deps, 'ukStartHeatingPoll', async ({ principal, params }) => {
+    const viewer = await loadViewer(ctx.db, principal);
+    const h = await visibleHouse(ctx.db, viewer, params.id);
+    assertStaffOf(viewer, h);
+    const started = await startHeatingPoll(ctx, { house: h, staffUserId: principal.userId });
+    if (started.status === 'no_chat') throw new ApiError(409, 'invalid_transition', 'Чат дома не привязан', 'Опрос отправляется в чат дома — сначала привяжите чат');
+    if (started.status === 'already') throw new ApiError(409, 'invalid_transition', 'Опрос уже был в этом сезоне', '«Тепло ли у вас?» запускается один раз за отопительный сезон');
+    return { status: 202, body: { startedAt: iso(started.startedAt) } };
   });
 
   registerApiRoute(app, deps, 'ukGetChatBinding', async ({ principal, params }) => {
