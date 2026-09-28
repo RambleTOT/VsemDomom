@@ -39,6 +39,12 @@ export function serviceGen(t: Translator, service: ServiceType): string {
 }
 
 /** «Нет горячей воды» → «нет горячей воды»; аббревиатуры («УК сообщит…») не меняются. */
+/** «сентябрь» → «Сентябрь» — в начале предложения. */
+export function upperFirst(text: string): string {
+  const [first] = text;
+  return first === undefined ? text : `${first.toUpperCase()}${text.slice(1)}`;
+}
+
 export function lowerFirst(text: string): string {
   const [first, second] = text;
   if (first === undefined) return text;

@@ -2,7 +2,7 @@
  * Представления для экранов УК (U01–U03): аварии с сеткой «подъезд × этаж» и действиями,
  * дома с чатом и правами бота, итог месяца. Без имён и контактов жителей — их нет в БД.
  */
-import { allowedUkActions, deadlineState, isActualAnswer, isOpenStatus, monthBounds, monthKey, monthOf, nextDeadline, nextUkAction } from '@vsemdomom/core';
+import { allowedUkActions, deadlineState, isActualAnswer, isOpenStatus, monthBounds, monthKey, monthOf, nextDeadline, nextUkAction, type MonthRef } from '@vsemdomom/core';
 import type { IncidentSummary, MonthlySummarySchema, UkHouseSchema, UkIncidentDetailSchema } from '@vsemdomom/shared';
 import { and, count, eq, gte, inArray, lt } from 'drizzle-orm';
 import type { z } from 'zod';
@@ -140,8 +140,7 @@ export async function ukHouseView(db: Reader, h: HouseRow, chat: HouseChatRow | 
 }
 
 /** U06: аварии месяца, устранено в норматив, среднее время до «Принято», расхождения, перерывы. */
-export async function monthlySummaryView(db: Reader, h: HouseRow, now: Date): Promise<MonthlySummary> {
-  const month = monthOf(now, h.timezone);
+export async function monthlySummaryView(db: Reader, h: HouseRow, now: Date, month: MonthRef = monthOf(now, h.timezone)): Promise<MonthlySummary> {
   const bounds = monthBounds(month, h.timezone);
   const rows = await db
     .select()
@@ -154,7 +153,7 @@ export async function monthlySummaryView(db: Reader, h: HouseRow, now: Date): Pr
     const first = accepted.filter((e) => e.incidentId === r.id).sort((a, c) => a.occurredAt.getTime() - c.occurredAt.getTime())[0];
     return first ? [Math.max(0, first.occurredAt.getTime() - r.createdAt.getTime())] : [];
   });
-  const house = await monthSummary(db, h, null, now);
+  const house = await monthSummary(db, h, null, now, month);
   return {
     month: monthKey(month),
     incidents: list.length,

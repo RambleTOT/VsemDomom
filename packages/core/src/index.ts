@@ -30,5 +30,6 @@ export * from './render/notify.ts';
 export * from './render/statement.ts';
 export * from './render/act.ts';
 export * from './render/poll.ts';
+export * from './render/month.ts';
 export * from './incident/counts.ts';
 export * from './incident/started.ts';

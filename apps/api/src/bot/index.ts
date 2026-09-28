@@ -12,6 +12,7 @@ import { actTimerJob, type ActJob } from '../services/act.ts';
 import { checkTimerJob, type CheckJob } from '../services/check.ts';
 import { deadlineJob, type DeadlineJob } from '../services/deadline-timers.ts';
 import { demoAnswersJob, type DemoAnswersJob } from '../services/demo-answers.ts';
+import { monthlySummaryJob } from '../services/monthly.ts';
 import { notifyJob, type NotifyJob } from '../services/notify.ts';
 import { pollJob, type PollJob } from '../services/polls.ts';
 import { onActIntro, onActReady } from './act.ts';
@@ -71,5 +72,6 @@ export const botJobHandlers: JobHandlers = {
   [QUEUES.check]: (data: CheckJob, ctx) => checkTimerJob(ctx, data),
   [QUEUES.act]: (data: ActJob, ctx) => actTimerJob(ctx, data),
   [QUEUES.poll]: (data: PollJob, ctx) => pollJob(ctx, data),
+  [QUEUES.monthly]: (_data: object, ctx) => monthlySummaryJob(ctx),
   [QUEUES.demo]: (data: DemoAnswersJob, ctx) => demoAnswersJob(ctx, data),
 };

@@ -25,6 +25,8 @@ export const QUEUES = {
   act: 'act-tick',
   /** F14: опросы в чате дома — отправка, счётчик ответов, завершение. */
   poll: 'poll-tick',
+  /** F15: итог месяца в чаты домов (раз в час проверяет, где уже 1-е число и 10:00). */
+  monthly: 'monthly-summary',
   /** Личные уведомления присоединившимся. */
   notify: 'notify-participants',
   /** Одно напоминание ввести номер заявки АДС. */
@@ -63,6 +65,7 @@ const QUEUE_OPTIONS: Record<QueueName, QueueOptions & { deadLetter?: string }> =
   [QUEUES.check]: { ...COMMON, deadLetter: QUEUES.failed },
   [QUEUES.act]: { ...COMMON, deadLetter: QUEUES.failed },
   [QUEUES.poll]: { ...COMMON },
+  [QUEUES.monthly]: { ...COMMON, retryLimit: 1, expireInSeconds: 600 },
   [QUEUES.notify]: { ...COMMON },
   [QUEUES.adsReminder]: { ...COMMON },
   [QUEUES.demo]: { ...COMMON },

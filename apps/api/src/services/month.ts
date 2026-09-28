@@ -141,9 +141,8 @@ export async function monthDetail(
   };
 }
 
-/** «Этот месяц» на главной: только услуги с перерывами. */
-export async function monthSummary(db: Reader, h: HouseRow, flat: ResidencyRow | null, now: Date): Promise<MonthSummary> {
-  const month = monthOf(now, h.timezone);
+/** «Этот месяц» на главной (или указанный месяц — итог F15): только услуги с перерывами. */
+export async function monthSummary(db: Reader, h: HouseRow, flat: ResidencyRow | null, now: Date, month: MonthRef = monthOf(now, h.timezone)): Promise<MonthSummary> {
   const bounds = monthBounds(month, h.timezone);
   const incidents = await loadIntervalIncidents(db, h, month, SERVICE_TYPES);
   const norms = await loadNorms(db);

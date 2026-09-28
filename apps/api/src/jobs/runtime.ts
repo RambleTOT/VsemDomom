@@ -21,10 +21,11 @@ const WORK_OPTIONS: Partial<Record<QueueName, WorkOptions>> = {
 };
 const DEFAULT_WORK: WorkOptions = { batchSize: 1, pollingIntervalSeconds: 1 };
 
-/** Сторож подписки — раз в 10 минут; чистка — ночью. */
+/** Сторож подписки — раз в 10 минут; чистка — ночью; итог месяца — раз в час (F15). */
 export const SCHEDULES: { queue: QueueName; cron: string }[] = [
   { queue: QUEUES.watchdog, cron: '*/10 * * * *' },
   { queue: QUEUES.cleanup, cron: '17 3 * * *' },
+  { queue: QUEUES.monthly, cron: '5 * * * *' },
 ];
 
 export async function startWorkers(boss: PgBoss, ctx: JobContext, updateHandlers: UpdateHandlers, extra: JobHandlers = {}): Promise<void> {
