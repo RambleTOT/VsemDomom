@@ -2,7 +2,7 @@
 import { Typography } from '@maxhub/max-ui';
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import { isWebPlatform, setBackButton } from '../bridge/webapp.ts';
+import { inMax, setBackButton } from '../bridge/webapp.ts';
 import { t } from '../i18n.ts';
 import { Icon } from './Icon.tsx';
 import { ModelDataBadge } from './ui.tsx';
@@ -57,7 +57,8 @@ export function Screen({ title, sub, model = false, headerAfter, badges, back = 
   const navigate = useNavigate();
   return (
     <div className={`screen width-${width} ${actions ? 'with-actions' : ''}`}>
-      {back && isWebPlatform() ? (
+      {/* В MAX «Назад» — в шапке окна: на телефоне и в веб-версии (проверки 22.14); своя ссылка — только вне MAX. */}
+      {back && !inMax() ? (
         <button type="button" className="back-link" onClick={() => (typeof back === 'function' ? back() : void navigate(back))}>
           <Icon name="chevron-right" size={16} className="flip" />
           {t('common.back')}
