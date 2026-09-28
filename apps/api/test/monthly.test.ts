@@ -30,7 +30,7 @@ describe.skipIf(!url)('F15: итог месяца в чат дома', () => {
     const text = summary!.message.text.split('\n');
     expect(text[0]).toMatch(/^\*\*Сентябрь в доме 1: \d+ авари(я|и|й), \d+ устранен[аы] в норматив\*\*$/);
     expect(text.at(-1)).toBe('Модельные данные');
-    expect(summary!.message.keyboard).toEqual([[{ type: 'open_app', text: 'Подробнее', webApp: expect.any(String), payload: 'h_dom1model1' }]]);
+    expect(summary!.message.keyboard).toEqual([[{ type: 'open_app', text: 'Подробнее', webApp: h.ctx.config.max.botUsername, payload: 'h_dom1model1' }]]);
     expect(summary!.message.text).not.toMatch(/кв\.\s*\d/);
   });
 
