@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import open from '@vsemdomom/shared/examples/incident-open.json' with { type: 'json' };
 import discrepancy from '@vsemdomom/shared/examples/incident-discrepancy.json' with { type: 'json' };
 import { heatState } from '../src/components/grid.tsx';
-import { eventText, headlineText, rangeLabel, whenLabel } from '../src/texts.ts';
+import { eventSource, eventText, headlineText, rangeLabel, whenLabel } from '../src/texts.ts';
 
 const NOW = new Date('2026-09-27T16:30:00Z');
 const openIncident = open as IncidentDetail;
@@ -55,6 +55,12 @@ describe('хронология', () => {
     expect(eventText(event('joined', { entrance: 2 }), 'Europe/Moscow')).toContain('2');
     expect(eventText(event('ads_registered', { number: '4127' }), 'Europe/Moscow')).toContain('4127');
     expect(eventText(event('skipped_steps', { steps: ['brigade_on_site', 'localized'] }), 'Europe/Moscow')).toMatch(/Бригада на месте.*Локализована/);
+  });
+
+  it('подпись «Отметили жители»: у отметок о бригаде — число квартир из события', () => {
+    expect(eventSource(event('residents_no_brigade', { flats: 2 }))).toBe('Отметили жители: 2 квартиры');
+    expect(eventSource(event('joined', { entrance: 2 }))).toBe('Отметили жители: 1 квартира');
+    expect(eventSource({ ...event('uk_accepted'), actorType: 'uk' })).toBe('УК отметила');
   });
 
   it('у каждого типа события есть текст', () => {

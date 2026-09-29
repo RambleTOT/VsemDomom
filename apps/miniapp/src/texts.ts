@@ -45,6 +45,14 @@ function deadlineName(kind: unknown): string {
 }
 
 /** Текст события хронологии по типу и данным (без ПДн). */
+/** Подпись под событием: кто отметил. Отметки жителей о бригаде — от нескольких квартир, число — в событии. */
+export function eventSource(e: TimelineEvent): string {
+  if (e.actorType === 'uk') return t('timeline.src.uk');
+  if (e.actorType !== 'resident') return t('timeline.src.sys');
+  const flats = typeof e.payload.flats === 'number' && e.payload.flats > 0 ? e.payload.flats : 1;
+  return t('timeline.src.res', { count: flats, flats: plural(flats, 'flats') });
+}
+
 export function eventText(e: TimelineEvent, timezone: string): string {
   const p = e.payload;
   const str = (k: string): string | null => {

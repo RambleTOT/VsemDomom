@@ -6,8 +6,8 @@ import { Button, Typography } from '@maxhub/max-ui';
 import type { Deadline, DisplayStatus, EntranceCount, IncidentSummary, StatusStep, TimelineEvent } from '@vsemdomom/shared';
 import { useState, type ReactNode } from 'react';
 import { minutesLeft, minutesText, whenIn } from '../format.ts';
-import { has, plural, statusName, t } from '../i18n.ts';
-import { eventText, headlineText } from '../texts.ts';
+import { has, statusName, t } from '../i18n.ts';
+import { eventSource, eventText, headlineText } from '../texts.ts';
 import type { IconName } from '../icons/icons.ts';
 import { Icon } from './Icon.tsx';
 import { NormBasisLink } from './norm.tsx';
@@ -207,7 +207,7 @@ export function Timeline({ events, timezone }: { events: TimelineEvent[]; timezo
     <ol className="timeline">
       {events.map((e, i) => {
         const icon: IconName = e.type === 'discrepancy' ? 'triangle-alert' : e.actorType === 'uk' ? 'building-2' : e.actorType === 'resident' ? 'users' : 'circle-dot';
-        const src = e.actorType === 'uk' ? t('timeline.src.uk') : e.actorType === 'resident' ? t('timeline.src.res', { count: 1, flats: plural(1, 'flats') }) : t('timeline.src.sys');
+        const src = eventSource(e);
         return (
           <li key={`${e.at}-${i}`} className={`timeline-item actor-${e.actorType} ${e.type === 'discrepancy' ? 'is-disc' : ''}`}>
             <span className="timeline-dot" aria-hidden="true">
