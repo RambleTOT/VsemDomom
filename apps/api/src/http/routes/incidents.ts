@@ -247,7 +247,10 @@ export function registerIncidentRoutes(app: FastifyInstance, deps: ApiDeps): voi
   registerApiRoute(app, deps, 'getIncidentResult', async ({ principal, params }) => {
     const viewer = await loadViewer(ctx.db, principal);
     const { inc, house: h } = await load(viewer, params.id);
-    if (inc.status !== 'closed') throw new ApiError(409, 'incident_not_closed', 'Итог будет после закрытия аварии');
+    // «Проверяем» и «Расхождение» — предварительный итог на текущий момент.
+    if (inc.status !== 'closed' && inc.status !== 'checking' && inc.status !== 'discrepancy') {
+      throw new ApiError(409, 'incident_not_closed', 'Итог будет после отметки УК «Устранено»');
+    }
     const bundle = await loadIncidentBundle(ctx.db, inc.id);
     if (!bundle) throw notFound('Авария не найдена');
     return { status: 200, body: await resultView(ctx.db, bundle, incidentViewer(viewer, h), ctx.i18n, ctx.clock.now()) };

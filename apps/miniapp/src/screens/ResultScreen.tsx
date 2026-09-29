@@ -9,7 +9,7 @@ import { NormBasisLink } from '../components/norm.tsx';
 import { Screen } from '../components/Screen.tsx';
 import { useToast } from '../components/Toast.tsx';
 import { useCopy } from '../components/useCopy.ts';
-import { Card } from '../components/ui.tsx';
+import { Banner, Card } from '../components/ui.tsx';
 import { dayMonthIn, minutesText, monthOfKey, timeIn, whenIn } from '../format.ts';
 import { plural, serviceGen, serviceName, t } from '../i18n.ts';
 import { useSession } from '../app/session.tsx';
@@ -49,6 +49,7 @@ export function MonthCard({ result, label = true }: { result: Result; label?: bo
 function sourceText(result: Result): string | null {
   const my = result.my;
   if (!my) return null;
+  if (my.ongoing) return t('screen.S07.source.ongoing');
   const time = timeIn(my.restoredAt, result.house.timezone);
   if (my.source === 'resident_answer') return t('screen.S07.source', { time });
   if (my.source === 'ads_report') return t('screen.S07.source.ads', { time });
@@ -83,7 +84,7 @@ function ResultBody({ result }: { result: Result }) {
     <>
       {canApply ? (
         <Button size="large" stretched onClick={() => void navigate(`/incident/${result.incidentId}/recalc`)}>
-          {t('screen.S07.cta')}
+          {t(result.preliminary ? 'screen.S07.cta.preliminary' : 'screen.S07.cta')}
         </Button>
       ) : null}
       <Button size="large" stretched variant="secondary" onClick={() => void copyTimeline()}>
@@ -94,12 +95,17 @@ function ResultBody({ result }: { result: Result }) {
 
   return (
     <Screen
-      title={t('screen.S07.title')}
+      title={t(result.preliminary ? 'screen.S07.title.preliminary' : 'screen.S07.title')}
       sub={t('screen.S07.sub', { service: serviceName(result.service), house: result.house.label, date: dayMonthIn(result.startedAt, tz) })}
       model={result.house.isModel}
       back={session.staff && !my ? `/uk/incident/${result.incidentId}` : `/incident/${result.incidentId}`}
       actions={actions}
     >
+      {result.preliminary ? (
+        <Banner tone="info" title={t('screen.S07.preliminary')}>
+          <p>{t('screen.S07.preliminary.text')}</p>
+        </Banner>
+      ) : null}
       <Card>
         {my ? (
           <>
@@ -107,9 +113,11 @@ function ResultBody({ result }: { result: Result }) {
             <p className="big-number">{minutesText(my.durationMinutes)}</p>
             <p className="muted">{rangeLabel(result.startedAt, my.restoredAt, tz)}</p>
             <p>
-              {my.source === 'uk_mark'
-                ? t('screen.S07.by_uk.same', { uk_time: ukTime, uk_duration: ukDuration })
-                : t('screen.S07.by_uk', { uk_time: ukTime, uk_duration: ukDuration, my_time: timeIn(my.restoredAt, tz) })}
+              {my.ongoing
+                ? t('screen.S07.ongoing', { uk_time: ukTime, uk_duration: ukDuration })
+                : my.source === 'uk_mark'
+                  ? t('screen.S07.by_uk.same', { uk_time: ukTime, uk_duration: ukDuration })
+                  : t('screen.S07.by_uk', { uk_time: ukTime, uk_duration: ukDuration, my_time: timeIn(my.restoredAt, tz) })}
             </p>
             <p className="muted small">{sourceText(result)}</p>
           </>

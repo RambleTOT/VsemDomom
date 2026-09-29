@@ -252,7 +252,8 @@ function RecalcBody({ result, incident, house }: { result: Result; incident: Inc
   }
 
   if (step === 2 && calc) {
-    const nothing = calc.withinNorm || calc.amount === 0 || calc.limitMinutes === null;
+    // До закрытия заявление не оформляем: время восстановления ещё может измениться.
+    const nothing = calc.withinNorm || calc.amount === 0 || calc.limitMinutes === null || calc.preliminary;
     return (
       <Screen
         title={t('screen.S08.title')}
@@ -278,7 +279,11 @@ function RecalcBody({ result, incident, house }: { result: Result; incident: Inc
         }
       >
         <Progress step={2} of={STEPS} label={t('screen.S08.progress', { n: 2 })} />
-        {calc.preliminary ? <Banner tone="info" title={t('screen.S08.preliminary')} /> : null}
+        {calc.preliminary ? (
+          <Banner tone="info" title={t('screen.S08.preliminary')}>
+            <p>{t('screen.S08.preliminary.statement')}</p>
+          </Banner>
+        ) : null}
         <MoneyBreakdown calc={calc} service={result.service} />
       </Screen>
     );

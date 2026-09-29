@@ -372,6 +372,8 @@ export const incidentRoutes = defineRoutes([
     method: 'get',
     path: '/api/v1/incidents/{id}/result',
     summary: 'Итог аварии',
+    description:
+      'После закрытия — итог; в статусах «Проверяем» и «Расхождение» — предварительный итог на текущий момент (`preliminary: true`). До «Устранено» — 409 `incident_not_closed`.',
     tags: ['incidents'],
     auth: 'user',
     params: IncidentIdParams,

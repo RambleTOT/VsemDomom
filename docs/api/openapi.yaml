@@ -2149,6 +2149,9 @@ components:
             - resolvedAt
             - durationMinutes
           description: По отметке УК «Устранено»
+        preliminary:
+          type: boolean
+          description: "Авария ещё не закрыта («Проверяем», «Расхождение»): итог на текущий момент"
         my:
           type:
             - object
@@ -2158,17 +2161,24 @@ components:
               type: integer
               exclusiveMinimum: 0
             restoredAt:
-              $ref: "#/components/schemas/DateTime"
+              type: string
+              format: date-time
+              description: Когда услуга вернулась; при ongoing — текущий момент
+              example: 2026-09-27T14:40:00Z
             durationMinutes:
               type: integer
               minimum: 0
             source:
               $ref: "#/components/schemas/RestoredSource"
+            ongoing:
+              type: boolean
+              description: "Житель ответил «Нет» и восстановление не подтвердил: перерыв ещё идёт"
           required:
             - flatNo
             - restoredAt
             - durationMinutes
             - source
+            - ongoing
           description: Для квартиры пользователя; null — пользователь не житель этого дома
         single:
           type:
@@ -2314,6 +2324,7 @@ components:
         - displayStatus
         - startedAt
         - uk
+        - preliminary
         - my
         - single
         - month
@@ -2555,6 +2566,9 @@ components:
                 - resolvedAt
                 - durationMinutes
               description: По отметке УК «Устранено»
+            preliminary:
+              type: boolean
+              description: "Авария ещё не закрыта («Проверяем», «Расхождение»): итог на текущий момент"
             my:
               type:
                 - object
@@ -2564,17 +2578,24 @@ components:
                   type: integer
                   exclusiveMinimum: 0
                 restoredAt:
-                  $ref: "#/components/schemas/DateTime"
+                  type: string
+                  format: date-time
+                  description: Когда услуга вернулась; при ongoing — текущий момент
+                  example: 2026-09-27T14:40:00Z
                 durationMinutes:
                   type: integer
                   minimum: 0
                 source:
                   $ref: "#/components/schemas/RestoredSource"
+                ongoing:
+                  type: boolean
+                  description: "Житель ответил «Нет» и восстановление не подтвердил: перерыв ещё идёт"
               required:
                 - flatNo
                 - restoredAt
                 - durationMinutes
                 - source
+                - ongoing
               description: Для квартиры пользователя; null — пользователь не житель этого дома
             single:
               type:
@@ -2720,6 +2741,7 @@ components:
             - displayStatus
             - startedAt
             - uk
+            - preliminary
             - my
             - single
             - month
@@ -5060,6 +5082,7 @@ paths:
     get:
       operationId: getIncidentResult
       summary: Итог аварии
+      description: "После закрытия — итог; в статусах «Проверяем» и «Расхождение» — предварительный итог на текущий момент (`preliminary: true`). До «Устранено» — 409 `incident_not_closed`."
       tags:
         - incidents
       security:

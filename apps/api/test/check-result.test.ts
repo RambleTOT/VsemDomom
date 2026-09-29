@@ -202,7 +202,8 @@ describe.skipIf(!url)('проверка после «Устранено», ра�
   it('правило (б): окно проверки прошло без «Нет» — закрытие по таймеру', async () => {
     const heat = await report('heating');
     await status(heat.id, { status: 'resolved' });
-    expect((await api.call<Problem>('GET', `/api/v1/incidents/${heat.id}/result`, { token: tokens[A] })).body.code).toBe('incident_not_closed');
+    // До закрытия итог предварительный (на текущий момент).
+    expect((await api.call<{ preliminary: boolean }>('GET', `/api/v1/incidents/${heat.id}/result`, { token: tokens[A] })).body.preliminary).toBe(true);
     // В модельном доме в демо-режиме окно проверки — DEMO_CHECK_WINDOW_MIN (5 минут).
     await api.advance(6 * MIN);
     const closed = await row(heat.id);

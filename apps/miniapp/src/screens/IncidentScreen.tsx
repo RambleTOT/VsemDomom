@@ -119,6 +119,11 @@ function IncidentBody({ incident }: { incident: IncidentDetail }) {
     <Button size="large" stretched onClick={() => void navigate(`/incident/${incident.id}/result`)}>
       {t('screen.S05.result_cta')}
     </Button>
+  ) : incident.status === 'checking' || incident.status === 'discrepancy' ? (
+    // До закрытия — предварительный итог на текущий момент (TZ F09): перерасчёт можно прикинуть заранее.
+    <Button size="large" stretched variant="secondary" onClick={() => void navigate(`/incident/${incident.id}/result`)}>
+      {t('screen.S05.result_preliminary_cta')}
+    </Button>
   ) : undefined;
 
   const answer = me?.restoredAnswer ?? null;

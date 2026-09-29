@@ -11,6 +11,7 @@
   },
   "displayStatus": "closed",
   "startedAt": "2026-09-27T14:40:00Z",
+  "preliminary": false,
   "uk": {
     "resolvedAt": "2026-09-27T16:10:00Z",
     "durationMinutes": 90
@@ -19,7 +20,8 @@
     "flatNo": 57,
     "restoredAt": "2026-09-27T20:20:00Z",
     "durationMinutes": 340,
-    "source": "resident_answer"
+    "source": "resident_answer",
+    "ongoing": false
   },
   "single": {
     "limitMinutes": 240,

@@ -278,12 +278,14 @@ export const ResultSchema = z
     uk: z
       .object({ resolvedAt: DateTime, durationMinutes: z.int().nonnegative() })
       .meta({ description: 'По отметке УК «Устранено»' }),
+    preliminary: z.boolean().meta({ description: 'Авария ещё не закрыта («Проверяем», «Расхождение»): итог на текущий момент' }),
     my: z
       .object({
         flatNo: z.int().positive(),
-        restoredAt: DateTime,
+        restoredAt: DateTime.meta({ description: 'Когда услуга вернулась; при ongoing — текущий момент' }),
         durationMinutes: z.int().nonnegative(),
         source: RestoredSourceSchema,
+        ongoing: z.boolean().meta({ description: 'Житель ответил «Нет» и восстановление не подтвердил: перерыв ещё идёт' }),
       })
       .nullable()
       .meta({ description: 'Для квартиры пользователя; null — пользователь не житель этого дома' }),

@@ -126,7 +126,10 @@ export async function resultView(db: Reader, b: IncidentBundle, viewer: Incident
   const { summary, intervals } = await outcomeFor(db, b, flatNo, r.month, now, lim);
   const mine = viewer.residency ? b.participants.find((p) => p.userId === viewer.userId) : undefined;
   const affectsMe = viewer.residency !== null && (mine?.affected === true || (mine === undefined && summary.intervals.length > 0));
-  const restoredAt = mine?.restoredAt ?? r.resolvedAt;
+  const preliminary = inc.status !== 'closed';
+  // Предварительный итог: ответил «Нет» и не подтвердил восстановление — перерыв идёт до текущего момента (как в интервалах месяца).
+  const ongoing = preliminary && mine?.affected === true && mine.restoredAt === null && mine.restoredAnswer === 'no';
+  const restoredAt = ongoing ? now : (mine?.restoredAt ?? r.resolvedAt);
   // Единовременный лимит — про эту аварию: её непрерывный перерыв (вместе с пересекающимися), а не самый длинный за месяц.
   const own = interruptionAround(intervals, { start: inc.startedAt, end: affectsMe ? restoredAt : r.resolvedAt });
   const ownMs = own ? own.end.getTime() - own.start.getTime() : 0;
@@ -136,10 +139,17 @@ export async function resultView(db: Reader, b: IncidentBundle, viewer: Incident
     house: { id: b.house.publicId, label: b.house.label, address: b.house.address, timezone: b.house.timezone, entrances: b.house.entrances, isModel: b.house.isModel },
     displayStatus: displayStatus(inc.status, inc.discrepancyUnresolved),
     startedAt: iso(inc.startedAt),
+    preliminary,
     uk: { resolvedAt: iso(r.resolvedAt), durationMinutes: minutes(r.resolvedAt.getTime() - inc.startedAt.getTime()) },
     my:
       affectsMe && flatNo !== null
-        ? { flatNo, restoredAt: iso(restoredAt), durationMinutes: minutes(restoredAt.getTime() - inc.startedAt.getTime()), source: mine?.restoredSource ?? 'uk_mark' }
+        ? {
+            flatNo,
+            restoredAt: iso(restoredAt),
+            durationMinutes: minutes(restoredAt.getTime() - inc.startedAt.getTime()),
+            source: mine?.restoredSource ?? 'uk_mark',
+            ongoing,
+          }
         : null,
     single:
       lim.single && lim.single.ms !== null

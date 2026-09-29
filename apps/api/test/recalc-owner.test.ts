@@ -107,6 +107,30 @@ describe.skipIf(!url)('перерасчёт, заявление в личку, �
       expect(res.body).toMatchObject({ withinNorm: true, amount: 0, excessHours: 0, excessMinutes: 0, totalMinutes: 60, limitMinutes: 480 });
       expect(plain(res.body.formula)).toBe('Перерасчёт не положен: перерывы за месяц в пределах 8 ч');
     });
+
+    it('итог до закрытия: до «Устранено» — 409; «Проверяем» и «Расхождение» — предварительный на текущий момент', async () => {
+      type Res = Problem & { preliminary: boolean; my: { durationMinutes: number; source: string; ongoing: boolean; restoredAt: string } | null };
+      const heat = await api.call<IncidentDetail>('POST', '/api/v1/incidents', { token: tokens[B], body: { houseId: 'dom1model1', service: 'heating', scope: 'house', startedPreset: '1h' } });
+      const result = () => api.call<Res>('GET', `/api/v1/incidents/${heat.body.id}/result`, { token: tokens[B] });
+      const observe = (kind: string) => api.call('POST', `/api/v1/incidents/${heat.body.id}/observations`, { token: tokens[B], body: { kind } });
+      expect((await result()).body.code).toBe('incident_not_closed');
+
+      await api.call('POST', `/api/v1/uk/incidents/${heat.body.id}/status`, { token: uk, body: { status: 'resolved' } });
+      const checking = await result();
+      expect(checking.status).toBe(200);
+      expect(checking.body).toMatchObject({ preliminary: true, my: { durationMinutes: 60, source: 'uk_mark', ongoing: false } });
+
+      await observe('restored_no');
+      // Меньше окна проверки демо-дома (5 мин): остальные аварии этого файла не закрываются по таймеру.
+      api.clock.advance(3 * MIN);
+      const discrepancy = await result();
+      expect(discrepancy.body).toMatchObject({ preliminary: true, my: { durationMinutes: 63, ongoing: true, restoredAt: api.clock.now().toISOString() } });
+
+      await observe('restored_yes');
+      const closed = await result();
+      expect(closed.body).toMatchObject({ preliminary: false, my: { durationMinutes: 63, source: 'resident_answer', ongoing: false } });
+      api.clock.advance(-3 * MIN);
+    });
   });
 
   describe('заявление в личку', () => {
