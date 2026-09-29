@@ -32,8 +32,27 @@ export interface CheckQuestionInput {
   recheck: boolean;
   /** Авария закрыта: вопрос остаётся в чате без кнопок. */
   closedAt?: Date | null;
+  /** Актуальные ответы (после последнего «Устранено»): всплывающее уведомление MAX не показывает — счётчик виден всем. */
+  answers?: { yes: number; no: number; weak: number } | null;
   house: { timezone: string; isModel: boolean };
   now: Date;
+}
+
+/** «Ответили: «Да, есть» — 2, «Нет» — 1…»; null — ответов ещё нет. */
+function answersLine(input: CheckQuestionInput, t: Translator): string | null {
+  const a = input.answers;
+  if (!a) return null;
+  const bad = restoreBadLabel(input.service, t);
+  const parts: [string | null, number][] = [
+    [t.t('restore.answer.yes'), a.yes],
+    [t.t('restore.answer.no'), a.no],
+    [bad, a.weak],
+  ];
+  const list = parts
+    .filter((p): p is [string, number] => p[0] !== null && p[1] > 0)
+    .map(([label, count]) => t.t('bot.restore.answers.item', { label, count }))
+    .join(', ');
+  return list ? t.t('bot.restore.answers', { list }) : null;
 }
 
 export function renderCheckQuestion(input: CheckQuestionInput, t: Translator): BotMessage {
@@ -54,7 +73,7 @@ export function renderCheckQuestion(input: CheckQuestionInput, t: Translator): B
   const bad = BAD_LABEL[input.service];
   if (bad) keyboard.push([{ type: 'callback', text: t.t(bad), payload: encodeCallback('restore', id, 'weak') }]);
   return {
-    text: lines(question, input.recheck ? t.t('bot.restore.recheck', { time }) : t.t('bot.restore.meta', { time }), footer),
+    text: lines(question, input.recheck ? t.t('bot.restore.recheck', { time }) : t.t('bot.restore.meta', { time }), answersLine(input, t), footer),
     format: 'markdown',
     keyboard,
   };

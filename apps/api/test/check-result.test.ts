@@ -89,10 +89,14 @@ describe.skipIf(!url)('проверка после «Устранено», ра�
     });
 
     it('«Да» — ответ сохранён; «Нет» — расхождение, карточка, инструкция в личку с нормами из справочника', async () => {
+      // MAX не показывает всплывающее уведомление ответа — нажавший видит счётчик под вопросом.
+      const answeredLine = async () => messageText((await cardRow(hot.id)).checkMid)?.split('\n')[2];
       await press(A, hot.id, 'Да, есть');
       expect(answers().at(-1)).toBe('Ответ сохранён. Его можно изменить — считается последний');
+      expect(await answeredLine()).toBe('Ответили: «Да, есть» — 1. Ответ можно изменить — считается последний');
       await press(B, hot.id, 'Нет');
       expect(answers().at(-1)).toBe('Ответ «Нет» сохранён. В личку придёт подсказка, как сообщить в АДС');
+      expect(await answeredLine()).toBe('Ответили: «Да, есть» — 1, «Нет» — 1. Ответ можно изменить — считается последний');
       expect((await row(hot.id)).status).toBe('discrepancy');
       expect(messageText((await cardRow(hot.id)).mid)?.split('\n').slice(0, 2)).toEqual([
         '**⚠️ Горячая вода · у 1 квартиры воды нет**',
@@ -257,7 +261,10 @@ describe.skipIf(!url)('проверка после «Устранено», ра�
     const message = api.max.messages.get(card.mid!)!.message;
     await api.deliver(updates.callback(A, callbackPayload(message, 'Подтверждаю'), { chatId: CHAT, chatType: 'chat' }, card.mid!));
     expect(answers().at(-1)).toBe('Спасибо, отметили. Когда подтвердят и соседи из других квартир, это появится в хронологии');
+    // Нажатие видно в карточке: всплывающее уведомление MAX не показывает.
+    expect(messageText(card.mid)?.split('\n')).toContain('Бригаду отметили: «Подтверждаю» — 1');
     await api.deliver(updates.callback(B, callbackPayload(message, 'Подтверждаю'), { chatId: CHAT, chatType: 'chat' }, card.mid!));
+    expect(messageText(card.mid)?.split('\n')).toContain('Бригаду отметили: «Подтверждаю» — 2');
     const detail = await api.call<IncidentDetail>('GET', `/api/v1/incidents/${sewer.id}`, { token: tokens[A] });
     expect(detail.body.timeline.find((e) => e.type === 'residents_brigade_confirmed')?.payload).toEqual({ flats: 2 });
     expect(detail.body.counters.brigade).toEqual({ confirmed: 2, absent: 0 });

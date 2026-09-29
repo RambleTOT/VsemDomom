@@ -5,6 +5,7 @@
  */
 import { flatLocation, type EventSource } from '@vsemdomom/core';
 import { and, eq, isNotNull } from 'drizzle-orm';
+import { cardLater } from '../chat/card.ts';
 import { PARAMS } from '../config/params.ts';
 import { house, incident, incidentEvent, incidentParticipant, maxUser, residency } from '../db/schema.ts';
 import type { JobContext } from '../jobs/context.ts';
@@ -59,6 +60,8 @@ export async function observeBrigade(ctx: JobContext, input: { incidentId: numbe
         await tx.insert(incidentEvent).values({ incidentId: inc.id, type, actorType: 'resident', source: input.source, payload: { flats }, occurredAt: now });
       }
     }
+    // Счётчик «Бригаду отметили» в карточке — видимый ответ на нажатие.
+    await cardLater(ctx.queue, inc.id, tx);
     return 'saved';
   });
 }

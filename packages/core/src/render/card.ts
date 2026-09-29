@@ -46,6 +46,8 @@ export interface CardInput {
   mergedIntoPublicId: string | null;
   /** FEATURE_BRIGADE_CONFIRM: кнопки «Подтверждаю» / «Бригады нет». */
   brigadeConfirm: boolean;
+  /** «Подтверждаю» / «Бригады нет» — сколько жителей отметили (в статусе «бригада на месте»). */
+  brigadeMarks?: { yes: number; no: number } | null;
   /** DISCREPANCY_MAX_HOURS — для текста «За 72 ч … не пришло». */
   discrepancyMaxHours: number;
   /** Время последнего изменения (не «сейчас»: иначе каждая правка отличалась бы). */
@@ -176,6 +178,21 @@ function sinceLine(input: CardInput, t: Translator): string {
   return t.t('bot.card.since', { ...base, by_entrance: list });
 }
 
+/** Отметки жителей о бригаде: всплывающее уведомление MAX не показывает — нажавший видит счётчик. */
+function brigadeLine(input: CardInput, t: Translator): string | null {
+  const marks = input.brigadeMarks;
+  if (input.incident.status !== 'brigade_on_site' || !input.brigadeConfirm || !marks) return null;
+  const parts: [string, number][] = [
+    [t.t('bot.card.btn.crew_yes'), marks.yes],
+    [t.t('bot.card.btn.crew_no'), marks.no],
+  ];
+  const list = parts
+    .filter(([, count]) => count > 0)
+    .map(([label, count]) => t.t('bot.restore.answers.item', { label, count }))
+    .join(', ');
+  return list ? t.t('bot.card.brigade_marks', { list }) : null;
+}
+
 function joinKeyboard(input: CardInput, t: Translator): Keyboard {
   const id = input.incident.publicId;
   const notMe: KeyboardButton = { type: 'callback', text: t.t('bot.card.btn.not_me'), payload: encodeCallback('notme', id) };
@@ -230,7 +247,7 @@ export function renderCard(input: CardInput, t: Translator): BotMessage {
         : t.t('bot.card.ask.other', { service_no_lower: lowerFirst(serviceNo(t, incident.service)) });
   const unconfirmed = input.counts.unconfirmed > 0 ? t.t('bot.card.unconfirmed', { count: input.counts.unconfirmed }) : null;
   return {
-    text: lines(bold(l1), l2, sinceLine(input, t), unconfirmed, ask, footer),
+    text: lines(bold(l1), l2, sinceLine(input, t), unconfirmed, brigadeLine(input, t), ask, footer),
     format: 'markdown',
     keyboard: joinKeyboard(input, t),
   };

@@ -40,6 +40,7 @@ export async function loadCardInput(db: Reader, ctx: JobContext, incidentId: num
       userId: incidentParticipant.userId,
       answer: incidentParticipant.restoredAnswer,
       answeredAt: incidentParticipant.restoredAnswerAt,
+      brigadeSeen: incidentParticipant.brigadeSeen,
     })
     .from(incidentParticipant)
     .leftJoin(residency, eq(residency.id, incidentParticipant.residencyId))
@@ -89,6 +90,10 @@ export async function loadCardInput(db: Reader, ctx: JobContext, incidentId: num
     unconfirmedRestoreFlats: inc.discrepancyUnresolved ? discrepancyFlats : 0,
     mergedIntoPublicId: merged?.publicId ?? null,
     brigadeConfirm: ctx.config.features.brigadeConfirm,
+    brigadeMarks:
+      inc.status === 'brigade_on_site'
+        ? { yes: participants.filter((p) => p.brigadeSeen === true).length, no: participants.filter((p) => p.brigadeSeen === false).length }
+        : null,
     discrepancyMaxHours: ctx.config.discrepancyMaxHours,
     updatedAt: last?.at ? new Date(last.at) : inc.createdAt,
     botUsername: ctx.config.max.botUsername,
@@ -118,6 +123,16 @@ async function checkQuestionJob(ctx: JobContext, card: typeof chatCard.$inferSel
     .from(incidentEvent)
     .where(and(eq(incidentEvent.incidentId, card.incidentId), eq(incidentEvent.type, 'check_repeated')))
     .limit(1);
+  // Ответы после последнего «Устранено»: счётчик под вопросом вместо всплывающего уведомления.
+  const checkStartedAt = row.incident.checkStartedAt;
+  const actual = checkStartedAt
+    ? (
+        await ctx.db
+          .select({ answer: incidentParticipant.restoredAnswer, answeredAt: incidentParticipant.restoredAnswerAt })
+          .from(incidentParticipant)
+          .where(eq(incidentParticipant.incidentId, card.incidentId))
+      ).filter((p) => isActualAnswer(p, checkStartedAt))
+    : [];
   const message = renderCheckQuestion(
     {
       incidentPublicId: row.incident.publicId,
@@ -125,6 +140,11 @@ async function checkQuestionJob(ctx: JobContext, card: typeof chatCard.$inferSel
       resolvedAt: row.incident.resolvedAtUk,
       recheck: repeat !== undefined,
       closedAt: row.incident.status === 'closed' ? row.incident.closedAt : null,
+      answers: {
+        yes: actual.filter((p) => p.answer === 'yes').length,
+        no: actual.filter((p) => p.answer === 'no').length,
+        weak: actual.filter((p) => p.answer === 'weak').length,
+      },
       house: { timezone: row.house.timezone, isModel: row.house.isModel },
       now: ctx.clock.now(),
     },

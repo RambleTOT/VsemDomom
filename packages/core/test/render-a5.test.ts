@@ -196,6 +196,23 @@ describe('C02 — карточка аварии', () => {
     expect(accepted.keyboard.flat().map((b) => b.text)).not.toContain('Подтверждаю');
   });
 
+  it('«Бригада на месте»: отметки жителей — счётчиком в карточке, без имён', () => {
+    const m = renderCard(card({ incident: { status: 'brigade_on_site', brigadeOnSiteAt: at('17:55') }, brigadeMarks: { yes: 2, no: 1 } }), t);
+    assertGroupSafe(m);
+    const rows = m.text.split('\n');
+    expect(rows.slice(2, 5)).toEqual([
+      'С 17:40 · отметились 11 жителей: подъезд 2 — 6, подъезд 3 — 5',
+      'Из них не подтверждены: 2',
+      'Бригаду отметили: «Подтверждаю» — 2, «Бригады нет» — 1',
+    ]);
+    const one = renderCard(card({ incident: { status: 'brigade_on_site', brigadeOnSiteAt: at('17:55') }, brigadeMarks: { yes: 0, no: 1 } }), t);
+    expect(one.text.split('\n')).toContain('Бригаду отметили: «Бригады нет» — 1');
+    const none = renderCard(card({ incident: { status: 'brigade_on_site', brigadeOnSiteAt: at('17:55') }, brigadeMarks: { yes: 0, no: 0 } }), t);
+    expect(none.text).not.toContain('Бригаду отметили');
+    const off = renderCard(card({ incident: { status: 'brigade_on_site', brigadeOnSiteAt: at('17:55') }, brigadeConfirm: false, brigadeMarks: { yes: 2, no: 0 } }), t);
+    expect(off.text).not.toContain('Бригаду отметили');
+  });
+
   it('«Закрыта в норматив»: строки 3 и 6 остаются, клавиатура — «Итог и перерасчёт»', () => {
     const m = renderCard(card({ incident: { status: 'closed', resolvedAtUk: at('19:10') }, now: at('20:00') }), t);
     assertGroupSafe(m);
@@ -302,6 +319,22 @@ describe('C03 — вопрос о восстановлении', () => {
     expect(sewer.text.split('\n')[0]).toBe('**Канализация работает?**');
     const again = renderCheckQuestion({ ...base, service: 'hot_water', recheck: true, resolvedAt: at('21:05'), now: at('21:06') }, t);
     expect(again.text.split('\n')[1]).toBe('Повторная проверка, УК: 21:05');
+  });
+
+  it('ответы уже есть — счётчик по кнопкам: нажавший видит, что ответ принят (всплывающее уведомление MAX не показывает)', () => {
+    const m = renderCheckQuestion({ ...base, service: 'electricity', answers: { yes: 2, no: 1, weak: 0 } }, t);
+    assertGroupSafe(m);
+    expect(m.text.split('\n')).toEqual([
+      '**Свет есть?**',
+      'УК отметила устранение в 19:10. Ответ поможет увидеть, у всех ли всё в порядке.',
+      'Ответили: «Да, есть» — 2, «Нет» — 1. Ответ можно изменить — считается последний',
+      'Модельные данные',
+    ]);
+    const weak = renderCheckQuestion({ ...base, service: 'hot_water', answers: { yes: 0, no: 0, weak: 1 } }, t);
+    expect(weak.text.split('\n')[2]).toBe('Ответили: «Есть, но плохая» — 1. Ответ можно изменить — считается последний');
+    expect(renderCheckQuestion({ ...base, service: 'hot_water', answers: { yes: 0, no: 0, weak: 0 } }, t).text).not.toContain('Ответили');
+    const closed = renderCheckQuestion({ ...base, service: 'hot_water', answers: { yes: 3, no: 0, weak: 0 }, closedAt: at('19:40'), now: at('19:41') }, t);
+    expect(closed.text).not.toContain('Ответили');
   });
 
   it('авария закрыта — вопрос без кнопок: ответы больше не принимаются', () => {
