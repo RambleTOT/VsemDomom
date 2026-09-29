@@ -18,6 +18,12 @@ const BAD_LABEL: Partial<Record<ServiceType, string>> = {
   electricity: 'restore.answer.bad.power',
 };
 
+/** Подпись ответа «есть, но плохо» для услуги; null — у услуги такого ответа нет. */
+export function restoreBadLabel(service: ServiceType, t: Translator): string | null {
+  const key = BAD_LABEL[service];
+  return key ? t.t(key) : null;
+}
+
 export interface CheckQuestionInput {
   incidentPublicId: string;
   service: ServiceType;

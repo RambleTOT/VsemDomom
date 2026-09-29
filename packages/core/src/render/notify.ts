@@ -155,3 +155,27 @@ export function renderNoWater(input: NoWaterInput, t: Translator): BotMessage {
     keyboard: rows,
   };
 }
+
+export interface WeakQualityInput {
+  service: ServiceType;
+  /** Подпись ответа «есть, но плохо» для этой услуги: «Есть, но плохая», «Чуть тёплые». */
+  answerLabel: string;
+  adsPhone: string;
+  /** Через сколько часов в чат придёт опрос «Как вода сейчас?»; null — опроса не будет. */
+  pollHours: number | null;
+  isModel: boolean;
+}
+
+/** Ответ «есть, но плохо» (F07 → F14): восстановлением считается, о качестве можно сообщить в АДС. */
+export function renderWeakQuality(input: WeakQualityInput, t: Translator): BotMessage {
+  return {
+    text: lines(
+      t.t('bot.dm.weak.l1', { answer: input.answerLabel }),
+      t.t('bot.dm.weak.l2', { phone: escapeMarkdown(input.adsPhone) }),
+      input.pollHours !== null ? t.t('bot.dm.weak.poll', { hours: input.pollHours }) : null,
+      input.isModel ? t.t('bot.footer') : null,
+    ),
+    format: 'markdown',
+    keyboard: [[{ type: 'clipboard', text: t.t('report.ads.copy'), payload: input.adsPhone }]],
+  };
+}

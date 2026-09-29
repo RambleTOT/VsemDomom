@@ -12,6 +12,8 @@ import {
   nextCheckDeadline,
   normDurationMs,
   renderNoWater,
+  renderWeakQuality,
+  restoreBadLabel,
   renderResult,
   selectNorm,
   transition,
@@ -200,6 +202,32 @@ async function instructAnswerer(tx: Tx, ctx: JobContext, inc: IncidentRow, h: Ho
   return true;
 }
 
+/** Ответ «есть, но плохо»: подсказка про АДС и опрос о качестве; одна на проверку. */
+async function offerQualityReport(tx: Tx, ctx: JobContext, inc: IncidentRow, h: HouseRow, userId: number): Promise<void> {
+  const [user] = await tx.select({ dialogActive: maxUser.dialogActive }).from(maxUser).where(eq(maxUser.id, userId));
+  const label = restoreBadLabel(inc.serviceType, ctx.i18n);
+  if (!user?.dialogActive || !label) return;
+  const [uk] = await tx.select({ adsPhone: managementCompany.adsPhone }).from(managementCompany).where(eq(managementCompany.id, h.ukId));
+  const water = inc.serviceType === 'cold_water' || inc.serviceType === 'hot_water';
+  const message = renderWeakQuality(
+    {
+      service: inc.serviceType,
+      answerLabel: label,
+      adsPhone: uk?.adsPhone ?? '',
+      pollHours: water && ctx.config.features.polls ? ctx.config.waterQualityPollDelayHours : null,
+      isModel: h.isModel,
+    },
+    ctx.i18n,
+  );
+  await enqueueOutbound(tx, ctx.queue, {
+    kind: 'dm',
+    idempotencyKey: `weak:${inc.id}:${userId}:${inc.checkStartedAt?.getTime() ?? 0}`,
+    target: { userId },
+    message,
+    incidentId: inc.id,
+  });
+}
+
 export type AnswerResult = { status: 'saved'; to: IncidentStatus | null; instructed: boolean } | { status: 'not_checking' };
 
 /**
@@ -271,6 +299,8 @@ export async function answerCheck(
     const to = command ? await applyCheckCommand(tx, ctx, inc, h, command, now) : null;
     if (!to) await cardLater(ctx.queue, inc.id, tx);
     const instructed = input.answer === 'no' && (to ?? inc.status) !== 'closed' ? await instructAnswerer(tx, ctx, inc, h, input.userId) : false;
+    // «Есть, но плохо» — восстановление, но с плохим качеством: подсказать, куда сообщить (F07 → F14). Демо-соседям не пишем.
+    if (input.answer === 'weak' && !p.isModel) await offerQualityReport(tx, ctx, inc, h, input.userId);
     return { status: 'saved', to, instructed };
   });
 }

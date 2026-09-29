@@ -183,6 +183,21 @@ describe.skipIf(!url)('проверка после «Устранено», ра�
     });
   });
 
+  it('«Есть, но плохая» — восстановление; ответившему в личку — куда сообщить о качестве', async () => {
+    const cold = await report('cold_water');
+    await status(cold.id, { status: 'resolved' });
+    const res = await api.call<IncidentDetail>('POST', `/api/v1/incidents/${cold.id}/observations`, { token: tokens[A], body: { kind: 'restored_weak' } });
+    expect(res.body.status).toBe('closed');
+    await api.drain();
+    const dm = dmMessages(api, A).find((m) => m.text.startsWith('Отметили ваш ответ: «Есть, но плохая»'));
+    expect(dm?.text.split('\n')).toEqual([
+      'Отметили ваш ответ: «Есть, но плохая». Это считается восстановлением',
+      'Если качество не наладится, сообщите в АДС: +7 (000) 000-00-01 — о плохом качестве тоже составляют акт проверки',
+      'Через 3 ч после закрытия в чате дома будет опрос «Как вода сейчас?»',
+      'Модельные данные',
+    ]);
+  });
+
   it('правило (а): все жители уровня 1–2 ответили «Да» — закрытие сразу', async () => {
     const cold = await report('cold_water');
     const checking = await status(cold.id, { status: 'resolved' });
