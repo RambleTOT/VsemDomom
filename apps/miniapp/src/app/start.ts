@@ -26,7 +26,7 @@ export function routeForStart(startParam: string | null, me: Pick<Me, 'staff' | 
     case 'incident':
       return staff ? `/uk/incident/${id}` : `/incident/${id}`;
     case 'house':
-      return staff ? `/uk/houses/${id}` : `/house/${id}`;
+      return staff && !me.residencies.some((r) => r.house.id === id) ? `/uk/houses/${id}` : `/house/${id}`;
     case 'result':
       return staffOnly ? `/uk/incident/${id}` : `/incident/${id}/result`;
     case 'act':

@@ -1,14 +1,14 @@
 /** S07. Итог: сколько не было услуги в квартире, месячная норма (от неё зависит перерасчёт), кто может оформить. */
 import { Button } from '@maxhub/max-ui';
-import type { Result } from '@vsemdomom/shared';
+import type { IncidentDetail, Result } from '@vsemdomom/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import { ApiError } from '../api/client.ts';
 import { api } from '../api/endpoints.ts';
-import { copyText } from '../bridge/webapp.ts';
 import { NormBasisLink } from '../components/norm.tsx';
 import { Screen } from '../components/Screen.tsx';
 import { useToast } from '../components/Toast.tsx';
+import { useCopy } from '../components/useCopy.ts';
 import { Card } from '../components/ui.tsx';
 import { dayMonthIn, minutesText, monthOfKey, timeIn, whenIn } from '../format.ts';
 import { plural, serviceGen, serviceName, t } from '../i18n.ts';
@@ -60,6 +60,8 @@ function ResultBody({ result }: { result: Result }) {
   const session = useSession();
   const toast = useToast();
   const client = useQueryClient();
+  const copy = useCopy();
+  const incidentQuery = useQuery({ queryKey: ['incident', result.incidentId], queryFn: () => api.incident(result.incidentId) });
   const tz = result.house.timezone;
   const my = result.my;
   const ukTime = timeIn(result.uk.resolvedAt, tz);
@@ -69,8 +71,9 @@ function ResultBody({ result }: { result: Result }) {
 
   const copyTimeline = async () => {
     try {
-      const incident = await client.fetchQuery({ queryKey: ['incident', result.incidentId], queryFn: () => api.incident(result.incidentId) });
-      if (await copyText(timelineText(incident))) toast(t('screen.S07.copied'));
+      // Хронология загружена заранее: копирование идёт прямо в обработчике нажатия (Safari требует жест пользователя).
+      const incident: IncidentDetail = incidentQuery.data ?? (await client.fetchQuery({ queryKey: ['incident', result.incidentId], queryFn: () => api.incident(result.incidentId) }));
+      await copy(timelineText(incident), t('screen.S07.copied'));
     } catch (err) {
       toast(errorText(err, t('error.network.title')), 'error');
     }

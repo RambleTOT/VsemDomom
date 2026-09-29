@@ -9,11 +9,12 @@ import { useState } from 'react';
 import { useParams } from 'react-router';
 import { ApiError } from '../api/client.ts';
 import { api } from '../api/endpoints.ts';
-import { copyText, openMaxLink } from '../bridge/webapp.ts';
+import { openMaxLink } from '../bridge/webapp.ts';
 import { SystemScreen } from '../components/errors.tsx';
 import { NormBasisLink } from '../components/norm.tsx';
 import { Screen } from '../components/Screen.tsx';
 import { useToast } from '../components/Toast.tsx';
+import { useCopy } from '../components/useCopy.ts';
 import { Banner, Card, Chip, KeyValue, Muted } from '../components/ui.tsx';
 import { dayMonthIn, whenIn } from '../format.ts';
 import { plural, serviceName, t } from '../i18n.ts';
@@ -26,6 +27,7 @@ const REFRESH_MS = 30_000;
 function ActBody({ incident, act }: { incident: IncidentDetail; act: ActInfo }) {
   const session = useSession();
   const toast = useToast();
+  const copy = useCopy();
   const client = useQueryClient();
   const [busy, setBusy] = useState<string | null>(null);
   const [botBlocked, setBotBlocked] = useState(false);
@@ -60,9 +62,7 @@ function ActBody({ incident, act }: { incident: IncidentDetail; act: ActInfo }) 
     }
   };
 
-  const copy = async () => {
-    if (await copyText(template)) toast(t('screen.S09.copied'));
-  };
+  const copyTemplate = () => void copy(template, t('screen.S09.copied'));
 
   return (
     <Screen
@@ -76,7 +76,7 @@ function ActBody({ incident, act }: { incident: IncidentDetail; act: ActInfo }) 
             <Button size="large" stretched loading={busy === 'dm'} onClick={() => void send()}>
               {t('screen.S09.send')}
             </Button>
-            <Button size="large" stretched variant="secondary" onClick={() => void copy()}>
+            <Button size="large" stretched variant="secondary" onClick={copyTemplate}>
               {t('common.copy')}
             </Button>
           </>
@@ -90,7 +90,7 @@ function ActBody({ incident, act }: { incident: IncidentDetail; act: ActInfo }) 
             >
               {t('screen.S09.cta')}
             </Button>
-            <Button size="large" stretched variant="secondary" onClick={() => void copy()}>
+            <Button size="large" stretched variant="secondary" onClick={copyTemplate}>
               {t('common.copy')}
             </Button>
           </>

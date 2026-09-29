@@ -5,12 +5,13 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useId, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { api } from '../api/endpoints.ts';
-import { copyText, isWebPlatform, openLink } from '../bridge/webapp.ts';
+import { isWebPlatform, openLink } from '../bridge/webapp.ts';
 import { DeadlineList, EntranceCounter, IncidentHero, StatusStepper, Timeline } from '../components/incident.tsx';
 import { headlineText } from '../texts.ts';
 import { Screen } from '../components/Screen.tsx';
 import { Sheet } from '../components/Sheet.tsx';
 import { useToast } from '../components/Toast.tsx';
+import { useCopy } from '../components/useCopy.ts';
 import { NormBasisLink } from '../components/norm.tsx';
 import { Banner, Card, SectionTitle } from '../components/ui.tsx';
 import { whenIn } from '../format.ts';
@@ -72,6 +73,7 @@ function IncidentBody({ incident }: { incident: IncidentDetail }) {
   const session = useSession();
   const navigate = useNavigate();
   const toast = useToast();
+  const copy = useCopy();
   const client = useQueryClient();
   const { busy, run } = useIncidentAction(incident);
   const [adsOpen, setAdsOpen] = useState<'first' | 'rereport' | null>(null);
@@ -102,7 +104,7 @@ function IncidentBody({ incident }: { incident: IncidentDetail }) {
 
   const actions = BEFORE_RESOLVE.has(incident.status) ? (
     web ? (
-      <Button size="large" stretched onClick={() => void copyText(phone).then((ok) => ok && toast(t('report.ads.copied')))}>
+      <Button size="large" stretched onClick={() => void copy(phone, t('report.ads.copied'))}>
         {t('report.ads.copy')}
       </Button>
     ) : (

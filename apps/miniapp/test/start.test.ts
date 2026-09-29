@@ -31,6 +31,9 @@ describe('экран по payload запуска', () => {
     expect(routeForStart(`r_${ID}`, both)).toBe(`/incident/${ID}/result`);
     expect(routeForStart(`a_${ID}`, both)).toBe(`/incident/${ID}/act`);
     expect(routeForStart(`i_${ID}`, both)).toBe(`/uk/incident/${ID}`);
+    // «Мой дом» из меню жителя — свой дом как житель; чужой дом УК — экран УК.
+    expect(routeForStart('h_dom1model1', both)).toBe('/house/dom1model1');
+    expect(routeForStart(`h_${ID}`, both)).toBe(`/uk/houses/${ID}`);
   });
 
   it('без payload — корень роли', () => {

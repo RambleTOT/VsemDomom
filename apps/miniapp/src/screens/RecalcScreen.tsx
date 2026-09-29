@@ -10,11 +10,12 @@ import { useEffect, useId, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { ApiError } from '../api/client.ts';
 import { api } from '../api/endpoints.ts';
-import { copyText, openMaxLink, requestContact, setClosingConfirmation, shareMaxContent } from '../bridge/webapp.ts';
+import { openMaxLink, requestContact, setClosingConfirmation, shareMaxContent } from '../bridge/webapp.ts';
 import { Icon } from '../components/Icon.tsx';
 import { NormBasisLink } from '../components/norm.tsx';
 import { Screen } from '../components/Screen.tsx';
 import { useToast } from '../components/Toast.tsx';
+import { useCopy } from '../components/useCopy.ts';
 import { Banner, Card, KeyValue, Muted } from '../components/ui.tsx';
 import { minutesText, monthOfKey, percent, rubles } from '../format.ts';
 import { lowerFirst, serviceKey, serviceNo, t } from '../i18n.ts';
@@ -98,6 +99,7 @@ function RecalcBody({ result, incident, house }: { result: Result; incident: Inc
   const navigate = useNavigate();
   const session = useSession();
   const toast = useToast();
+  const copy = useCopy();
   const amountId = useId();
   const fioId = useId();
   const phoneId = useId();
@@ -181,10 +183,7 @@ function RecalcBody({ result, incident, house }: { result: Result; incident: Inc
   };
 
   const copyStatement = async () => {
-    if (await copyText(statement)) {
-      setFinished(true);
-      toast(t('screen.S08.copied'));
-    }
+    if (await copy(statement, t('screen.S08.copied'))) setFinished(true);
   };
 
   const shareToOwner = async () => {
@@ -195,10 +194,7 @@ function RecalcBody({ result, incident, house }: { result: Result; incident: Inc
   };
 
   const copyLink = async () => {
-    if (share && (await copyText(share.link))) {
-      setFinished(true);
-      toast(t('screen.S08.share.copied'));
-    }
+    if (share && (await copy(share.link, t('screen.S08.share.copied')))) setFinished(true);
   };
 
   const fillPhone = async () => {

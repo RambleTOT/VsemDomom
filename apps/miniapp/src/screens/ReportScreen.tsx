@@ -10,12 +10,13 @@ import { useCallback, useEffect, useId, useMemo, useState, type ReactNode } from
 import { useNavigate, useSearchParams } from 'react-router';
 import { ApiError, newIdempotencyKey } from '../api/client.ts';
 import { api } from '../api/endpoints.ts';
-import { copyText, isWebPlatform, openLink, openMaxLink, setClosingConfirmation } from '../bridge/webapp.ts';
+import { isWebPlatform, openLink, openMaxLink, setClosingConfirmation } from '../bridge/webapp.ts';
 import { InlineError } from '../components/errors.tsx';
 import { Icon } from '../components/Icon.tsx';
 import { EntranceCounter, IncidentHeadline } from '../components/incident.tsx';
 import { Screen } from '../components/Screen.tsx';
 import { useToast } from '../components/Toast.tsx';
+import { useCopy } from '../components/useCopy.ts';
 import { Banner, Card, EmptyState, Muted, Skeleton } from '../components/ui.tsx';
 import { localInputValue, timeIn, whenIn } from '../format.ts';
 import { plural, serviceGen, serviceName, serviceNo, t } from '../i18n.ts';
@@ -78,6 +79,7 @@ export function ReportScreen() {
   const session = useSession();
   const navigate = useNavigate();
   const toast = useToast();
+  const copy = useCopy();
   const [params] = useSearchParams();
   const houseId = params.get('house') ?? session.me.residencies[0]?.house.id ?? '';
   const house = useQuery({ queryKey: ['house', houseId], queryFn: () => api.house(houseId), enabled: houseId !== '' });
@@ -458,7 +460,7 @@ export function ReportScreen() {
                 size="large"
                 stretched
                 variant="secondary"
-                onClick={() => void copyText(phone).then((ok) => ok && toast(t('report.ads.copied')))}
+                onClick={() => void copy(phone, t('report.ads.copied'))}
               >
                 {t('report.ads.copy')}
               </Button>
