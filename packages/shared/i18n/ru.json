@@ -613,7 +613,7 @@
   "bot.result.l1": "Итог: {service_lower}, Дом {house}",
   "bot.result.by_uk": "По отметке УК: {from}–{to}, {duration}",
   "bot.result.flats": "{joined} {count} {flats}. У {late} вода вернулась позже, в {time}",
-  "bot.result.month": "У этих {late} {flats} за {month} {total} перерывов при норме {limit}",
+  "bot.result.month": "У {late} {flats} за {month} до {total} перерывов при норме {limit}",
   "bot.result.can_apply": "Им можно подать заявление на перерасчёт",
   "bot.result.act": "Копию акта о нарушении качества выдают по запросу за 3 рабочих дня (ПП № 416, п. 34)",
   "bot.result.footer": "Это расчёт по нормам · Модельные данные",

@@ -90,7 +90,15 @@ function isPermanent(err: MaxApiError): boolean {
   return err.kind === 'bad_request' || err.kind === 'forbidden' || err.kind === 'not_found' || err.kind === 'unauthorized';
 }
 
-export async function sendOutbound(ctx: JobContext, data: { id: number }): Promise<'sent' | 'skipped' | 'failed'> {
+/**
+ * refreshCard — правка карточки аварии перед итогом: итог отвечает на карточку, а MAX цитирует её
+ * такой, какой она была в момент ответа. Обычная правка ждёт окна (debounce) и пришла бы позже итога.
+ */
+export async function sendOutbound(
+  ctx: JobContext,
+  data: { id: number },
+  refreshCard?: (incidentId: number) => Promise<unknown>,
+): Promise<'sent' | 'skipped' | 'failed'> {
   const [row] = await ctx.db.select().from(outboundMessage).where(eq(outboundMessage.id, data.id));
   if (!row || row.status === 'sent' || row.status === 'skipped' || !row.payload) return 'skipped';
   const payload = row.payload as unknown as StoredPayload;
@@ -98,6 +106,11 @@ export async function sendOutbound(ctx: JobContext, data: { id: number }): Promi
   if (!target) {
     await ctx.db.update(outboundMessage).set({ status: 'skipped', payload: null }).where(eq(outboundMessage.id, row.id));
     return 'skipped';
+  }
+  if (payload.afterSend.type === 'result' && refreshCard) {
+    const incidentId = payload.afterSend.incidentId;
+    // Не удалось — итог всё равно уходит, карточку поправит отложенная задача.
+    await refreshCard(incidentId).catch((err: unknown) => ctx.log.warn({ err, incidentId }, 'карточка перед итогом не обновлена'));
   }
   try {
     const { mid } = await ctx.max.sendMessage(target, payload.message);

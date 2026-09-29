@@ -135,6 +135,12 @@ describe.skipIf(!url)('проверка после «Устранено», ра�
       ]);
       const result = api.max.messages.get(c.resultMid!);
       expect(result?.message.replyToMid).toBe(c.mid);
+      // MAX цитирует карточку такой, какой она была в момент ответа: финальная правка — до итога.
+      const text = (body: unknown) => (body as { text?: string } | null)?.text ?? '';
+      const closedEdit = api.calls.calls.findIndex((x) => x.method === 'PUT' && text(x.body).startsWith('**✅ Закрыта · горячая вода есть**'));
+      const resultSent = api.calls.calls.findIndex((x) => x.method === 'POST' && x.path === '/messages' && text(x.body).startsWith('**Итог: горячая вода'));
+      expect(closedEdit).toBeGreaterThanOrEqual(0);
+      expect(closedEdit).toBeLessThan(resultSent);
       // Вопрос о восстановлении после закрытия — без кнопок (правка, не новое сообщение).
       const question = api.max.messages.get(c.checkMid!);
       expect(question?.message.keyboard).toEqual([]);

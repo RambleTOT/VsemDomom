@@ -68,7 +68,7 @@ export const botRouting: BotRouting = {
 export const botUpdateHandlers: UpdateHandlers = mergeHandlers(baseHandlers, createBotHandlers(botRouting));
 
 export const botJobHandlers: JobHandlers = {
-  [QUEUES.outbound]: (data: { id: number }, ctx) => sendOutbound(ctx, data),
+  [QUEUES.outbound]: (data: { id: number }, ctx) => sendOutbound(ctx, data, (incidentId) => cardJob(ctx, { incidentId })),
   [QUEUES.callbackAnswer]: (data: CallbackAnswerJob, ctx) => answerCallbackJob(ctx, data),
   [QUEUES.panelRender]: (data: PanelJob, ctx) => panelJob(ctx, data),
   [QUEUES.cardRender]: (data: { incidentId: number }, ctx) => cardJob(ctx, data),
