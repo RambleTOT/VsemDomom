@@ -210,11 +210,11 @@ function RecalcBody({ result, incident, house }: { result: Result; incident: Inc
         model={result.house.isModel}
         back={back}
         actions={
-          <Button size="large" stretched disabled={amount.trim() === ''} loading={busy === 'calc'} onClick={() => void calculate()}>
+          <Button size="large" stretched disabled={parseCharge(amount) === null} loading={busy === 'calc'} onClick={() => void calculate()}>
             {t('screen.S08.calc.cta')}
           </Button>
         }
-        actionsReason={amount.trim() === '' ? t('screen.S08.amount.error') : undefined}
+        actionsReason={parseCharge(amount) === null ? t('screen.S08.amount.error') : undefined}
       >
         <Progress step={1} of={STEPS} label={t('screen.S08.progress', { n: 1 })} />
         <StepQuestion>

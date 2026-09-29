@@ -312,7 +312,7 @@ export function ReportScreen() {
       : customFuture
         ? futureText
         : customOld && !confirmOld
-          ? t('screen.S04.step2.confirm.old')
+          ? t('screen.S04.step2.confirm.reason')
           : needEntrance
             ? t('screen.S04.step3.disabled')
             : undefined;
@@ -372,7 +372,7 @@ export function ReportScreen() {
         sub={sub}
         model={houseInfo?.isModel ?? false}
         back={stepBack}
-        actionsReason={customFuture ? futureText : undefined}
+        actionsReason={customFuture ? futureText : customOld && !confirmOld ? t('screen.S04.step2.confirm.reason') : undefined}
         actions={
           <Button size="large" stretched disabled={timeBlocked} onClick={() => setStep(3)}>
             {t('common.continue')}
@@ -548,7 +548,13 @@ export function ReportScreen() {
               <span className="list-row-title">{t('report.done.what', { service: serviceName(created.service), time: whenIn(created.startedAt, created.house.timezone) })}</span>
               {created.me?.entrance ? (
                 <span className="muted small">
-                  {created.me.floor ? t('report.done.where.floor', { entrance: created.me.entrance, floor: created.me.floor }) : t('report.done.where', { entrance: created.me.entrance })}
+                  {created.scope === 'house'
+                    ? created.me.floor
+                      ? t('report.done.where.house.floor', { entrance: created.me.entrance, floor: created.me.floor })
+                      : t('report.done.where.house', { entrance: created.me.entrance })
+                    : created.me.floor
+                      ? t('report.done.where.floor', { entrance: created.me.entrance, floor: created.me.floor })
+                      : t('report.done.where', { entrance: created.me.entrance })}
                 </span>
               ) : null}
             </span>

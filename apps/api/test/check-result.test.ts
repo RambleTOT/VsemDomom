@@ -151,6 +151,12 @@ describe.skipIf(!url)('проверка после «Устранено», ра�
       const kinds = (await api.handle.db.select().from(outboundMessage).where(eq(outboundMessage.incidentId, closed.id))).map((o) => o.kind);
       expect(kinds.filter((k) => k !== 'dm').sort()).toEqual(['card_create', 'check_question', 'result']);
       expect(lastDm(api, A).text.split('\n')[0]).toBe('✅ Авария закрыта · горячая вода есть');
+      // «Я сообщил в АДС» из старой инструкции после закрытия — ответ, а не просьба номера.
+      const help = dmMessages(api, B).find((m) => m.text.includes('Воды нет'))!;
+      const dmsBefore = dmMessages(api, B).length;
+      await api.deliver(updates.callback(B, callbackPayload(help, 'Я сообщил в АДС'), dm(B)));
+      expect(answers().at(-1)).toBe('Эта авария уже закрыта. Итог — в «Подробнее»');
+      expect(dmMessages(api, B)).toHaveLength(dmsBefore);
     });
 
     it('итог в приложении: для каждой квартиры своё время и месяц против нормы', async () => {

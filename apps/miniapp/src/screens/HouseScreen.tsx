@@ -109,7 +109,11 @@ function HouseBody({ house }: { house: HouseDetail }) {
           <SectionTitle>{t('screen.S03.active')}</SectionTitle>
           {active.length === 0 ? (
             <Card>
-              <EmptyState icon="house" title={t('empty.incidents.resident.title')} text={t('empty.incidents.resident')} />
+              <EmptyState
+                icon="house"
+                title={t('empty.incidents.resident.title')}
+                text={t(house.chat?.bound ? 'empty.incidents.resident' : 'empty.incidents.resident.no_chat')}
+              />
             </Card>
           ) : (
             active.map((i) => <IncidentCard key={i.id} incident={i} onOpen={() => void navigate(`/incident/${i.id}`)} />)

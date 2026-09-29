@@ -22,6 +22,9 @@ import { errorText, Loaded } from './common.tsx';
 const REFRESH_MS = 15_000;
 const BEFORE_RESOLVE = new Set(['open', 'accepted', 'brigade_on_site', 'localized']);
 
+/** Ответ, который закрыл аварию, изменить уже нельзя — тост об этом, а не «можно изменить». */
+const answerSaved = (updated: IncidentDetail): string => t(updated.status === 'closed' ? 'restore.answer.closed' : 'restore.answer.saved');
+
 function useIncidentAction(incident: IncidentDetail) {
   const client = useQueryClient();
   const toast = useToast();
@@ -84,7 +87,7 @@ function IncidentBody({ incident }: { incident: IncidentDetail }) {
   const phone = incident.ads.phone;
   const web = isWebPlatform();
 
-  const observe = (body: ObservationRequest, done: string) => run(body.kind, () => api.observe(incident.id, body), done);
+  const observe = (body: ObservationRequest, done: string | ((updated: IncidentDetail) => string)) => run(body.kind, () => api.observe(incident.id, body), done);
   // Авария в подъезде: «У меня тоже» — тот же подъезд; для дома подъезд житель укажет в боте.
   const join = () =>
     run(
@@ -127,7 +130,7 @@ function IncidentBody({ incident }: { incident: IncidentDetail }) {
   return (
     <Screen
       title={headlineText(incident).title}
-      back={session.staff ? '/uk' : `/house/${incident.house.id}`}
+      back={session.staff && !session.me.residencies.some((r) => r.house.id === incident.house.id) ? '/uk' : `/house/${incident.house.id}`}
       width="wide"
       actions={actions}
       headerAfter={
@@ -169,14 +172,14 @@ function IncidentBody({ incident }: { incident: IncidentDetail }) {
           title={restoreQuestion(incident.service)}
           actions={
             <>
-              <Button size="small" variant={answer === 'yes' ? 'primary' : 'secondary'} loading={busy === 'restored_yes'} onClick={() => void observe({ kind: 'restored_yes' }, t('restore.answer.saved'))}>
+              <Button size="small" variant={answer === 'yes' ? 'primary' : 'secondary'} loading={busy === 'restored_yes'} onClick={() => void observe({ kind: 'restored_yes' }, answerSaved)}>
                 {t('restore.answer.yes')}
               </Button>
               <Button size="small" variant={answer === 'no' ? 'primary' : 'secondary'} loading={busy === 'restored_no'} onClick={() => void observe({ kind: 'restored_no' }, t('restore.answer.no_saved'))}>
                 {t('restore.answer.no')}
               </Button>
               {bad ? (
-                <Button size="small" variant={answer === 'weak' ? 'primary' : 'secondary'} loading={busy === 'restored_weak'} onClick={() => void observe({ kind: 'restored_weak' }, t('restore.answer.saved'))}>
+                <Button size="small" variant={answer === 'weak' ? 'primary' : 'secondary'} loading={busy === 'restored_weak'} onClick={() => void observe({ kind: 'restored_weak' }, answerSaved)}>
                   {bad}
                 </Button>
               ) : null}

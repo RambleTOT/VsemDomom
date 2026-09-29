@@ -278,6 +278,15 @@ function checkInfo(b: IncidentBundle, config: AppConfig): IncidentDetail['check'
   };
 }
 
+/** Ответ на идущую проверку: ответ на прошлую (до повторного «Устранено») не показываем как текущий. */
+function currentAnswer(b: IncidentBundle, p: IncidentBundle['participants'][number] | undefined): NonNullable<IncidentDetail['me']>['restoredAnswer'] {
+  if (!p?.restoredAnswer) return null;
+  const inc = b.incident;
+  const checking = inc.status === 'checking' || inc.status === 'discrepancy';
+  if (!checking || !inc.checkStartedAt) return p.restoredAnswer;
+  return isActualAnswer({ answer: p.restoredAnswer, answeredAt: p.restoredAnswerAt }, inc.checkStartedAt) ? p.restoredAnswer : null;
+}
+
 function myParticipation(b: IncidentBundle, viewer: IncidentViewer | null): IncidentDetail['me'] {
   if (!viewer?.residency) return null;
   const p = b.participants.find((x) => x.userId === viewer.userId);
@@ -288,7 +297,7 @@ function myParticipation(b: IncidentBundle, viewer: IncidentViewer | null): Inci
     entrance: p?.entrance ?? loc?.entrance ?? null,
     floor: p?.floor ?? loc?.floor ?? null,
     notify: p?.notify ?? viewer.user?.notifyDefault ?? true,
-    restoredAnswer: p?.restoredAnswer ?? null,
+    restoredAnswer: currentAnswer(b, p),
     restoredAt: isoOrNull(p?.restoredAt),
     restoredSource: p?.restoredSource ?? null,
     adsRereport: p?.adsRereportAt ? { number: p.adsRereportNumber, at: iso(p.adsRereportAt) } : null,

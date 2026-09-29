@@ -42,6 +42,8 @@ export const onCrewNo = brigade(false);
 export const onAdsAgain: CallbackHandler = async (e, ctx) => {
   const inc = e.payload.id ? await incidentByPublicId(ctx.db, e.payload.id) : null;
   if (!inc) return ctx.i18n.t('bot.answer.expired');
+  // После закрытия номер уже не нужен: не открываем диалог, который ничего не сохранит.
+  if (inc.status !== 'checking' && inc.status !== 'discrepancy') return ctx.i18n.t(inc.status === 'closed' ? 'bot.answer.closed' : 'bot.answer.check_closed');
   const [p] = await ctx.db
     .select({ id: incidentParticipant.id })
     .from(incidentParticipant)

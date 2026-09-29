@@ -254,4 +254,18 @@ describe.skipIf(!url)('экраны и действия УК (A7, PostgreSQL + �
     expect((await api.call('POST', `/api/v1/uk/incidents/${created.body.id}/status`, { token: CHECKER.resident, body: { status: 'resolved' } })).status).toBe(403);
     expect((await api.call('GET', `/api/v1/uk/incidents/${hot.id}`, { token: CHECKER.uk })).status).toBe(404);
   });
+
+  it('повторное «Устранено» после «Нет»: прошлый ответ жителя не выдаётся за ответ на новую проверку', async () => {
+    const carol = await api.resident(8005, 'dom2model2', 5);
+    const created = await api.call<IncidentDetail>('POST', '/api/v1/incidents', { token: carol, body: { houseId: 'dom2model2', service: 'cold_water', scope: 'house' } });
+    expect((await setStatus(created.body.id, { status: 'resolved' })).body.status).toBe('checking');
+    const no = await api.call<IncidentDetail>('POST', `/api/v1/incidents/${created.body.id}/observations`, { token: carol, body: { kind: 'restored_no' } });
+    expect(no.body).toMatchObject({ status: 'discrepancy', me: { restoredAnswer: 'no' } });
+    api.clock.advance(MIN);
+    expect((await setStatus(created.body.id, { status: 'resolved' })).body.status).toBe('checking');
+    const view = await api.call<IncidentDetail>('GET', `/api/v1/incidents/${created.body.id}`, { token: carol });
+    expect(view.body.me?.restoredAnswer).toBeNull();
+    const yes = await api.call<IncidentDetail>('POST', `/api/v1/incidents/${created.body.id}/observations`, { token: carol, body: { kind: 'restored_yes' } });
+    expect(yes.body.me?.restoredAnswer).toBe('yes');
+  });
 });
