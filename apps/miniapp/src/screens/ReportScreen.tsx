@@ -43,6 +43,10 @@ const SCOPES: readonly IncidentScope[] = ['flat', 'entrance', 'house'];
 
 type Step = 1 | 2 | 3 | 'duplicate' | 4 | 'done';
 
+/** Что сказать после создания: карточка в чате есть, авария только своей квартиры или чат дома не подключён. */
+const createdKey = (created: IncidentDetail): string =>
+  created.scope === 'flat' ? 'report.created.flat' : created.cardInChat ? 'report.created' : 'report.created.no_chat';
+
 export function Progress({ step, of, label }: { step: number; of: number; label?: string }) {
   return (
     <div className="stack tight">
@@ -448,7 +452,7 @@ export function ReportScreen() {
     return (
       <Screen title={title} sub={sub} model={created.isModel}>
         <Progress step={4} of={4} />
-        <Banner tone="positive" title={t('report.created')} />
+        <Banner tone="positive" title={t(createdKey(created))} />
         <StepQuestion>{t('report.ads.title')}</StepQuestion>
         <Muted>{t('report.ads.body')}</Muted>
         <Card>
@@ -536,7 +540,7 @@ export function ReportScreen() {
         }
       >
         <Card className="done-card">
-          <EmptyState icon="circle-check" title={t('report.done.title')} text={created.scope === 'flat' ? t('report.done.flat') : t('report.done')} />
+          <EmptyState icon="circle-check" title={t('report.done.title')} text={t(created.scope === 'flat' ? 'report.done.flat' : created.cardInChat ? 'report.done' : 'report.done.no_chat')} />
         </Card>
         <div className="list-card">
           <div className="list-row static">
