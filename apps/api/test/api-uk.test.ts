@@ -77,6 +77,11 @@ describe.skipIf(!url)('экраны и действия УК (A7, PostgreSQL + �
     expect(list.body.houses.map((h) => h.id)).not.toContain('dom5sandbx');
     const closed = await api.call<UkList>('GET', '/api/v1/uk/incidents?status=closed', { token: uk });
     expect(closed.body.items.every((i) => i.status === 'closed')).toBe(true);
+    // Фильтр по дому: аварии и счётчики — этого дома, список домов — все (фильтр можно сбросить).
+    const dom3 = await api.call<UkList>('GET', '/api/v1/uk/incidents?status=closed&houseId=dom3model3', { token: uk });
+    expect(dom3.body.counts).toEqual({ open: 0, expired: 0, closed: 1 });
+    expect(dom3.body.houses.map((h) => h.id)).toEqual(['dom1model1', 'dom2model2', 'dom3model3', 'dom4model4']);
+    expect(dom3.body.houses.find((h) => h.id === 'dom1model1')?.openCount).toBe(1);
   });
 
   it('авария для УК: сетка «подъезд × этаж», жители, действия, карточка', async () => {

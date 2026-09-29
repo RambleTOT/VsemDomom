@@ -146,6 +146,8 @@ export function ReportScreen() {
         key,
       );
       setCreated(incident);
+      // Время регистрации по умолчанию — момент отметки, а не открытия формы (не раньше начала аварии).
+      setAdsTime(localInputValue(new Date()));
       setClosingConfirmation(false);
       setStep(4);
     } catch (err) {

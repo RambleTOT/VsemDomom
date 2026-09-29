@@ -21,9 +21,9 @@ export const UkIncidentsResponseSchema = z
       description: 'Сортировка: срок истёк → срок подходит → новые → остальные',
     }),
     counts: z.object({ open: z.int(), expired: z.int(), closed: z.int() }),
-    houses: z.array(
-      z.object({ id: PublicId, label: z.string(), address: z.string(), openCount: z.int().nonnegative() }),
-    ),
+    houses: z
+      .array(z.object({ id: PublicId, label: z.string(), address: z.string(), openCount: z.int().nonnegative() }))
+      .meta({ description: 'Все дома сотрудника для фильтра — и при выбранном houseId' }),
   })
   .meta({ id: 'UkIncidentsResponse' });
 

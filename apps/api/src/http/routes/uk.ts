@@ -86,6 +86,14 @@ export function registerUkRoutes(app: FastifyInstance, deps: ApiDeps): void {
     const now = ctx.clock.now();
     const open = bundles.filter((b) => isOpenStatus(b.incident.status));
     const expired = open.filter((b) => isExpired(b, now));
+    const openCounts = new Map<number, number>();
+    const allOpen = query.houseId
+      ? await ctx.db
+          .select({ houseId: incident.houseId })
+          .from(incident)
+          .where(and(inArray(incident.houseId, houses.map((h) => h.id)), inArray(incident.status, [...OPEN_STATUSES])))
+      : open.map((b) => ({ houseId: b.house.id }));
+    for (const r of allOpen) openCounts.set(r.houseId, (openCounts.get(r.houseId) ?? 0) + 1);
     const closed = bundles
       .filter((b) => !isOpenStatus(b.incident.status))
       .sort((a, b) => (b.incident.closedAt ?? b.incident.createdAt).getTime() - (a.incident.closedAt ?? a.incident.createdAt).getTime());
@@ -98,7 +106,8 @@ export function registerUkRoutes(app: FastifyInstance, deps: ApiDeps): void {
       body: {
         items: chosen.map((b) => incidentSummary(b, incidentViewer(viewer, b.house), now)),
         counts: { open: open.length, expired: expired.length, closed: closed.length },
-        houses: scope.map((h) => ({ id: h.publicId, label: h.label, address: h.address, openCount: open.filter((b) => b.house.id === h.id).length })),
+        // Все дома сотрудника, а не только выбранный: фильтр на экране остаётся, его можно сбросить.
+        houses: houses.map((h) => ({ id: h.publicId, label: h.label, address: h.address, openCount: openCounts.get(h.id) ?? 0 })),
       },
     };
   });

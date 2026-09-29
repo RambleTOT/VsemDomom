@@ -74,7 +74,9 @@ export function eventText(e: TimelineEvent, timezone: string): string {
     }
     case 'skipped_steps': {
       const steps = Array.isArray(p.steps) ? (p.steps as unknown[]).filter((s): s is string => typeof s === 'string') : [];
-      return steps.length ? steps.map((s) => t('timeline.skipped', { step: has(`stepper.step.${s}`) ? t(`stepper.step.${s}`) : s })).join('; ') : t('timeline.event.skipped_steps');
+      const names = steps.map((s) => `«${has(`stepper.step.${s}`) ? t(`stepper.step.${s}`) : s}»`);
+      if (names.length === 0) return t('timeline.event.skipped_steps');
+      return names.length === 1 ? t('timeline.skipped', { step: names[0]! }) : t('timeline.skipped.many', { steps: names.join(', ') });
     }
     case 'deadline_warned':
     case 'deadline_met':

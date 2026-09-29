@@ -2792,6 +2792,7 @@ components:
               - label
               - address
               - openCount
+          description: Все дома сотрудника для фильтра — и при выбранном houseId
       required:
         - items
         - counts
