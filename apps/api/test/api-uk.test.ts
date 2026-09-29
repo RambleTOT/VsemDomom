@@ -129,6 +129,8 @@ describe.skipIf(!url)('экраны и действия УК (A7, PostgreSQL + �
   it('«Не присылать» в личке выключает уведомления по аварии', async () => {
     const notice = lastDm(api, B);
     await api.deliver(updates.callback(B, callbackPayload(notice, 'Не присылать'), dm(B)));
+    // Всплывающее уведомление MAX не показывает — ответ приходит сообщением в личку.
+    expect(lastDm(api, B).text).toBe('Больше не пришлём уведомлений по этой аварии');
     const [row] = await api.handle.db
       .select()
       .from(incidentParticipant)

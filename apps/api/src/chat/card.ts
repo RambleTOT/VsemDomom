@@ -90,6 +90,7 @@ export async function loadCardInput(db: Reader, ctx: JobContext, incidentId: num
     unconfirmedRestoreFlats: inc.discrepancyUnresolved ? discrepancyFlats : 0,
     mergedIntoPublicId: merged?.publicId ?? null,
     brigadeConfirm: ctx.config.features.brigadeConfirm,
+    notMe: participants.filter((p) => !p.affected).length,
     brigadeMarks:
       inc.status === 'brigade_on_site'
         ? { yes: participants.filter((p) => p.brigadeSeen === true).length, no: participants.filter((p) => p.brigadeSeen === false).length }

@@ -595,6 +595,7 @@
   "bot.card.since": "С {time} · {joined} {count} {residents}: {by_entrance}",
   "bot.card.unconfirmed": "Из них не подтверждены: {count}",
   "bot.card.brigade_marks": "Бригаду отметили: {list}",
+  "bot.card.not_me": "Нажали «Не у меня»: {count}",
   "bot.card.ask": "У вас тоже нет воды? Нажмите свой подъезд:",
   "bot.card.btn.dont_know": "Не знаю подъезд",
   "bot.card.btn.not_me": "Не у меня",

@@ -196,6 +196,15 @@ describe('C02 — карточка аварии', () => {
     expect(accepted.keyboard.flat().map((b) => b.text)).not.toContain('Подтверждаю');
   });
 
+  it('«Не у меня» — счётчиком в карточке: нажавший видит, что отметка принята', () => {
+    const m = renderCard(card({ notMe: 2 }), t);
+    assertGroupSafe(m);
+    expect(m.text.split('\n').slice(2, 5)).toEqual(['С 17:40 · отметились 11 жителей: подъезд 2 — 6, подъезд 3 — 5', 'Из них не подтверждены: 2', 'Нажали «Не у меня»: 2']);
+    expect(renderCard(card({ notMe: 0 }), t).text).not.toContain('Не у меня»:');
+    const closed = renderCard(card({ notMe: 2, incident: { status: 'closed', resolvedAtUk: at('19:10') }, now: at('20:00') }), t);
+    expect(closed.text).not.toContain('Не у меня»:');
+  });
+
   it('«Бригада на месте»: отметки жителей — счётчиком в карточке, без имён', () => {
     const m = renderCard(card({ incident: { status: 'brigade_on_site', brigadeOnSiteAt: at('17:55') }, brigadeMarks: { yes: 2, no: 1 } }), t);
     assertGroupSafe(m);

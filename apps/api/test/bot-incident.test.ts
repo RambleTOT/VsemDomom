@@ -152,6 +152,8 @@ describe.skipIf(!url)('авария: личка, живая карточка, о
     expect(answers(h).at(-1)).toBe('Отметили: у вас горячая вода есть');
     const text = (await cardOf(hotId)).message?.message.text ?? '';
     expect(text).toContain('отметились 2 жителя: подъезд 2 — 1, подъезд 3 — 1');
+    // Уведомление MAX не показывает — нажатие видно по счётчику в карточке.
+    expect(text.split('\n')).toContain('Нажали «Не у меня»: 1');
     expect(text).not.toContain('не подтверждены');
     const events = await h.handle.db.select().from(incidentEvent).where(and(eq(incidentEvent.incidentId, hotId), eq(incidentEvent.type, 'left')));
     expect(events).toHaveLength(1);
@@ -244,6 +246,8 @@ describe.skipIf(!url)('авария: личка, живая карточка, о
     const flatDone = dmMessages(h, D).findLast((m) => m.text.includes('В чат дома она не попадёт'))!;
     await h.deliver(updates.callback(D, callbackPayload(flatDone, 'Не дозвонился'), dm(D)));
     expect(answers(h).at(-1)).toBe('Записали попытку дозвониться. Напомним через 30 минут');
+    // MAX не показывает всплывающее уведомление — в личке тот же текст приходит сообщением.
+    expect(lastDm(h, D).text).toBe('Записали попытку дозвониться. Напомним через 30 минут');
     const aBefore = dmMessages(h, A).length;
     const dBefore = dmMessages(h, D).length;
     await h.advance(31 * MIN);

@@ -19,7 +19,8 @@ const act =
     });
     if (saved.status !== 'saved') return ctx.i18n.t('bot.answer.act.not_available');
     if (intro) return ctx.i18n.t('bot.answer.act.intro');
-    return ctx.i18n.t('bot.answer.act.ready', { count: saved.info.readyCount, neighbours: ctx.i18n.plural(saved.info.readyCount, 'neighbours') });
+    // Следующий шаг (вопрос о знакомстве) уже пришёл сообщением со счётчиком — не дублируем.
+    return { notification: ctx.i18n.t('bot.answer.act.ready', { count: saved.info.readyCount, neighbours: ctx.i18n.plural(saved.info.readyCount, 'neighbours') }), echo: false };
   };
 
 export const onActReady = act(false);

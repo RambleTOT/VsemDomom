@@ -166,7 +166,9 @@ describe.skipIf(!url)('проверка после «Устранено», ра�
       const dmsBefore = dmMessages(api, B).length;
       await api.deliver(updates.callback(B, callbackPayload(help, 'Я сообщил в АДС'), dm(B)));
       expect(answers().at(-1)).toBe('Эта авария уже закрыта. Итог — в «Подробнее»');
-      expect(dmMessages(api, B)).toHaveLength(dmsBefore);
+      // Ответ приходит сообщением (уведомление MAX не показывает), просьбы номера нет.
+      expect(dmMessages(api, B)).toHaveLength(dmsBefore + 1);
+      expect(lastDm(api, B).text).toBe('Эта авария уже закрыта. Итог — в «Подробнее»');
     });
 
     it('итог в приложении: для каждой квартиры своё время и месяц против нормы', async () => {

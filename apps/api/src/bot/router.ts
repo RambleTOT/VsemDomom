@@ -3,7 +3,7 @@
  * (команды и шаги диалога), команды в группе и события чатов. Ответ нажавшему ставится
  * в очередь callback-answer в той же транзакции, что и изменения.
  */
-import { decodeCallback, renderAnsweredStep, renderDeleteConfirm, renderHelp, renderText, type CallbackAction } from '@vsemdomom/core';
+import { decodeCallback, renderAnsweredStep, renderDeleteConfirm, renderHelp, renderNotice, renderText, type CallbackAction } from '@vsemdomom/core';
 import { PARAMS } from '../config/params.ts';
 import type { JobContext } from '../jobs/context.ts';
 import { markDialogStarted, type UpdateHandlers } from '../jobs/process-update.ts';
@@ -71,7 +71,15 @@ async function handleCallback(u: NormalizedUpdate, ctx: JobContext, meta: Update
     reply = typeof result === 'string' ? { notification: result } : result;
   }
   const job: CallbackAnswerJob = { callbackId: u.callbackId, chatId: u.chatId, notification: reply.notification, ...(reply.message ? { message: reply.message } : {}) };
-  await ctx.db.transaction(async (tx) => answerCallbackLater(tx, ctx, job));
+  // MAX не показывает всплывающее уведомление (docs/MAX_CHECKS.md, 22.3): в личке ответ без правки сообщения
+  // приходит ещё и сообщением, иначе нажатие выглядит так, будто ничего не произошло. «Готово» не дублируем:
+  // его возвращают вместе со следующим шагом, который уже пришёл сообщением.
+  const echo = u.chatType === 'dialog' && !reply.message && reply.echo !== false && reply.notification !== ctx.i18n.t('bot.answer.ok');
+  const userId = u.userId;
+  await ctx.db.transaction(async (tx) => {
+    await answerCallbackLater(tx, ctx, job);
+    if (echo) await sendDm(tx, ctx, userId, renderNotice(reply.notification), `${meta.dedupeKey}:echo`);
+  });
 }
 
 const MS_PER_MINUTE = 60_000;

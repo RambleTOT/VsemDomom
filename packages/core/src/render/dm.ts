@@ -135,6 +135,11 @@ export function renderText(key: string, t: Translator, params?: Record<string, s
   return msg(t.t(key, params));
 }
 
+/** Готовый текст (ответ на нажатие) сообщением в личку: без кнопок, разметка экранирована. */
+export function renderNotice(text: string): BotMessage {
+  return msg(escapeMarkdown(text));
+}
+
 /** Проживание подтверждено (уровень доверия 2): собственником по ссылке или УК в очереди подтверждения. */
 export function renderResidencyConfirmed(input: { by: 'owner' | 'uk'; flat: number; isModel: boolean }, t: Translator): BotMessage {
   const key = input.by === 'owner' ? 'bot.dm.owner.confirmed' : 'bot.dm.uk.confirmed';

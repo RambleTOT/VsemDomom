@@ -48,6 +48,8 @@ export interface CardInput {
   brigadeConfirm: boolean;
   /** «Подтверждаю» / «Бригады нет» — сколько жителей отметили (в статусе «бригада на месте»). */
   brigadeMarks?: { yes: number; no: number } | null;
+  /** Нажали «Не у меня»: всплывающее уведомление MAX не показывает — нажатие видно по счётчику. */
+  notMe?: number;
   /** DISCREPANCY_MAX_HOURS — для текста «За 72 ч … не пришло». */
   discrepancyMaxHours: number;
   /** Время последнего изменения (не «сейчас»: иначе каждая правка отличалась бы). */
@@ -247,7 +249,7 @@ export function renderCard(input: CardInput, t: Translator): BotMessage {
         : t.t('bot.card.ask.other', { service_no_lower: lowerFirst(serviceNo(t, incident.service)) });
   const unconfirmed = input.counts.unconfirmed > 0 ? t.t('bot.card.unconfirmed', { count: input.counts.unconfirmed }) : null;
   return {
-    text: lines(bold(l1), l2, sinceLine(input, t), unconfirmed, brigadeLine(input, t), ask, footer),
+    text: lines(bold(l1), l2, sinceLine(input, t), unconfirmed, input.notMe ? t.t('bot.card.not_me', { count: input.notMe }) : null, brigadeLine(input, t), ask, footer),
     format: 'markdown',
     keyboard: joinKeyboard(input, t),
   };

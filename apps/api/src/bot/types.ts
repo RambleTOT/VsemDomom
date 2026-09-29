@@ -38,6 +38,11 @@ export interface CallbackEvent {
 export interface CallbackReply {
   notification: string;
   message?: BotMessage;
+  /**
+   * В личке ответ без message приходит ещё и сообщением (всплывающее уведомление MAX не показывает).
+   * false — не дублировать: следующий шаг с тем же смыслом уже отправлен.
+   */
+  echo?: boolean;
 }
 
 /** Обработчик нажатия: текст уведомления нажавшему или ответ с правкой сообщения. */
