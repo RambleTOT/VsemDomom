@@ -234,7 +234,7 @@ function EtaSheet({ incident, open, busy, onClose, onSend }: { incident: UkIncid
       {eta ? <p className="banner-title">{t('uk.eta.value', { time: whenIn(eta.toISOString(), tz) })}</p> : null}
       {localize ? (
         <div className="stack tight">
-          <p className="muted small">{t('uk.eta.norm', { time: whenIn(localize.dueAt, tz) })}</p>
+          <p className="muted small">{t(localize.state === 'breached' ? 'uk.eta.norm.breached' : 'uk.eta.norm', { time: whenIn(localize.dueAt, tz) })}</p>
           <NormBasisLink norm={localize.norm} />
         </div>
       ) : null}

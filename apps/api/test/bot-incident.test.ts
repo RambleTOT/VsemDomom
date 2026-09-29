@@ -273,6 +273,18 @@ describe.skipIf(!url)('авария: личка, живая карточка, о
     expect(kinds).toEqual(['card_create', 'card_replace']);
   });
 
+  it('нажал до регистрации, потом зарегистрировался — отметка сохранена, «не подтверждён» пропадает', async () => {
+    expect((await cardOf(hotId)).message?.message.text).toContain('Из них не подтверждены: 1');
+    await registerResident(h, 7005, 3);
+    const mine = (await participants(hotId)).find((p) => p.userId === 7005);
+    expect(mine).toMatchObject({ affected: true, entrance: 1 });
+    expect(mine?.residencyId).not.toBeNull();
+    await h.drain();
+    const text = (await cardOf(hotId)).message?.message.text ?? '';
+    expect(text).toContain('подъезд 1 — 2');
+    expect(text).not.toContain('не подтверждены');
+  });
+
   it('закрытая авария: кнопки старой карточки отвечают «уже закрыта»', async () => {
     await h.handle.db.update(incident).set({ status: 'closed', closedAt: h.clock.now() }).where(eq(incident.id, hotId));
     const [inc] = await h.handle.db.select().from(incident).where(eq(incident.id, hotId));

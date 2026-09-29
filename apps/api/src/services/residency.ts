@@ -3,10 +3,11 @@
  * уровень доверия до 0 и подтверждение; после сохранения — проверка членства в чате (уровень 1).
  * Общий код для регистрации в личке и PUT /api/v1/me/residency.
  */
-import { isFlatInRange, type ResidencyRole, type ResidencySource } from '@vsemdomom/core';
-import { eq } from 'drizzle-orm';
+import { isFlatInRange, OPEN_STATUSES, type ResidencyRole, type ResidencySource } from '@vsemdomom/core';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { cardLater } from '../chat/card.ts';
 import { residencyIn, type HouseRow, type ResidencyRow } from '../db/queries.ts';
-import { residency } from '../db/schema.ts';
+import { incident, incidentParticipant, residency } from '../db/schema.ts';
 import type { JobContext } from '../jobs/context.ts';
 import { refreshMembership } from './membership.ts';
 
@@ -43,7 +44,25 @@ export async function saveResidency(ctx: JobContext, input: SaveResidencyInput):
   }
   const saved = await residencyIn(ctx.db, userId, h.id);
   if (!saved) throw new Error('проживание не сохранено');
+  await linkEarlierPresses(ctx, saved);
   const membership = await refreshMembership(ctx, saved, { force: true });
   const fresh = (await residencyIn(ctx.db, userId, h.id)) ?? saved;
   return { ok: true, residency: fresh, trustReset: flatChanged && (existing?.trustLevel ?? 0) > 0, inChat: membership.inChat };
+}
+
+/**
+ * Нажатия в карточке до регистрации (без квартиры) привязываются к новому проживанию: отметка
+ * сохраняется, житель перестаёт считаться «не подтверждённым», карточка правится.
+ */
+async function linkEarlierPresses(ctx: JobContext, saved: ResidencyRow): Promise<void> {
+  const open = ctx.db
+    .select({ id: incident.id })
+    .from(incident)
+    .where(and(eq(incident.houseId, saved.houseId), inArray(incident.status, [...OPEN_STATUSES])));
+  const linked = await ctx.db
+    .update(incidentParticipant)
+    .set({ residencyId: saved.id })
+    .where(and(eq(incidentParticipant.userId, saved.userId), isNull(incidentParticipant.residencyId), inArray(incidentParticipant.incidentId, open)))
+    .returning({ incidentId: incidentParticipant.incidentId });
+  for (const row of linked) await cardLater(ctx.queue, row.incidentId);
 }
