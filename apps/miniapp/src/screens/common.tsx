@@ -17,6 +17,7 @@ export function useErrorAction(): (kind: ErrorKind, retry?: () => void, mergedIn
   return (kind, retry, mergedInto) => {
     switch (kind) {
       case 'session':
+      case 'crash':
         return close;
       case 'forbidden':
         return () => void navigate('/profile');

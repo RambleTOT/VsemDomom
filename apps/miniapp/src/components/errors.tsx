@@ -6,7 +6,7 @@ import { t } from '../i18n.ts';
 import type { IconName } from '../icons/icons.ts';
 import { Icon } from './Icon.tsx';
 
-export type ErrorKind = 'outside' | 'session' | 'network' | 'server' | 'busy' | 'forbidden' | 'notfound' | 'merged' | 'expired' | 'feature_off' | 'slow';
+export type ErrorKind = 'outside' | 'session' | 'network' | 'server' | 'busy' | 'forbidden' | 'notfound' | 'merged' | 'expired' | 'feature_off' | 'slow' | 'crash';
 
 export function errorKind(err: unknown): ErrorKind {
   if (!(err instanceof ApiError)) return 'server';
@@ -33,6 +33,7 @@ const ERROR_VIEW: Record<ErrorKind, { icon: IconName; title: string; text: strin
   expired: { icon: 'link-2-off', title: 'error.expired.title', text: 'error.expired', cta: 'common.to_home' },
   feature_off: { icon: 'square-dashed', title: 'feature.off.title', text: 'feature.off', cta: 'common.to_home' },
   slow: { icon: 'refresh-cw', title: 'loading.slow.title', text: 'loading.slow', cta: 'common.retry' },
+  crash: { icon: 'refresh-cw', title: 'error.crash.title', text: 'error.session', cta: 'common.close' },
 };
 
 export interface ErrorViewProps {

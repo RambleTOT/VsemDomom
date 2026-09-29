@@ -9,5 +9,6 @@ export default defineConfig({
     port: 5173,
     proxy: { '/api': 'http://localhost:3000' },
   },
-  build: { outDir: 'dist', target: 'es2022', sourcemap: false },
+  // Один файл без догружаемых частей: открытое до выкладки приложение не ищет удалённые файлы (≈175 КБ в gzip).
+  build: { outDir: 'dist', target: 'es2022', sourcemap: false, chunkSizeWarningLimit: 800 },
 });

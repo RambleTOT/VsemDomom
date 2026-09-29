@@ -4,40 +4,32 @@
  */
 import { MaxUI, useSystemColorScheme } from '@maxhub/max-ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { lazy, Suspense } from 'react';
+import { Component, Suspense, type ReactNode } from 'react';
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router';
 import { ApiError } from '../api/client.ts';
-import { getPlatform } from '../bridge/webapp.ts';
+import { close, getPlatform } from '../bridge/webapp.ts';
 import { SystemScreen } from '../components/errors.tsx';
 import { ToastProvider } from '../components/Toast.tsx';
 import { Skeleton } from '../components/ui.tsx';
 import { t } from '../i18n.ts';
+import { ActScreen } from '../screens/ActScreen.tsx';
 import { useErrorAction } from '../screens/common.tsx';
 import { HouseScreen } from '../screens/HouseScreen.tsx';
 import { IncidentScreen } from '../screens/IncidentScreen.tsx';
+import { OwnerScreen } from '../screens/OwnerScreen.tsx';
 import { ConsentScreen, ResidenceScreen } from '../screens/Onboarding.tsx';
 import { ProfileScreen } from '../screens/ProfileScreen.tsx';
+import { RecalcScreen } from '../screens/RecalcScreen.tsx';
 import { ReportScreen } from '../screens/ReportScreen.tsx';
+import { ResultScreen } from '../screens/ResultScreen.tsx';
 import { SessionPending, StartScreen } from '../screens/StartScreen.tsx';
 import { SystemRoute } from '../screens/SystemRoute.tsx';
+import { ChatBindScreen, UkHeatScreen, UkHouseScreen, UkHousesScreen, UkMonthScreen, UkResidentsScreen } from '../screens/UkHouseScreens.tsx';
+import { UkIncidentScreen, UkListScreen } from '../screens/UkIncidentScreens.tsx';
 import { SessionProvider, useSession, useSessionState } from './session.tsx';
 import { onboardingFor } from './start.ts';
 
 const STALE_MS = 5_000;
-
-// Экраны УК и редкие экраны жителя грузятся отдельно: первый экран открывается быстрее.
-const ActScreen = lazy(() => import('../screens/ActScreen.tsx').then((m) => ({ default: m.ActScreen })));
-const OwnerScreen = lazy(() => import('../screens/OwnerScreen.tsx').then((m) => ({ default: m.OwnerScreen })));
-const RecalcScreen = lazy(() => import('../screens/RecalcScreen.tsx').then((m) => ({ default: m.RecalcScreen })));
-const ResultScreen = lazy(() => import('../screens/ResultScreen.tsx').then((m) => ({ default: m.ResultScreen })));
-const UkListScreen = lazy(() => import('../screens/UkIncidentScreens.tsx').then((m) => ({ default: m.UkListScreen })));
-const UkIncidentScreen = lazy(() => import('../screens/UkIncidentScreens.tsx').then((m) => ({ default: m.UkIncidentScreen })));
-const UkHousesScreen = lazy(() => import('../screens/UkHouseScreens.tsx').then((m) => ({ default: m.UkHousesScreen })));
-const UkHouseScreen = lazy(() => import('../screens/UkHouseScreens.tsx').then((m) => ({ default: m.UkHouseScreen })));
-const UkHeatScreen = lazy(() => import('../screens/UkHouseScreens.tsx').then((m) => ({ default: m.UkHeatScreen })));
-const UkMonthScreen = lazy(() => import('../screens/UkHouseScreens.tsx').then((m) => ({ default: m.UkMonthScreen })));
-const UkResidentsScreen = lazy(() => import('../screens/UkHouseScreens.tsx').then((m) => ({ default: m.UkResidentsScreen })));
-const ChatBindScreen = lazy(() => import('../screens/UkHouseScreens.tsx').then((m) => ({ default: m.ChatBindScreen })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,6 +41,20 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+/**
+ * Сбой отрисовки экрана — не белый лист, а S12 «Откройте приложение заново из чата».
+ * Экраны собраны в один файл: открытое до выкладки приложение не догружает старые части.
+ */
+class ScreenBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  override state = { failed: false };
+  static getDerivedStateFromError(): { failed: boolean } {
+    return { failed: true };
+  }
+  override render() {
+    return this.state.failed ? <SystemScreen kind="crash" onAction={close} /> : this.props.children;
+  }
+}
 
 /** Экраны после входа: пока сессии нет — загрузка или ошибка входа. */
 function SessionGate() {
@@ -64,7 +70,9 @@ function SessionGate() {
           </div>
         }
       >
-        <Outlet />
+        <ScreenBoundary>
+          <Outlet />
+        </ScreenBoundary>
       </Suspense>
     </>
   );
