@@ -32,6 +32,10 @@ describe.skipIf(!url)('регистрация в личке (A4, PostgreSQL + с
     expect(lastDm(h, U).text).toContain('Кто вы в квартире?');
     expect((await user(U))?.consentVersion).toBe(PARAMS.consentVersion);
     expect(answers(h).at(-1)).toBe('Готово');
+    // Приветствие правится: «— Согласен», кнопки «Согласен» больше нет, ссылка на политику остаётся.
+    const agreed = h.max.callbacks.at(-1)?.answer.message;
+    expect(agreed?.text).toContain('— **Согласен**');
+    expect(agreed?.keyboard.flat().map((b) => b.type)).toEqual(['link']);
 
     await h.deliver(updates.callback(U, callbackPayload(lastDm(h, U), 'Собственник'), dm(U)));
     expect(lastDm(h, U).text).toContain('номер квартиры');
@@ -43,6 +47,9 @@ describe.skipIf(!url)('регистрация в личке (A4, PostgreSQL + с
 
     await h.deliver(updates.dmText(U, ' 57 '));
     expect(lastDm(h, U).text).toContain('Готово. Вы — житель дома 1, кв. 57');
+    // Просьба «Напишите номер квартиры» правится: «Номер квартиры — 57» без «Отмена».
+    const asked = h.max.messagesIn({ userId: U }).find((m) => m.message.text.startsWith('Номер квартиры —'));
+    expect(asked?.message).toMatchObject({ text: 'Номер квартиры — **57**', keyboard: [] });
     const [row] = await flats(U);
     expect(row).toMatchObject({ flatNo: 57, role: 'owner', trustLevel: 0, source: 'qr' });
     expect((await user(U))?.dialogState).toBeNull();

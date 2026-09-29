@@ -33,6 +33,13 @@ export function renderWelcome(input: { privacyUrl: string }, t: Translator): Bot
   ]);
 }
 
+/** Приветствие после «Согласен»: кнопки согласия больше нет, ссылка на политику остаётся. */
+export function renderWelcomeAgreed(input: { privacyUrl: string }, t: Translator): BotMessage {
+  return msg(lines(t.t('bot.dm.welcome.l1'), `${t.t('bot.dm.welcome.l2')} — ${bold(t.t('bot.dm.btn.agree'))}`), [
+    [{ type: 'link', text: t.t('bot.dm.btn.policy'), url: input.privacyUrl }],
+  ]);
+}
+
 export function renderChooseHouse(houses: readonly DmHouse[], t: Translator): BotMessage {
   return msg(
     lines(t.t('bot.dm.house.choose'), houses.some((h) => h.isModel) ? t.t('bot.footer') : null),

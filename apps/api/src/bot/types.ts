@@ -13,6 +13,8 @@ export type DialogState =
       houseId: string | null;
       role: ResidencyRole | null;
       source: ResidencySource;
+      /** Ключ просьбы «Напишите номер квартиры»: после ввода она правится в «Номер квартиры — 57». */
+      promptKey?: string;
     }
   | { flow: 'report'; step: string; houseId: string; data: Record<string, string | number | boolean | null> }
   | {

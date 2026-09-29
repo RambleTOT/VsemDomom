@@ -3,6 +3,7 @@ import {
   computeInterruption,
   flatIntervals,
   houseIntervals,
+  interruptionAround,
   mergeIntervals,
   monthBounds,
   monthKey,
@@ -72,6 +73,16 @@ describe('превышение и перерасчёт: таблица тест�
     expect(sum.monthlyTotalMs).toBe(11 * H + 40 * MIN);
     expect(sum.monthlyExcessMs).toBe(3 * H + 40 * MIN);
     expect(money(1200, sum, 'hot_water')).toMatchObject({ excessMinutes: 240, excessHours: 4, amountKopecks: 720 });
+  });
+
+  it('перерыв этой аварии для единовременного лимита — объединённый с пересекающимися, а не самый длинный за месяц', () => {
+    const earlier = iv('2026-09-29T01:20:00+03:00', '2026-09-29T07:22:00+03:00');
+    const own = iv('2026-09-29T07:25:00+03:00', '2026-09-29T07:26:00+03:00');
+    expect(interruptionAround([earlier, own], own)).toEqual(own);
+    // Пересекается с другой аварией — один непрерывный перерыв.
+    const overlapping = iv('2026-09-29T07:00:00+03:00', '2026-09-29T07:30:00+03:00');
+    expect(interruptionAround([earlier, overlapping], own)).toEqual(iv('2026-09-29T01:20:00+03:00', '2026-09-29T07:30:00+03:00'));
+    expect(interruptionAround([earlier], own)).toBeNull();
   });
 
   it('две пересекающиеся аварии 14:00–18:00 и 16:00–20:00 → 6 ч, а не 8 ч', () => {

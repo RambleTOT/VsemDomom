@@ -15,7 +15,7 @@ import { useToast } from '../components/Toast.tsx';
 import { Banner, Card, ModelDataBadge, Muted, Skeleton } from '../components/ui.tsx';
 import { roleName, t } from '../i18n.ts';
 import type { IconName } from '../icons/icons.ts';
-import { homePath, houseFromTarget, safeNext } from '../app/start.ts';
+import { homePath, houseFromTarget, residencePrefill, safeNext } from '../app/start.ts';
 import { useSession } from '../app/session.tsx';
 
 const POINTS: { icon: IconName; key: string }[] = [
@@ -41,7 +41,10 @@ export function ConsentScreen() {
       await api.consent(session.me.currentConsentVersion);
       const me = await session.refresh();
       const after = safeNext(next, '');
-      void navigate(me.residencies.length === 0 ? `/onboarding/residence${after ? `?next=${encodeURIComponent(after)}` : ''}` : after || homePath(me), { replace: true });
+      // Дом, квартира и роль из ссылки (приглашение собственника) — дальше, в S02.
+      const q = new URLSearchParams(residencePrefill(params));
+      if (after) q.set('next', after);
+      void navigate(me.residencies.length === 0 ? `/onboarding/residence${q.size > 0 ? `?${q.toString()}` : ''}` : after || homePath(me), { replace: true });
     } catch (err) {
       setError(err);
     } finally {
@@ -128,8 +131,11 @@ export function ResidenceScreen() {
   const preset = useQuery({ queryKey: ['house-summary', presetHouse], queryFn: () => api.houseSummary(presetHouse!), enabled: presetHouse !== null });
   const [house, setHouse] = useState<HouseSummary | null>(null);
   const [changing, setChanging] = useState(false);
-  const [flat, setFlat] = useState(current && current.house.id === presetHouse ? String(current.flatNo) : '');
-  const [role, setRole] = useState<ResidencyRole | null>(current?.role ?? null);
+  // Квартира и роль из ссылки (приглашение собственника) — если дом тот же; иначе — текущие жителя.
+  const link = new URLSearchParams(residencePrefill(params));
+  const linkRole = link.get('role') as ResidencyRole | null;
+  const [flat, setFlat] = useState(current && current.house.id === presetHouse ? String(current.flatNo) : (link.get('flat') ?? ''));
+  const [role, setRole] = useState<ResidencyRole | null>(current?.role ?? linkRole);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const flatId = useId();
@@ -187,7 +193,7 @@ export function ResidenceScreen() {
               <div className="stack tight">
                 <p>{t('screen.S03.title', { house: chosen.label })}</p>
                 <p className="muted small">{chosen.address}</p>
-                {linkHouse === chosen.id ? <p className="muted small">{t('screen.S02.house.from_chat')}</p> : null}
+                {linkHouse === chosen.id ? <p className="muted small">{t(linkRole === 'owner' && link.get('flat') !== null ? 'screen.S02.house.from_invite' : 'screen.S02.house.from_chat')}</p> : null}
               </div>
               <Button size="small" variant="ghost" onClick={() => setChanging(true)}>
                 {t('screen.S02.house.change')}

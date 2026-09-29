@@ -288,9 +288,14 @@ export const ResultSchema = z
       .nullable()
       .meta({ description: 'Для квартиры пользователя; null — пользователь не житель этого дома' }),
     single: z
-      .object({ limitMinutes: z.int(), longestMinutes: z.int(), exceeded: z.boolean(), norm: NormBasisSchema })
+      .object({
+        limitMinutes: z.int(),
+        longestMinutes: z.int().meta({ description: 'Непрерывный перерыв этой аварии у квартиры (вместе с пересекающимися авариями)' }),
+        exceeded: z.boolean(),
+        norm: NormBasisSchema,
+      })
       .nullable()
-      .meta({ description: 'Единовременный лимит — флаг, на сумму не влияет' }),
+      .meta({ description: 'Единовременный лимит — флаг по этой аварии, на сумму не влияет' }),
     month: z
       .object({
         month: z.string(),

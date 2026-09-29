@@ -42,7 +42,8 @@ function OwnerBody({ token, view }: { token: string; view: OwnerInviteView }) {
 
   const recalc = () => {
     const target = `/incident/${view.incidentId}/recalc`;
-    void navigate(onboardingFor(session.me, target) ?? target);
+    // Собственник ещё не зарегистрирован: дом и квартира известны из приглашения, роль — собственник.
+    void navigate(onboardingFor(session.me, target, { house: view.house.id, flat: view.flatNo, role: 'owner' }) ?? target);
   };
 
   const actions =

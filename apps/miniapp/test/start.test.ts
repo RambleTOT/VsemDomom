@@ -1,6 +1,6 @@
 import type { Me } from '@vsemdomom/shared';
 import { describe, expect, it } from 'vitest';
-import { homePath, houseFromTarget, onboardingFor, routeForStart, safeNext } from '../src/app/start.ts';
+import { homePath, houseFromTarget, onboardingFor, residencePrefill, routeForStart, safeNext } from '../src/app/start.ts';
 
 type Who = Pick<Me, 'staff' | 'residencies' | 'consentRequired'>;
 
@@ -55,6 +55,16 @@ describe('регистрация перед экраном', () => {
 
   it('без квартиры — S02', () => {
     expect(onboardingFor({ ...newcomer, consentRequired: false }, `/incident/${ID}`)).toBe(`/onboarding/residence?next=${encodeURIComponent(`/incident/${ID}`)}`);
+  });
+
+  it('собственник из приглашения: дом, квартира и роль подставлены в регистрацию', () => {
+    const prefill = { house: 'dom1model1', flat: 20, role: 'owner' as const };
+    const target = `/incident/${ID}/recalc`;
+    const next = `next=${encodeURIComponent(target)}`;
+    expect(onboardingFor(newcomer, target, prefill)).toBe(`/onboarding?house=dom1model1&flat=20&role=owner&${next}`);
+    expect(onboardingFor({ ...newcomer, consentRequired: false }, target, prefill)).toBe(`/onboarding/residence?house=dom1model1&flat=20&role=owner&${next}`);
+    expect(residencePrefill(new URLSearchParams('house=dom1model1&flat=20&role=owner&next=%2F'))).toBe('house=dom1model1&flat=20&role=owner');
+    expect(residencePrefill(new URLSearchParams('house=bad!&flat=x&role=king'))).toBe('');
   });
 
   it('сам экран регистрации не становится «следующим» — нет петли', () => {

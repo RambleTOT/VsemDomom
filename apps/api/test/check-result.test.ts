@@ -135,6 +135,10 @@ describe.skipIf(!url)('проверка после «Устранено», ра�
       ]);
       const result = api.max.messages.get(c.resultMid!);
       expect(result?.message.replyToMid).toBe(c.mid);
+      // Вопрос о восстановлении после закрытия — без кнопок (правка, не новое сообщение).
+      const question = api.max.messages.get(c.checkMid!);
+      expect(question?.message.keyboard).toEqual([]);
+      expect(question?.message.text.split('\n')[1]).toBe('Проверка закончена в 15:40. Итог — ответом на карточку');
       expect(result?.message.text).toMatchInlineSnapshot(`
         "**Итог: горячая вода, Дом 1**
         По отметке УК: 11:00–12:00, 1 ч
@@ -155,7 +159,8 @@ describe.skipIf(!url)('проверка после «Устранено», ра�
       expect(b.body).toMatchObject({
         my: { flatNo: 100, restoredAt: msk('15:40').toISOString(), durationMinutes: 280, source: 'resident_answer' },
         month: { totalMinutes: 640, limitMinutes: 480, excessMinutes: 160, withinNorm: false },
-        single: { limitMinutes: 240, longestMinutes: 360, exceeded: true },
+        // Единовременный лимит — перерыв этой аварии у квартиры (11:00–15:40), а не самый длинный за месяц (6 ч в истории).
+        single: { limitMinutes: 240, longestMinutes: 280, exceeded: true },
         flatsCount: 3,
         lateFlats: { count: 1, lastRestoredAt: msk('15:40').toISOString() },
         eligibleFlats: 1,

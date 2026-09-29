@@ -24,6 +24,8 @@ export interface CheckQuestionInput {
   /** Отметка УК «Устранено» (последняя). */
   resolvedAt: Date;
   recheck: boolean;
+  /** Авария закрыта: вопрос остаётся в чате без кнопок. */
+  closedAt?: Date | null;
   house: { timezone: string; isModel: boolean };
   now: Date;
 }
@@ -31,6 +33,12 @@ export interface CheckQuestionInput {
 export function renderCheckQuestion(input: CheckQuestionInput, t: Translator): BotMessage {
   const time = formatChatTime(input.resolvedAt, input.now, input.house.timezone);
   const id = input.incidentPublicId;
+  const question = bold(t.t(`restore.question.${SERVICE_I18N_KEY[input.service]}`));
+  const footer = input.house.isModel ? t.t('bot.footer') : null;
+  if (input.closedAt) {
+    // Нажатия после закрытия не принимаются — кнопки убираем, чтобы не отвечать «не получилось».
+    return { text: lines(question, t.t('bot.restore.closed', { time: formatChatTime(input.closedAt, input.now, input.house.timezone) }), footer), format: 'markdown', keyboard: [] };
+  }
   const keyboard: Keyboard = [
     [
       { type: 'callback', text: t.t('restore.answer.yes'), payload: encodeCallback('restore', id, 'yes') },
@@ -40,11 +48,7 @@ export function renderCheckQuestion(input: CheckQuestionInput, t: Translator): B
   const bad = BAD_LABEL[input.service];
   if (bad) keyboard.push([{ type: 'callback', text: t.t(bad), payload: encodeCallback('restore', id, 'weak') }]);
   return {
-    text: lines(
-      bold(t.t(`restore.question.${SERVICE_I18N_KEY[input.service]}`)),
-      input.recheck ? t.t('bot.restore.recheck', { time }) : t.t('bot.restore.meta', { time }),
-      input.house.isModel ? t.t('bot.footer') : null,
-    ),
+    text: lines(question, input.recheck ? t.t('bot.restore.recheck', { time }) : t.t('bot.restore.meta', { time }), footer),
     format: 'markdown',
     keyboard,
   };

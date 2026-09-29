@@ -124,6 +124,7 @@ async function checkQuestionJob(ctx: JobContext, card: typeof chatCard.$inferSel
       service: row.incident.serviceType,
       resolvedAt: row.incident.resolvedAtUk,
       recheck: repeat !== undefined,
+      closedAt: row.incident.status === 'closed' ? row.incident.closedAt : null,
       house: { timezone: row.house.timezone, isModel: row.house.isModel },
       now: ctx.clock.now(),
     },

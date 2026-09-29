@@ -2174,6 +2174,7 @@ components:
               type: integer
             longestMinutes:
               type: integer
+              description: Непрерывный перерыв этой аварии у квартиры (вместе с пересекающимися авариями)
             exceeded:
               type: boolean
             norm:
@@ -2183,7 +2184,7 @@ components:
             - longestMinutes
             - exceeded
             - norm
-          description: Единовременный лимит — флаг, на сумму не влияет
+          description: Единовременный лимит — флаг по этой аварии, на сумму не влияет
         month:
           type:
             - object
@@ -2579,6 +2580,7 @@ components:
                   type: integer
                 longestMinutes:
                   type: integer
+                  description: Непрерывный перерыв этой аварии у квартиры (вместе с пересекающимися авариями)
                 exceeded:
                   type: boolean
                 norm:
@@ -2588,7 +2590,7 @@ components:
                 - longestMinutes
                 - exceeded
                 - norm
-              description: Единовременный лимит — флаг, на сумму не влияет
+              description: Единовременный лимит — флаг по этой аварии, на сумму не влияет
             month:
               type:
                 - object

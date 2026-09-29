@@ -303,6 +303,13 @@ describe('C03 — вопрос о восстановлении', () => {
     const again = renderCheckQuestion({ ...base, service: 'hot_water', recheck: true, resolvedAt: at('21:05'), now: at('21:06') }, t);
     expect(again.text.split('\n')[1]).toBe('Повторная проверка, УК: 21:05');
   });
+
+  it('авария закрыта — вопрос без кнопок: ответы больше не принимаются', () => {
+    const closed = renderCheckQuestion({ ...base, service: 'hot_water', closedAt: at('19:40'), now: at('19:41') }, t);
+    assertGroupSafe(closed);
+    expect(closed.keyboard).toEqual([]);
+    expect(closed.text.split('\n')[1]).toBe('Проверка закончена в 19:40. Итог — ответом на карточку');
+  });
 });
 
 describe('C04 — итог', () => {

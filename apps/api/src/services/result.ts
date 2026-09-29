@@ -9,6 +9,7 @@ import {
   flatIntervals,
   flatLocation,
   houseIntervals,
+  interruptionAround,
   monthKey,
   monthOf,
   selectNorm,
@@ -102,7 +103,7 @@ export async function computeResult(db: Reader, b: IncidentBundle, now: Date): P
 
 type ResultView = z.infer<typeof ResultSchema>;
 
-/** Перерывы за месяц для одной квартиры (или для дома, если квартира не известна). */
+/** Перерывы за месяц для одной квартиры (или для дома, если квартира не известна) и сами интервалы. */
 async function outcomeFor(db: Reader, b: IncidentBundle, flatNo: number | null, month: MonthRef, now: Date, lim: ReturnType<typeof limits>) {
   const inc = b.incident;
   const incidents = await loadIntervalIncidents(db, b.house, month, [inc.serviceType]);
@@ -110,7 +111,8 @@ async function outcomeFor(db: Reader, b: IncidentBundle, flatNo: number | null, 
     flatNo === null
       ? houseIntervals(incidents, inc.serviceType, now)
       : flatIntervals(incidents, inc.serviceType, { flatNo, entrance: flatLocation(b.house, flatNo)?.entrance ?? null }, now);
-  return computeInterruption({ intervals, month, timezone: b.house.timezone, singleLimitMs: lim.single?.ms ?? null, monthlyLimitMs: lim.monthly?.ms ?? null });
+  const summary = computeInterruption({ intervals, month, timezone: b.house.timezone, singleLimitMs: lim.single?.ms ?? null, monthlyLimitMs: lim.monthly?.ms ?? null });
+  return { summary, intervals };
 }
 
 const minutes = (ms: number) => Math.max(0, Math.floor(ms / MS_PER_MINUTE));
@@ -121,10 +123,13 @@ export async function resultView(db: Reader, b: IncidentBundle, viewer: Incident
   const r = await computeResult(db, b, now);
   const lim = { single: r.norms.single, monthly: r.norms.monthly };
   const flatNo = viewer.residency?.flatNo ?? null;
-  const summary = await outcomeFor(db, b, flatNo, r.month, now, lim);
+  const { summary, intervals } = await outcomeFor(db, b, flatNo, r.month, now, lim);
   const mine = viewer.residency ? b.participants.find((p) => p.userId === viewer.userId) : undefined;
   const affectsMe = viewer.residency !== null && (mine?.affected === true || (mine === undefined && summary.intervals.length > 0));
   const restoredAt = mine?.restoredAt ?? r.resolvedAt;
+  // Единовременный лимит — про эту аварию: её непрерывный перерыв (вместе с пересекающимися), а не самый длинный за месяц.
+  const own = interruptionAround(intervals, { start: inc.startedAt, end: affectsMe ? restoredAt : r.resolvedAt });
+  const ownMs = own ? own.end.getTime() - own.start.getTime() : 0;
   return {
     incidentId: inc.publicId,
     service: inc.serviceType,
@@ -138,7 +143,7 @@ export async function resultView(db: Reader, b: IncidentBundle, viewer: Incident
         : null,
     single:
       lim.single && lim.single.ms !== null
-        ? { limitMinutes: minutes(lim.single.ms), longestMinutes: minutes(summary.longestMs), exceeded: summary.singleExceeded, norm: basisOf(lim.single.norm) }
+        ? { limitMinutes: minutes(lim.single.ms), longestMinutes: minutes(ownMs), exceeded: ownMs > lim.single.ms, norm: basisOf(lim.single.norm) }
         : null,
     month:
       lim.monthly && lim.monthly.ms !== null

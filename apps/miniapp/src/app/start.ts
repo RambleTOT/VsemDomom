@@ -1,6 +1,6 @@
 /** Куда вести после входа: payload кнопки open_app или диплинка startapp → экран по роли (таблица payload → экран). */
-import { decodeStartApp } from '@vsemdomom/shared/browser';
-import type { Me } from '@vsemdomom/shared';
+import { decodeStartApp, RESIDENCY_ROLES } from '@vsemdomom/shared/browser';
+import type { Me, ResidencyRole } from '@vsemdomom/shared';
 
 export const isStaff = (me: Pick<Me, 'staff'>): boolean => me.staff !== null;
 
@@ -38,15 +38,36 @@ export function routeForStart(startParam: string | null, me: Pick<Me, 'staff' | 
   }
 }
 
+/** Что уже известно для регистрации (например, из приглашения собственника): дом, квартира, роль. */
+export interface ResidencePrefill {
+  house: string;
+  flat: number;
+  role: ResidencyRole;
+}
+
 /** Жителю без согласия или без квартиры — сначала S01–S02, затем экран из payload. */
-export function onboardingFor(me: Pick<Me, 'staff' | 'consentRequired' | 'residencies'>, target: string): string | null {
+export function onboardingFor(me: Pick<Me, 'staff' | 'consentRequired' | 'residencies'>, target: string, prefill?: ResidencePrefill): string | null {
   if (isStaff(me)) return null;
   if (target.startsWith('/owner/') || target.startsWith('/error/')) return null;
+  const q = new URLSearchParams(prefill ? { house: prefill.house, flat: String(prefill.flat), role: prefill.role } : {});
   // Сам экран регистрации — без «следующего экрана», иначе после неё вернёмся на неё же.
-  const next = isOnboarding(target) ? '' : `?next=${encodeURIComponent(target)}`;
-  if (me.consentRequired) return `/onboarding${next}`;
-  if (me.residencies.length === 0) return target.startsWith('/onboarding/residence') ? null : `/onboarding/residence${next}`;
+  if (!isOnboarding(target)) q.set('next', target);
+  const query = q.size > 0 ? `?${q.toString()}` : '';
+  if (me.consentRequired) return `/onboarding${query}`;
+  if (me.residencies.length === 0) return target.startsWith('/onboarding/residence') ? null : `/onboarding/residence${query}`;
   return null;
+}
+
+/** Подстановка для S02 из адреса (после S01 передаётся дальше): только корректные дом, квартира и роль. */
+export function residencePrefill(params: URLSearchParams): string {
+  const q = new URLSearchParams();
+  const house = params.get('house');
+  const flat = params.get('flat');
+  const role = params.get('role');
+  if (house && /^[A-Za-z0-9]{10}$/.test(house)) q.set('house', house);
+  if (flat && /^\d{1,5}$/.test(flat)) q.set('flat', flat);
+  if (role && (RESIDENCY_ROLES as readonly string[]).includes(role)) q.set('role', role);
+  return q.toString();
 }
 
 const isOnboarding = (path: string): boolean => path === '/onboarding' || path.startsWith('/onboarding/') || path.startsWith('/onboarding?');

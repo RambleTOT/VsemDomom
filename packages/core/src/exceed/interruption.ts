@@ -34,6 +34,14 @@ export function mergeIntervals(list: readonly Interval[]): Interval[] {
   return merged.map((m) => ({ start: new Date(m.start), end: new Date(m.end) }));
 }
 
+/**
+ * Непрерывный перерыв, в который входит авария (объединённый с пересекающимися авариями), — для
+ * единовременного лимита на экране итога: «перерыв был дольше 4 ч» говорит об этой аварии, а не о месяце.
+ */
+export function interruptionAround(list: readonly Interval[], own: Interval): Interval | null {
+  return mergeIntervals(list).find((i) => i.start.getTime() <= own.end.getTime() && i.end.getTime() >= own.start.getTime()) ?? null;
+}
+
 /** Месяц, в который попадает момент, в часовом поясе дома. */
 export function monthOf(at: Date, timezone: string): MonthRef {
   const local = new TZDate(at.getTime(), timezone);

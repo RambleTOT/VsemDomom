@@ -16,6 +16,7 @@ import {
   renderText,
   renderUnregisteredMenu,
   renderWelcome,
+  renderWelcomeAgreed,
   RESIDENCY_ROLE_I18N_KEY,
   RESIDENCY_ROLES,
   type ResidencySource,
@@ -24,7 +25,7 @@ import { eq } from 'drizzle-orm';
 import { PARAMS } from '../config/params.ts';
 import { maxUser } from '../db/schema.ts';
 import type { JobContext } from '../jobs/context.ts';
-import { activeDialogState, sendDm, setDialogState } from './dm.ts';
+import { activeDialogState, answerDmPrompt, sendDm, setDialogState } from './dm.ts';
 import { saveResidency } from '../services/residency.ts';
 import { chatOfHouse, dmHouse, houseByPublicId, listResidentialHouses, residenciesOf, userById, type HouseRow } from '../db/queries.ts';
 import type { CallbackHandler, CallbackReply, DialogState, UpdateMeta } from './types.ts';
@@ -131,7 +132,7 @@ export const onConsent: CallbackHandler = async (e, ctx) => {
     .where(eq(maxUser.id, e.userId));
   const reg = state?.flow === 'registration' ? state : null;
   await nextAfterConsent(ctx, e.userId, reg?.houseId ?? null, reg?.source ?? 'dm', e.meta.dedupeKey);
-  return answered(ctx);
+  return { notification: answered(ctx), message: renderWelcomeAgreed({ privacyUrl: privacyUrl(ctx) }, ctx.i18n) };
 };
 
 export const onHouseChosen: CallbackHandler = async (e, ctx) => {
@@ -163,10 +164,11 @@ export const onRoleChosen: CallbackHandler = async (e, ctx) => {
     return answered(ctx);
   }
   await ctx.db.transaction(async (tx) => {
-    await setDialogState(tx, ctx, e.userId, { ...state, step: 'flat', role });
+    await setDialogState(tx, ctx, e.userId, { ...state, step: 'flat', role, promptKey: e.meta.dedupeKey });
     await sendDm(tx, ctx, e.userId, renderAskFlat(dmHouse(h), ctx.i18n), e.meta.dedupeKey);
   });
-  return answeredStep(ctx, ctx.i18n.t('bot.dm.role'), ctx.i18n.t(`bot.dm.btn.${RESIDENCY_ROLE_I18N_KEY[role]}`));
+  // В ответе — полное название роли («Снимаю квартиру»), а не короткая подпись кнопки.
+  return answeredStep(ctx, ctx.i18n.t('bot.dm.role'), ctx.i18n.t(`role.${RESIDENCY_ROLE_I18N_KEY[role]}`));
 };
 
 /** «Отмена» и «Главное меню»; menu:register — начать регистрацию. */
@@ -206,6 +208,7 @@ export async function onFlatInput(ctx: JobContext, userId: number, text: string,
   }
   const saved = await saveResidency(ctx, { userId, house: h, flatNo, role: state.role, source: state.source });
   if (!saved.ok) return true;
+  if (state.promptKey) await answerDmPrompt(ctx, userId, state.promptKey, renderAnsweredStep(ctx.i18n.t('bot.dm.flat.label'), String(flatNo)));
   const { trustReset } = saved;
   const membership = { inChat: saved.inChat };
   const chat = await chatOfHouse(ctx.db, h.id);
