@@ -261,6 +261,15 @@ describe.skipIf(!url)('авария: личка, живая карточка, о
     expect(reminders).toHaveLength(1);
     const events = await h.handle.db.select().from(incidentEvent).where(and(eq(incidentEvent.incidentId, flat!.id), eq(incidentEvent.type, 'ads_not_reached')));
     expect(events).toHaveLength(1);
+    // После «Устранено» звонить в АДС поздно и напоминания не будет — не обещаем его.
+    await h.handle.db.update(incident).set({ status: 'checking' }).where(eq(incident.id, flat!.id));
+    await h.deliver(updates.callback(D, callbackPayload(flatDone, 'Не дозвонился'), dm(D)));
+    expect(lastDm(h, D).text).toBe('УК уже отметила устранение. Если услуги нет — ответьте «Нет» на вопрос в чате дома');
+    await h.handle.db.update(incident).set({ status: 'closed', closedAt: h.clock.now() }).where(eq(incident.id, flat!.id));
+    await h.deliver(updates.callback(D, callbackPayload(flatDone, 'Не дозвонился'), dm(D)));
+    expect(lastDm(h, D).text).toBe('Эта авария уже закрыта. Итог — в «Подробнее»');
+    const after = await h.handle.db.select().from(incidentEvent).where(and(eq(incidentEvent.incidentId, flat!.id), eq(incidentEvent.type, 'ads_not_reached')));
+    expect(after).toHaveLength(1);
   });
 
   it('карточку удалили в чате — публикуется новая, в бюджет трёх сообщений замена не входит', async () => {

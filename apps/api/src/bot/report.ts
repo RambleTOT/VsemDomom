@@ -277,9 +277,15 @@ export const onAdsNumber: CallbackHandler = async (e, ctx) => {
   return ok(ctx);
 };
 
+/** Статусы до «Устранено»: звонок в АДС и напоминание о номере заявки ещё имеют смысл. */
+const BEFORE_RESOLVE: readonly string[] = ['open', 'accepted', 'brigade_on_site', 'localized'];
+
 export const onAdsFail: CallbackHandler = async (e, ctx) => {
   const inc = await participantIncident(ctx, e.payload.id, e.userId);
   if (!inc) return ctx.i18n.t('bot.answer.expired');
+  // После «Устранено» звонить в АДС поздно и напоминания не будет — не обещаем его.
+  if (inc.status === 'closed' || inc.status === 'merged') return ctx.i18n.t('bot.answer.closed');
+  if (!BEFORE_RESOLVE.includes(inc.status)) return ctx.i18n.t('bot.dm.ads.too_late');
   await adsNotReached(ctx, { incident: inc, userId: e.userId, source: 'bot' });
   return ctx.i18n.t('report.ads.no_answer.saved');
 };
@@ -323,7 +329,7 @@ export async function onAdsNumberInput(ctx: JobContext, userId: number, text: st
 /** Задача ads-reminder: одно напоминание, если номер так и не введён и авария ещё до «Устранено». */
 export async function adsReminderJob(ctx: JobContext, data: { incidentId: number; userId: number }): Promise<'sent' | 'skipped'> {
   const [inc] = await ctx.db.select().from(incident).where(eq(incident.id, data.incidentId));
-  if (!inc || inc.adsRegNumber !== null || !['open', 'accepted', 'brigade_on_site', 'localized'].includes(inc.status)) return 'skipped';
+  if (!inc || inc.adsRegNumber !== null || !BEFORE_RESOLVE.includes(inc.status)) return 'skipped';
   const user = await userById(ctx.db, data.userId);
   if (!user?.dialogActive) return 'skipped';
   const r = (await residenciesOf(ctx.db, data.userId)).find((x) => x.house.id === inc.houseId);
