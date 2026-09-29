@@ -285,6 +285,25 @@ describe.skipIf(!url)('авария: личка, живая карточка, о
     expect(text).not.toContain('не подтверждены');
   });
 
+  it('отмечен из лички (уровень 0), потом жмёт подъезд в чате — «уже отметились», уровень 1, карточка правится', async () => {
+    const E = 7006; // кв. 110, подъезд 4, не в чате
+    await registerResident(h, E, 110);
+    await h.deliver(updates.dmText(E, '/report'));
+    await h.deliver(updates.callback(E, callbackPayload(lastDm(h, E), 'Горячая вода'), dm(E)));
+    await h.deliver(updates.callback(E, callbackPayload(lastDm(h, E), 'Сейчас'), dm(E)));
+    await h.deliver(updates.callback(E, callbackPayload(lastDm(h, E), 'Дом'), dm(E)));
+    await h.drain();
+    const unconfirmed = (text: string) => Number(/не подтверждены: (\d+)/.exec(text)?.[1] ?? 0);
+    const before = unconfirmed((await cardOf(hotId)).message?.message.text ?? '');
+    expect(before).toBeGreaterThan(0);
+    await pressInCard(E, hotId, '4');
+    expect(answers(h).at(-1)).toBe('Вы уже отметились');
+    const [res] = await h.handle.db.select().from(residency).where(eq(residency.userId, E));
+    expect(res?.trustLevel).toBe(1);
+    await h.drain();
+    expect(unconfirmed((await cardOf(hotId)).message?.message.text ?? '')).toBe(before - 1);
+  });
+
   it('закрытая авария: кнопки старой карточки отвечают «уже закрыта»', async () => {
     await h.handle.db.update(incident).set({ status: 'closed', closedAt: h.clock.now() }).where(eq(incident.id, hotId));
     const [inc] = await h.handle.db.select().from(incident).where(eq(incident.id, hotId));

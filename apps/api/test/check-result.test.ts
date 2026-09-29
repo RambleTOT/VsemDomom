@@ -235,7 +235,7 @@ describe.skipIf(!url)('проверка после «Устранено», ра�
     const card = await cardRow(sewer.id);
     const message = api.max.messages.get(card.mid!)!.message;
     await api.deliver(updates.callback(A, callbackPayload(message, 'Подтверждаю'), { chatId: CHAT, chatType: 'chat' }, card.mid!));
-    expect(answers().at(-1)).toBe('Спасибо. Отметка видна в хронологии');
+    expect(answers().at(-1)).toBe('Спасибо, отметили. Когда подтвердят и соседи из других квартир, это появится в хронологии');
     await api.deliver(updates.callback(B, callbackPayload(message, 'Подтверждаю'), { chatId: CHAT, chatType: 'chat' }, card.mid!));
     const detail = await api.call<IncidentDetail>('GET', `/api/v1/incidents/${sewer.id}`, { token: tokens[A] });
     expect(detail.body.timeline.find((e) => e.type === 'residents_brigade_confirmed')?.payload).toEqual({ flats: 2 });

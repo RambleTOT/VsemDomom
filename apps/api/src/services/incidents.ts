@@ -236,7 +236,8 @@ export async function joinIncident(ctx: JobContext, input: JoinInput): Promise<J
     if (!h) throw new Error('дом аварии не найден');
     const [res] = await tx.select().from(residency).where(and(eq(residency.userId, input.userId), eq(residency.houseId, h.id)));
     let trust: TrustLevel = res?.trustLevel ?? 0;
-    if (res && input.fromHouseChat && trust === 0) {
+    const upgraded = Boolean(res && input.fromHouseChat && trust === 0);
+    if (res && upgraded) {
       // Нажал кнопку в чате дома — значит, состоит в чате.
       await tx
         .update(residency)
@@ -244,6 +245,11 @@ export async function joinIncident(ctx: JobContext, input: JoinInput): Promise<J
         .where(and(eq(residency.id, res.id), eq(residency.trustLevel, 0)));
       trust = 1;
     }
+    // Уже отмечен, но стал «из чата дома» — карточка правится: строка «не подтверждены» меняется.
+    const alreadyJoined = async (entrance: number | null): Promise<JoinResult> => {
+      if (upgraded) await cardLater(ctx.queue, input.incident.id, tx);
+      return { ...base, result: 'already_joined', entrance };
+    };
     const loc = locate(h, res ?? null, { entrance: input.entrance, floor: input.floor ?? null, preferExplicit: input.preferExplicit ?? false });
     const [user] = await tx.select({ dialogActive: maxUser.dialogActive, notifyDefault: maxUser.notifyDefault }).from(maxUser).where(eq(maxUser.id, input.userId));
     const base = { registered: Boolean(res), dialogActive: user?.dialogActive ?? false };
@@ -270,7 +276,7 @@ export async function joinIncident(ctx: JobContext, input: JoinInput): Promise<J
         .onConflictDoNothing()
         .returning({ id: incidentParticipant.id });
       // Параллельное нажатие того же жителя уже записало участие.
-      if (inserted.length === 0) return { ...base, result: 'already_joined', entrance: loc.entrance };
+      if (inserted.length === 0) return alreadyJoined(loc.entrance);
       result = 'joined';
     } else if (!existing.affected) {
       await tx
@@ -285,7 +291,7 @@ export async function joinIncident(ctx: JobContext, input: JoinInput): Promise<J
       await tx.update(incidentParticipant).set({ entrance: loc.entrance, floor: loc.floor }).where(eq(incidentParticipant.id, existing.id));
       result = 'updated';
     } else {
-      return { ...base, result: 'already_joined', entrance: existing.entrance };
+      return alreadyJoined(existing.entrance);
     }
     await tx.insert(incidentEvent).values({
       incidentId: input.incident.id,
