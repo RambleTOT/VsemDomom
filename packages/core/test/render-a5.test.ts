@@ -477,6 +477,9 @@ describe('начало аварии', () => {
   it('быстрые варианты и проверки', () => {
     expect(startedAtFromPreset('now', now)).toEqual(now);
     expect(startedAtFromPreset('12h', now)).toEqual(new Date('2026-09-27T03:00:00Z'));
+    // С точностью до минуты: иначе «16:52–17:57, 1 ч 4 мин» — длительность не сходится с показанным временем.
+    expect(startedAtFromPreset('1h', new Date('2026-09-29T14:52:47.123Z'))).toEqual(new Date('2026-09-29T13:52:00Z'));
+    expect(startedAtFromPreset('now', new Date('2026-09-29T14:52:47.123Z'))).toEqual(new Date('2026-09-29T14:52:00Z'));
     const options = { futureSkewMs: 60_000, confirmOldAfterMs: 24 * 3_600_000 };
     expect(checkStartedAt(new Date(now.getTime() + 30_000), now, options)).toBe('ok');
     expect(checkStartedAt(new Date(now.getTime() + 120_000), now, options)).toBe('future');

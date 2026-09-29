@@ -3,11 +3,16 @@
  * (с допуском на расхождение часов), старше порога — нужно подтверждение.
  */
 import { TZDate } from '@date-fns/tz';
-import { MS_PER_HOUR } from '../constants/time.ts';
+import { MS_PER_HOUR, MS_PER_MINUTE } from '../constants/time.ts';
 import { STARTED_PRESET_HOURS, type StartedPreset } from '../domain/enums.ts';
 
+/**
+ * С точностью до минуты: время в сообщениях — без секунд, и с секундами в начале длительность
+ * расходилась с показанным временем («16:52–17:57, 1 ч 4 мин»).
+ */
 export function startedAtFromPreset(preset: Exclude<StartedPreset, 'custom'>, now: Date): Date {
-  return new Date(now.getTime() - STARTED_PRESET_HOURS[preset] * MS_PER_HOUR);
+  const at = now.getTime() - STARTED_PRESET_HOURS[preset] * MS_PER_HOUR;
+  return new Date(Math.floor(at / MS_PER_MINUTE) * MS_PER_MINUTE);
 }
 
 export type StartedAtCheck = 'ok' | 'future' | 'old' | 'too_old';
