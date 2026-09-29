@@ -135,7 +135,7 @@ export const authRoutes = defineRoutes([
     method: 'post',
     path: '/api/v1/auth/dev',
     summary: 'Вход вне MAX для разработки',
-    description: 'Только при DEV_AUTH=true (локально). На стенде отвечает 404 независимо от клиента.',
+    description: 'Только при DEV_AUTH=true (локально). При DEV_AUTH=false (стенд) любой запрос — 404 feature_disabled, тело не проверяется.',
     tags: ['auth'],
     auth: 'none',
     body: AuthDevRequestSchema,

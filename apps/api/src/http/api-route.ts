@@ -47,6 +47,8 @@ export interface RouteOptions {
   bodyError?: () => ApiError;
   /** Ввод кода: строгий лимит запросов на пользователя (как у входа). */
   codeInput?: boolean;
+  /** Маршрут включён настройкой не из FEATURE_* (dev-вход): выключенный отвечает 404 feature_disabled до разбора запроса. */
+  enabled?: boolean;
 }
 
 export function findRoute<Id extends OperationId>(operationId: Id): RouteOf<Id> {
@@ -104,7 +106,7 @@ export function registerApiRoute<Id extends OperationId>(
     url: fastifyPath(route.path),
     config: rateLimit ? { rateLimit } : {},
     handler: async (req: FastifyRequest, reply: FastifyReply) => {
-      if (route.feature && !deps.config.features[route.feature]) {
+      if ((route.feature && !deps.config.features[route.feature]) || options.enabled === false) {
         return sendProblem(req, reply, 404, 'feature_disabled', 'Функция выключена');
       }
       if (route.auth !== 'none' && !req.principal) {

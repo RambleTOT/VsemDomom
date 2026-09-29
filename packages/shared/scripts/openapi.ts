@@ -93,7 +93,10 @@ export function buildDocument(): string {
         '- Дома, УК и телефоны АДС — модельные данные.',
       ].join('\n'),
     },
-    servers: [{ url: '/', description: 'Тот же хост, что и мини-приложение' }],
+    servers: [
+      { url: 'https://app.vsemdomom.ru', description: 'Стенд' },
+      { url: '/', description: 'Тот же хост, что и мини-приложение' },
+    ],
     tags: [
       { name: 'system', description: 'Проверки и версия' },
       { name: 'auth', description: 'Вход: initData MAX, dev-вход' },

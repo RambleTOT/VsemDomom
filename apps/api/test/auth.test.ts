@@ -1,11 +1,15 @@
 import { createHmac } from 'node:crypto';
+import { ManualClock } from '@vsemdomom/core';
+import { pino } from 'pino';
 import { describe, expect, it } from 'vitest';
 import { signInitData, verifyInitData } from '../src/auth/init-data.ts';
 import { authenticate } from '../src/auth/principal.ts';
 import { issueSession, verifySession } from '../src/auth/session.ts';
 import { LOCAL_CHECKER_TOKENS, LOCAL_SESSION_SECRET, loadConfig } from '../src/config/env.ts';
 import { CHECKER_USERS } from '../src/config/params.ts';
+import { buildApp } from '../src/http/app.ts';
 import { parseIfMatch, assertVersion } from '../src/http/if-match.ts';
+import type { JobContext } from '../src/jobs/context.ts';
 import { ApiError } from '../src/http/problem.ts';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -118,6 +122,24 @@ describe('сессия JWT', () => {
     const root = findUp('pnpm-workspace.yaml')!.replace(/pnpm-workspace\.yaml$/, '');
     const seeds = JSON.parse(readFileSync(join(root, 'seeds/checker.json'), 'utf8')) as { users: { name: string; maxUserId: number }[] };
     expect(Object.fromEntries(seeds.users.map((u) => [u.name, u.maxUserId]))).toEqual(CHECKER_USERS);
+  });
+});
+
+describe('dev-вход при DEV_AUTH=false (стенд)', () => {
+  it('любой запрос — 404 feature_disabled, раньше разбора тела: маршрут не выдаёт свою схему', async () => {
+    const config = loadConfig({ DATABASE_URL: 'postgres://x', SESSION_SECRET: LOCAL_SESSION_SECRET, DEV_AUTH: 'false' });
+    // Выключенный маршрут отвечает до обработчика — сервисы и база не нужны.
+    const api = { clock: new ManualClock(now) } as unknown as JobContext;
+    const app = await buildApp({ config, log: pino({ level: 'silent' }), readiness: [], api });
+    try {
+      for (const payload of [{}, { userId: 1, role: 'resident' }]) {
+        const res = await app.inject({ method: 'POST', url: '/api/v1/auth/dev', payload });
+        expect(res.statusCode).toBe(404);
+        expect(res.json()).toMatchObject({ code: 'feature_disabled' });
+      }
+    } finally {
+      await app.close();
+    }
   });
 });
 

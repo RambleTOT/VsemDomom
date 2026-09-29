@@ -16,6 +16,8 @@ info:
     - `If-Match: <version>` на смене статуса УК — необязательный; устаревшая версия → 409 `version_conflict`.
     - Дома, УК и телефоны АДС — модельные данные.
 servers:
+  - url: https://app.vsemdomom.ru
+    description: Стенд
   - url: /
     description: Тот же хост, что и мини-приложение
 tags:
@@ -3823,7 +3825,7 @@ paths:
     post:
       operationId: authDev
       summary: Вход вне MAX для разработки
-      description: Только при DEV_AUTH=true (локально). На стенде отвечает 404 независимо от клиента.
+      description: Только при DEV_AUTH=true (локально). При DEV_AUTH=false (стенд) любой запрос — 404 feature_disabled, тело не проверяется.
       tags:
         - auth
       security: []

@@ -1,6 +1,7 @@
 /**
  * Вход: POST /auth/max — initData MAX (подпись по алгоритму dev.max.ru) → сессия на 12 часов;
- * POST /auth/dev — вход вне MAX, только при DEV_AUTH=true (конфигурация запрещает его в webhook и production).
+ * POST /auth/dev — вход вне MAX, только при DEV_AUTH=true (конфигурация запрещает его в webhook и production);
+ * при DEV_AUTH=false любой запрос — 404 feature_disabled.
  */
 import type { FastifyInstance } from 'fastify';
 import { eq } from 'drizzle-orm';
@@ -42,8 +43,8 @@ export function registerAuthRoutes(app: FastifyInstance, deps: ApiDeps): void {
     };
   });
 
+  // DEV_AUTH=false (стенд): любой запрос — 404 feature_disabled, до разбора тела.
   registerApiRoute(app, deps, 'authDev', async ({ body }) => {
-    if (!config.devAuth) throw new ApiError(404, 'not_found', 'Не найдено');
     const now = ctx.clock.now();
     await ensureUser(ctx, body.userId, 'ru');
     if (body.role === 'uk') {
@@ -56,5 +57,5 @@ export function registerAuthRoutes(app: FastifyInstance, deps: ApiDeps): void {
       status: 200,
       body: { token: session.token, expiresAt: iso(session.expiresAt), user: await loadMe(ctx, body.userId), startParam: body.startParam ?? null, devAuth: true },
     };
-  });
+  }, { enabled: config.devAuth });
 }
