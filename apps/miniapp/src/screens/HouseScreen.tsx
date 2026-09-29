@@ -1,6 +1,6 @@
 /** S03. Мой дом: есть ли сейчас авария и знает ли УК; сообщить; итоги; месяц против нормы; чат. */
 import { Button, IconButton } from '@maxhub/max-ui';
-import type { HouseDetail, IncidentSummary } from '@vsemdomom/shared';
+import type { HouseDetail, IncidentSummary, RecentResult } from '@vsemdomom/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router';
 import { api } from '../api/endpoints.ts';
@@ -34,8 +34,12 @@ function IncidentCard({ incident, onOpen }: { incident: IncidentSummary; onOpen:
   );
 }
 
-/** Итог в списке: устранено в норматив или со сроком сверх норматива; расхождение — отдельно. */
-function resultLine(r: IncidentSummary): string {
+/**
+ * Итог в списке (как в макете): квартиры сверх месячной нормы — главное, от этого зависит перерасчёт;
+ * иначе — устранено в норматив или позже; расхождение — отдельно.
+ */
+function resultLine(r: RecentResult): string {
+  if (r.overNormFlats > 0) return t('screen.S03.result.over', { count: r.overNormFlats, flats: plural(r.overNormFlats, 'flats_gen') });
   if (r.displayStatus === 'closed_with_discrepancy') return t('status.closed_disc');
   const duration = minutesText(r.headline.durationMinutes ?? 0);
   return r.overdue ? t('screen.S03.result.done', { duration }) : t('screen.S03.result.in_norm', { duration });
@@ -122,7 +126,7 @@ function HouseBody({ house }: { house: HouseDetail }) {
                 {house.recentResults.map((r) => (
                   <button type="button" key={r.id} className="list-row plain-button" onClick={() => void navigate(`/incident/${r.id}/result`)}>
                     <span className="list-row-text">
-                      <span className="list-row-title">{t('screen.S03.result.title', { service: serviceName(r.service), date: dayMonthIn(r.closedAt ?? r.startedAt, tz) })}</span>
+                      <span className="list-row-title">{t('screen.S03.result.title', { service: serviceName(r.service), date: dayMonthIn(r.startedAt, tz) })}</span>
                       <span className="muted small">{resultLine(r)}</span>
                     </span>
                     <Icon name="chevron-right" size={16} className="muted" />

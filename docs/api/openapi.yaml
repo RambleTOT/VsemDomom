@@ -569,7 +569,7 @@ components:
         recentResults:
           type: array
           items:
-            $ref: "#/components/schemas/IncidentSummary"
+            $ref: "#/components/schemas/RecentResult"
           description: Последние закрытые аварии (до 3)
         month:
           $ref: "#/components/schemas/HouseMonthSummary"
@@ -922,6 +922,97 @@ components:
       required:
         - entrance
         - count
+    RecentResult:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/PublicId"
+        house:
+          $ref: "#/components/schemas/IncidentHouseRef"
+        service:
+          $ref: "#/components/schemas/ServiceType"
+        scope:
+          $ref: "#/components/schemas/IncidentScope"
+        entrance:
+          type:
+            - integer
+            - "null"
+          exclusiveMinimum: 0
+          description: Подъезд для масштаба entrance
+        status:
+          $ref: "#/components/schemas/IncidentStatus"
+        displayStatus:
+          $ref: "#/components/schemas/DisplayStatus"
+        headline:
+          $ref: "#/components/schemas/Headline"
+        startedAt:
+          $ref: "#/components/schemas/DateTime"
+        createdAt:
+          $ref: "#/components/schemas/DateTime"
+        eta:
+          allOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type:
+                - string
+                - "null"
+        overdue:
+          type: boolean
+          description: Истёк хотя бы один срок по нормативу
+        singleLimitExceeded:
+          type: boolean
+        discrepancyUnresolved:
+          type: boolean
+        participantsCount:
+          type: integer
+          minimum: 0
+          description: Отметились «у меня тоже» (жители, включая не подтверждённых)
+        flatsCount:
+          type: integer
+          minimum: 0
+          description: Квартиры зарегистрированных участников
+        byEntrance:
+          type: array
+          items:
+            $ref: "#/components/schemas/EntranceCount"
+        joined:
+          type:
+            - boolean
+            - "null"
+          description: Текущий пользователь отметился; null — для сотрудника УК
+        closedAt:
+          allOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type:
+                - string
+                - "null"
+        isModel:
+          type: boolean
+        overNormFlats:
+          type: integer
+          minimum: 0
+          description: Квартиры участников сверх месячной нормы — могут оформить перерасчёт
+      required:
+        - id
+        - house
+        - service
+        - scope
+        - entrance
+        - status
+        - displayStatus
+        - headline
+        - startedAt
+        - createdAt
+        - eta
+        - overdue
+        - singleLimitExceeded
+        - discrepancyUnresolved
+        - participantsCount
+        - flatsCount
+        - byEntrance
+        - joined
+        - closedAt
+        - isModel
+        - overNormFlats
     HouseMonthSummary:
       type: object
       properties:

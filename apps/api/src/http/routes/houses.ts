@@ -5,6 +5,7 @@ import { chatOfHouse } from '../../db/queries.ts';
 import { house, managementCompany } from '../../db/schema.ts';
 import { houseIncidentIds, incidentSummary, loadIncidentBundles } from '../../services/incident-view.ts';
 import { monthDetail, monthSummary } from '../../services/month.ts';
+import { computeResult } from '../../services/result.ts';
 import { chatInfo, houseSummary, residencyView } from '../../services/views.ts';
 import { assertHouseAccess, incidentViewer, loadViewer, residencyIn, visibleHouse } from '../access.ts';
 import { registerApiRoute, type ApiDeps } from '../api-route.ts';
@@ -42,7 +43,12 @@ export function registerHouseRoutes(app: FastifyInstance, deps: ApiDeps): void {
     const ids = await houseIncidentIds(ctx.db, h.id, viewer.userId);
     const bundles = await loadIncidentBundles(ctx.db, [...ids.active, ...ids.recent]);
     const iv = incidentViewer(viewer, h);
-    const pick = (list: number[]) => list.flatMap((id) => bundles.filter((b) => b.incident.id === id)).map((b) => incidentSummary(b, iv, now));
+    const bundlesOf = (list: number[]) => list.flatMap((id) => bundles.filter((b) => b.incident.id === id));
+    const pick = (list: number[]) => bundlesOf(list).map((b) => incidentSummary(b, iv, now));
+    // Итог: квартиры сверх месячной нормы — тот же расчёт, что в итоге в чате и на экране итога.
+    const recentResults = await Promise.all(
+      bundlesOf(ids.recent).map(async (b) => ({ ...incidentSummary(b, iv, now), overNormFlats: (await computeResult(ctx.db, b, now)).eligible?.flats ?? 0 })),
+    );
     return {
       status: 200,
       body: {
@@ -50,7 +56,7 @@ export function registerHouseRoutes(app: FastifyInstance, deps: ApiDeps): void {
         uk: { name: uk?.name ?? '', adsPhone: uk?.adsPhone ?? '', isModel: uk?.isModel ?? h.isModel },
         chat: chatInfo(chat),
         activeIncidents: pick(ids.active),
-        recentResults: pick(ids.recent),
+        recentResults,
         month: await monthSummary(ctx.db, h, myResidency, now),
         myResidency: myResidency ? residencyView(myResidency, h, chat) : null,
       },

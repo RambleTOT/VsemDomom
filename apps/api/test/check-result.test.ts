@@ -1,4 +1,4 @@
-import type { IncidentDetail, Problem } from '@vsemdomom/shared';
+import type { HouseDetail, IncidentDetail, Problem } from '@vsemdomom/shared';
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { chatCard, incident, incidentParticipant, outboundMessage } from '../src/db/schema.ts';
@@ -166,6 +166,9 @@ describe.skipIf(!url)('проверка после «Устранено», ра�
       expect(a.body).toMatchObject({ my: { flatNo: 57, restoredAt: msk('12:00').toISOString(), source: 'uk_mark' }, month: { totalMinutes: 420, withinNorm: true } });
       const u = await api.call<Result>('GET', `/api/v1/incidents/${hot.id}/result`, { token: uk });
       expect(u.body.my).toBeNull();
+      // Главная дома: в «Последних итогах» — сколько квартир сверх месячной нормы (как в итоге в чате).
+      const home = await api.call<HouseDetail>('GET', '/api/v1/houses/dom1model1', { token: tokens[A] });
+      expect(home.body.recentResults.find((r) => r.id === hot.id)?.overNormFlats).toBe(1);
     });
   });
 

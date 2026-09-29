@@ -132,7 +132,7 @@ describe.skipIf(!url)('REST API жителя (A6, PostgreSQL)', () => {
       const res = await api.call<HouseDetail>('GET', '/api/v1/houses/dom1model1', { token: alice });
       expect(res.status).toBe(200);
       expect(res.body).toMatchObject({ id: 'dom1model1', uk: { name: 'УК Модельная', isModel: true }, chat: null, activeIncidents: [] });
-      expect(res.body.recentResults.map((r) => r.service)).toEqual(['hot_water']);
+      expect(res.body.recentResults.map((r) => [r.service, r.overNormFlats])).toEqual([['hot_water', 0]]);
       expect(res.body.myResidency).toMatchObject({ flatNo: 57 });
       expect(res.body.month.scope).toBe('flat');
       expect(res.body.month.services).toEqual([
