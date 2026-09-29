@@ -215,7 +215,7 @@ describe('C02 — карточка аварии', () => {
       card({ incident: { status: 'closed', resolvedAtUk: at('19:10') }, overNorm: { flats: 3, durationMs: (5 * 60 + 40) * 60_000 } }),
       t,
     );
-    expect(over.text.split('\n')[1]).toBe('У 3 квартир перерыв 5 ч 40 мин, сверх месячной нормы. Итог ниже');
+    expect(over.text.split('\n')[1]).toBe('У 3 квартир за месяц до 5 ч 40 мин перерывов — сверх месячной нормы. Итог ниже');
     const disc = renderCard(card({ incident: { status: 'closed', discrepancyUnresolved: true, resolvedAtUk: at('19:10') }, unconfirmedRestoreFlats: 2 }), t);
     assertGroupSafe(disc);
     expect(disc.text.split('\n').slice(0, 2)).toEqual([

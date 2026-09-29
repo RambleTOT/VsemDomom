@@ -131,7 +131,7 @@ describe.skipIf(!url)('проверка после «Устранено», ра�
       const c = await cardRow(hot.id);
       expect(messageText(c.mid)?.split('\n').slice(0, 2)).toEqual([
         '**✅ Закрыта · горячая вода есть**',
-        'У 1 квартиры перерыв 10 ч 40 мин, сверх месячной нормы. Итог ниже',
+        'У 1 квартиры за месяц 10 ч 40 мин перерывов — сверх месячной нормы. Итог ниже',
       ]);
       const result = api.max.messages.get(c.resultMid!);
       expect(result?.message.replyToMid).toBe(c.mid);

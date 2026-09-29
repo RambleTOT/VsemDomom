@@ -144,7 +144,12 @@ function statusLines(input: CardInput, t: Translator): [string, string] {
       const duration = formatDuration(resolvedAt.getTime() - incident.startedAt.getTime());
       const over = input.overNorm && input.overNorm.flats > 0 ? input.overNorm : null;
       const l2 = over
-        ? t.t('bot.card.l2.closed_over', { count: over.flats, flats: t.plural(over.flats, 'flats_gen'), duration: formatDuration(over.durationMs) })
+        ? // Сумма перерывов за месяц (у нескольких квартир — наибольшая), а не длина этой аварии.
+          t.t(over.flats > 1 ? 'bot.card.l2.closed_over.many' : 'bot.card.l2.closed_over', {
+            count: over.flats,
+            flats: t.plural(over.flats, 'flats_gen'),
+            duration: formatDuration(over.durationMs),
+          })
         : t.t('bot.card.l2.closed_ok', { duration });
       return [t.t('bot.card.status.closed', vars), l2];
     }
