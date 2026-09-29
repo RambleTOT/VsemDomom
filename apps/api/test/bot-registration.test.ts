@@ -65,7 +65,7 @@ describe.skipIf(!url)('регистрация в личке (A4, PostgreSQL + с
     expect(labels.filter((t) => t.startsWith('Дом '))).toHaveLength(4);
     expect(JSON.stringify(choose.keyboard)).not.toContain('dom5sandbx');
 
-    await h.deliver(updates.callback(U, callbackPayload(choose, 'Модельная, 2'), dm(U)));
+    await h.deliver(updates.callback(U, callbackPayload(choose, 'Садовая, 2'), dm(U)));
     await h.deliver(updates.callback(U, callbackPayload(lastDm(h, U), 'Снимаю'), dm(U)));
     await h.deliver(updates.dmText(U, '12'));
     const [row] = await flats(U);

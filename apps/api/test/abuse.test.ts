@@ -94,7 +94,7 @@ describe.skipIf(!url)('перебор демо-кода и засорение а
     expect(lastDm(h, CODE_USER).text).toBe('Слишком много неверных кодов подряд. Попробуйте через 15 мин');
     await h.advance(16 * 60_000);
     await h.deliver(updates.dmText(CODE_USER, '/democode DEMO-ABUSE-1'));
-    expect(lastDm(h, CODE_USER).text).toBe('Готово: у вас демо-роль сотрудника «УК Модельная». Пульт аварий — /uk');
+    expect(lastDm(h, CODE_USER).text).toBe('Готово: у вас демо-роль сотрудника УК «Садовый квартал». Пульт аварий — /uk');
   });
 
   it('не больше пяти новых аварий от жителя за час; песочница не ограничена', async () => {

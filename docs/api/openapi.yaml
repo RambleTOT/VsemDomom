@@ -277,7 +277,7 @@ components:
           example: "1"
         address:
           type: string
-          example: ул. Модельная, 1
+          example: ул. Садовая, 1
         city:
           type: string
         timezone:
@@ -530,7 +530,7 @@ components:
           example: "1"
         address:
           type: string
-          example: ул. Модельная, 1
+          example: ул. Садовая, 1
         city:
           type: string
         timezone:
@@ -4077,7 +4077,7 @@ paths:
     post:
       operationId: demoUkRole
       summary: Демо-код роли УК
-      description: "Только при DEMO_MODE=true: выдаёт роль сотрудника «УК Модельная» с пометкой «Демо-роль»."
+      description: "Только при DEMO_MODE=true: выдаёт роль сотрудника модельной УК с пометкой «Демо-роль»."
       tags:
         - me
         - demo

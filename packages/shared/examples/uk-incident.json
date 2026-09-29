@@ -3,7 +3,7 @@
   "house": {
     "id": "dom1model1",
     "label": "1",
-    "address": "ул. Модельная, 1",
+    "address": "ул. Садовая, 1",
     "timezone": "Europe/Moscow",
     "entrances": 4,
     "isModel": true

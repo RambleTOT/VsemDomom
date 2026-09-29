@@ -120,7 +120,7 @@ describe.skipIf(!url)('REST API жителя (A6, PostgreSQL)', () => {
     it('поиск: модельные дома без песочницы; checker-токен видит только песочницу', async () => {
       const all = await api.call<{ items: HouseSummary[] }>('GET', '/api/v1/houses/search', { token: alice });
       expect(all.body.items.map((h) => h.id)).toEqual(['dom1model1', 'dom2model2', 'dom3model3', 'dom4model4']);
-      const q = await api.call<{ items: HouseSummary[] }>('GET', `/api/v1/houses/search?q=${encodeURIComponent('Модельная, 2')}`, { token: alice });
+      const q = await api.call<{ items: HouseSummary[] }>('GET', `/api/v1/houses/search?q=${encodeURIComponent('Садовая, 2')}`, { token: alice });
       expect(q.body.items.map((h) => h.id)).toEqual(['dom2model2']);
       const checker = await api.call<{ items: HouseSummary[] }>('GET', '/api/v1/houses/search', { token: CHECKER.resident });
       expect(checker.body.items.map((h) => h.id)).toEqual(['dom5sandbx']);
@@ -131,7 +131,7 @@ describe.skipIf(!url)('REST API жителя (A6, PostgreSQL)', () => {
       expect((await api.call('GET', '/api/v1/houses/dom1model1/summary', { token: carol })).status).toBe(200);
       const res = await api.call<HouseDetail>('GET', '/api/v1/houses/dom1model1', { token: alice });
       expect(res.status).toBe(200);
-      expect(res.body).toMatchObject({ id: 'dom1model1', uk: { name: 'УК Модельная', isModel: true }, chat: null, activeIncidents: [] });
+      expect(res.body).toMatchObject({ id: 'dom1model1', uk: { name: 'УК «Садовый квартал»', isModel: true }, chat: null, activeIncidents: [] });
       expect(res.body.recentResults.map((r) => [r.service, r.overNormFlats])).toEqual([['hot_water', 0]]);
       expect(res.body.myResidency).toMatchObject({ flatNo: 57 });
       expect(res.body.month.scope).toBe('flat');

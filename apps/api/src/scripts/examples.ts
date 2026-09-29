@@ -28,7 +28,7 @@ const MIN = 60_000;
 const BOT = 'vsemdomom_bot';
 const ID = 'K3f9QpZ2aB';
 const at = (hhmm: string, day = '2026-09-27') => new Date(`${day}T${hhmm}:00+03:00`);
-const house = { publicId: 'dom1model1', label: '1', address: 'ул. Модельная, 1', timezone: TZ, isModel: true };
+const house = { publicId: 'dom1model1', label: '1', address: 'ул. Садовая, 1', timezone: TZ, isModel: true };
 
 const basis = { basisDoc: 'ПП № 416', basisPoint: 'п. 13' };
 const deadlines: CardDeadline[] = [

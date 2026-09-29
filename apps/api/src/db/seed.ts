@@ -457,6 +457,50 @@ export async function reseedHouseHistory(
 }
 
 /**
+ * История модельных домов — в текущем месяце. Аварии истории дома пересоздаются, если их время
+ * не совпадает с планом из сидов: после смены месяца (история прошлого месяца в итог нового не входит)
+ * и в первые дни месяца, пока план ещё сдвинут к началу месяца и укорочен. Вызывается раз в час.
+ */
+export async function refreshModelHistory(db: Db, input: { seedsDir: string; now: Date; log: Logger }): Promise<number> {
+  const history = await readSeed(input.seedsDir, 'history.json', historySeed);
+  if (history.incidents.length === 0) return 0;
+  const houses = await db.select().from(t.house).where(and(eq(t.house.isModel, true), eq(t.house.isSandbox, false)));
+  const stored = await db
+    .select({ publicId: t.incident.publicId, startedAt: t.incident.startedAt, resolvedAtUk: t.incident.resolvedAtUk })
+    .from(t.incident)
+    .where(inArray(t.incident.publicId, history.incidents.map((i) => i.publicId)));
+  const byId = new Map(stored.map((r) => [r.publicId, r]));
+  const same = (a: Date, b: Date) => Math.abs(a.getTime() - b.getTime()) < MS_PER_MINUTE;
+  let refreshed = 0;
+  for (const home of houses) {
+    const own = history.incidents.filter((i) => i.housePublicId === home.publicId);
+    const local = new TZDate(input.now.getTime(), home.timezone);
+    const monthStart = new TZDate(local.getFullYear(), local.getMonth(), 1, 0, 0, 0, home.timezone).getTime();
+    const monthEnd = new Date(new TZDate(local.getFullYear(), local.getMonth() + 1, 1, 0, 0, 0, home.timezone).getTime() - 1);
+    const stale = own.some((i) => {
+      const planned = historyWindow(i, home.timezone, input.now);
+      // В этом месяце ещё нет места для интервала — прежнюю историю пока не трогаем.
+      if (!planned) return false;
+      const row = byId.get(i.publicId);
+      // Нет или осталась с прошлого месяца.
+      if (!row?.resolvedAtUk || row.startedAt.getTime() < monthStart) return true;
+      // В начале месяца была укорочена, а теперь помещается длиннее.
+      const rowMs = row.resolvedAtUk.getTime() - row.startedAt.getTime();
+      if (rowMs < planned.end.getTime() - planned.start.getTime() - MS_PER_MINUTE) return true;
+      // Плановое место (число и время из сидов) уже прошло — история должна стоять на нём.
+      const natural = historyWindow(i, home.timezone, monthEnd);
+      const naturalReached = natural !== null && same(natural.start, planned.start) && same(natural.end, planned.end);
+      return naturalReached && !(same(row.startedAt, planned.start) && same(row.resolvedAtUk, planned.end));
+    });
+    if (!stale) continue;
+    await db.transaction(async (tx) => seedHistory(tx, { history: own, houses: new Map([[home.publicId, home]]), norms: await loadNorms(tx), now: input.now, log: input.log }));
+    refreshed += 1;
+  }
+  if (refreshed > 0) input.log.info({ houses: refreshed }, 'история модельных домов перенесена в текущий месяц');
+  return refreshed;
+}
+
+/**
  * Интервал аварии истории в текущем месяце (часовой пояс дома). Если до «сейчас»
  * места не хватает — интервал сдвигается к началу месяца и при необходимости укорачивается.
  */

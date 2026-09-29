@@ -65,7 +65,7 @@
 
 | Эндпоинт | Поведение |
 |---|---|
-| `POST /me/demo-uk-role` | Код `DEMO_UK_CODE` → роль сотрудника «УК Модельная», `staff.isDemo: true`; неверный — 403 `demo_code_invalid`; 10 попыток в минуту на пользователя (дальше 429); тестовым токенам — 403 `forbidden` |
+| `POST /me/demo-uk-role` | Код `DEMO_UK_CODE` → роль сотрудника модельной УК, `staff.isDemo: true`; неверный — 403 `demo_code_invalid`; 10 попыток в минуту на пользователя (дальше 429); тестовым токенам — 403 `forbidden` |
 | `POST /uk/houses/{id}/demo/neighbours` | Пять модельных соседей уровня 1 в текущую аварию дома (`UkHouseDetail.demo.activeIncidentId`), разные подъезды; повтор — `added: 0`; нет открытой аварии — 409 `incident_not_open`. Через `DEMO_NEIGHBOUR_ANSWER_DELAY_SEC` после вопроса о восстановлении (или после добавления, если вопрос уже задан) соседи отвечают «Да» |
 | `POST /uk/incidents/{id}/demo/time-shift` | Начало аварии на 6 ч назад, `version` +1, событие `demo_time_shift` (`payload`: `hours`, `from`, `to`); пересчитываются сроки от начала аварии (устранение, допустимый перерыв), срок ответа УК и локализации — нет; ответ — `UkIncidentDetail`; закрытая или объединённая авария — 409 `incident_not_open` |
 | `POST /uk/houses/{id}/demo/reset` | Удаляет аварии, созданные при проверке, и пересоздаёт историю дома; проживания и роли остаются; `removedIncidents` — сколько аварий удалено |

@@ -1,6 +1,6 @@
 /**
  * Демо-пульт УК в личке (только DEMO_MODE) — чтобы сценарий проходился в MAX и без мини-приложения:
- *   /democode <код> — демо-роль сотрудника «УК Модельная» (тот же код и та же роль, что в профиле);
+ *   /democode <код> — демо-роль сотрудника модельной УК (тот же код и та же роль, что в профиле);
  *   /uk — открытые аварии домов сотрудника с кнопками следующих статусов.
  * Статусы ставятся тем же сервисом, что REST УК (ориентир «Принято» — через 2 часа).
  */
@@ -45,8 +45,9 @@ export async function onDemoCodeCommand(ctx: JobContext, userId: number, arg: st
     return reply(ctx, userId, 'bot.dm.democode.bad', meta, 'democode');
   }
   demoCodeFailures.reset(userId);
-  if (!(await grantDemoRole(ctx, userId))) return reply(ctx, userId, 'bot.dm.democode.bad', meta, 'democode');
-  await reply(ctx, userId, 'bot.dm.democode.ok', meta, 'democode');
+  const granted = await grantDemoRole(ctx, userId);
+  if (!granted) return reply(ctx, userId, 'bot.dm.democode.bad', meta, 'democode');
+  await reply(ctx, userId, 'bot.dm.democode.ok', meta, 'democode', { uk: granted.ukName });
 }
 
 export async function onUkCommand(ctx: JobContext, userId: number, _arg: string | null, meta: UpdateMeta): Promise<void> {

@@ -4,6 +4,7 @@
  */
 import { cardJob } from '../chat/card.ts';
 import { panelJob, type PanelJob } from '../chat/panel.ts';
+import { refreshModelHistory } from '../db/seed.ts';
 import { sendOutbound } from '../jobs/outbound.ts';
 import { baseHandlers, mergeHandlers, type UpdateHandlers } from '../jobs/process-update.ts';
 import { QUEUES } from '../jobs/queue.ts';
@@ -15,6 +16,7 @@ import { demoAnswersJob, type DemoAnswersJob } from '../services/demo-answers.ts
 import { monthlySummaryJob } from '../services/monthly.ts';
 import { notifyJob, type NotifyJob } from '../services/notify.ts';
 import { pollJob, type PollJob } from '../services/polls.ts';
+import { resolveDataDir } from '../util/paths.ts';
 import { onActIntro, onActReady } from './act.ts';
 import { onAdsAgain, onCrewNo, onCrewYes, onRestore } from './check.ts';
 import type { CallbackAnswerJob } from './dm.ts';
@@ -78,6 +80,11 @@ export const botJobHandlers: JobHandlers = {
   [QUEUES.check]: (data: CheckJob, ctx) => checkTimerJob(ctx, data),
   [QUEUES.act]: (data: ActJob, ctx) => actTimerJob(ctx, data),
   [QUEUES.poll]: (data: PollJob, ctx) => pollJob(ctx, data),
-  [QUEUES.monthly]: (_data: object, ctx) => monthlySummaryJob(ctx),
+  [QUEUES.monthly]: async (_data: object, ctx) => {
+    // Раз в час: итог месяца, затем история модельных домов — в текущий месяц (иначе в новом месяце демо не даст «сверх нормы»).
+    const queued = await monthlySummaryJob(ctx);
+    await refreshModelHistory(ctx.db, { seedsDir: resolveDataDir(ctx.config.seedsDir, 'seeds'), now: ctx.clock.now(), log: ctx.log });
+    return queued;
+  },
   [QUEUES.demo]: (data: DemoAnswersJob, ctx) => demoAnswersJob(ctx, data),
 };

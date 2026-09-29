@@ -67,7 +67,7 @@ describe.skipIf(!url)('демо-пульт УК в личке: /democode и /uk'
     await h.deliver(updates.dmText(D, '/democode WRONG-CODE'));
     expect(lastDm(h, D).text).toBe('Код не подошёл. Проверьте код и отправьте /democode <код> ещё раз');
     await h.deliver(updates.dmText(D, '/democode DEMO-CONSOLE'));
-    expect(lastDm(h, D).text).toBe('Готово: у вас демо-роль сотрудника «УК Модельная». Пульт аварий — /uk');
+    expect(lastDm(h, D).text).toBe('Готово: у вас демо-роль сотрудника УК «Садовый квартал». Пульт аварий — /uk');
     await h.deliver(updates.dmText(D, '/uk'));
     const console = lastDm(h, D);
     await h.deliver(updates.callback(D, callbackPayload(console, 'Бригада на месте'), dm(D)));

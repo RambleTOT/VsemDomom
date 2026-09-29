@@ -195,7 +195,7 @@ export const meRoutes = defineRoutes([
     method: 'post',
     path: '/api/v1/me/demo-uk-role',
     summary: 'Демо-код роли УК',
-    description: 'Только при DEMO_MODE=true: выдаёт роль сотрудника «УК Модельная» с пометкой «Демо-роль».',
+    description: 'Только при DEMO_MODE=true: выдаёт роль сотрудника модельной УК с пометкой «Демо-роль».',
     tags: ['me', 'demo'],
     auth: 'user',
     body: DemoUkRoleRequestSchema,

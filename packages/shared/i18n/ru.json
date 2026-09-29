@@ -1022,7 +1022,7 @@
   "bot.answer.uk.done": "Статус: {status}",
   "bot.answer.uk.failed": "Не получилось: {reason}",
   "bot.answer.uk.not_staff": "Это авария дома другой УК",
-  "bot.dm.democode.ok": "Готово: у вас демо-роль сотрудника «УК Модельная». Пульт аварий — /uk",
+  "bot.dm.democode.ok": "Готово: у вас демо-роль сотрудника {uk}. Пульт аварий — /uk",
   "bot.dm.democode.bad": "Код не подошёл. Проверьте код и отправьте /democode <код> ещё раз",
   "bot.dm.democode.too_many": "Слишком много неверных кодов подряд. Попробуйте через {minutes} мин",
   "timeline.event.reported": "Авария отмечена в сервисе",

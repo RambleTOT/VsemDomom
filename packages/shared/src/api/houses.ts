@@ -8,7 +8,7 @@ export const HouseSummarySchema = z
   .object({
     id: PublicId,
     label: z.string().meta({ description: 'Короткое имя для текстов: «Дом {label}»', example: '1' }),
-    address: z.string().meta({ example: 'ул. Модельная, 1' }),
+    address: z.string().meta({ example: 'ул. Садовая, 1' }),
     city: z.string(),
     timezone: z.string().meta({ description: 'Часовой пояс IANA; все времена показываются в нём', example: 'Europe/Moscow' }),
     entrances: z.int().positive(),

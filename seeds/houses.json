@@ -1,5 +1,5 @@
 {
-  "note": "Модельные дома: вымышленные адреса, параметры — типичные серии массовой застройки (допущение). Город и часовой пояс — параметры сидов.",
+  "note": "Модельные дома: вымышленный город и адреса, параметры — типичные серии массовой застройки (допущение). Город и часовой пояс — параметры сидов.",
   "city": "Модельск",
   "timezone": "Europe/Moscow",
   "houses": [
@@ -7,7 +7,7 @@
       "publicId": "dom1model1",
       "ukPublicId": "ukmodel001",
       "label": "1",
-      "address": "ул. Модельная, 1",
+      "address": "ул. Садовая, 1",
       "entrances": 4,
       "floors": 9,
       "flatsPerFloor": 4,
@@ -22,7 +22,7 @@
       "publicId": "dom2model2",
       "ukPublicId": "ukmodel001",
       "label": "2",
-      "address": "ул. Модельная, 2",
+      "address": "ул. Садовая, 2",
       "entrances": 3,
       "floors": 5,
       "flatsPerFloor": 4,
@@ -37,7 +37,7 @@
       "publicId": "dom3model3",
       "ukPublicId": "ukmodel001",
       "label": "3",
-      "address": "ул. Модельная, 3",
+      "address": "ул. Садовая, 3",
       "entrances": 2,
       "floors": 17,
       "flatsPerFloor": 6,
@@ -52,7 +52,7 @@
       "publicId": "dom4model4",
       "ukPublicId": "ukmodel001",
       "label": "4",
-      "address": "ул. Модельная, 4",
+      "address": "ул. Садовая, 4",
       "entrances": 4,
       "floors": 9,
       "flatsPerFloor": 4,
@@ -61,13 +61,13 @@
       "powerSources": 2,
       "hotWaterDeadEnd": false,
       "isSandbox": false,
-      "note": "Копия дома 1 со своим демо-чатом — если сценарий проверяют одновременно несколько человек"
+      "note": "Дом для проверки экспертом: как дом 1, свой чат; в истории месяца — ГВС 6 ч (весь дом), ХВС 1 ч 10 мин (подъезд 2), свет 50 мин"
     },
     {
       "publicId": "dom5sandbx",
       "ukPublicId": "ukmodel001",
       "label": "5",
-      "address": "ул. Модельная, 5 (песочница API)",
+      "address": "ул. Садовая, 5 (песочница API)",
       "entrances": 4,
       "floors": 9,
       "flatsPerFloor": 4,

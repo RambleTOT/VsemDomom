@@ -76,6 +76,44 @@
         140,
         190
       ]
+    },
+    {
+      "publicId": "hist4xvs01",
+      "housePublicId": "dom4model4",
+      "serviceType": "cold_water",
+      "scope": "entrance",
+      "entrance": 2,
+      "monthDay": 9,
+      "startTime": "10:00",
+      "steps": {
+        "acceptedMin": 15,
+        "localizedMin": 40,
+        "resolvedMin": 70
+      },
+      "note": "Дом 4: ХВС в подъезде 2 — 1 ч 10 мин, устранено в норматив",
+      "participantFlats": [
+        40,
+        47
+      ]
+    },
+    {
+      "publicId": "hist4ele01",
+      "housePublicId": "dom4model4",
+      "serviceType": "electricity",
+      "scope": "house",
+      "monthDay": 17,
+      "startTime": "19:30",
+      "steps": {
+        "acceptedMin": 10,
+        "localizedMin": 25,
+        "resolvedMin": 50
+      },
+      "note": "Дом 4: свет во всём доме — 50 мин, в пределах нормы",
+      "participantFlats": [
+        12,
+        88,
+        130
+      ]
     }
   ]
 }

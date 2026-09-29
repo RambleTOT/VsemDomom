@@ -108,7 +108,7 @@ describe.skipIf(!url)('авария: личка, живая карточка, о
     const done = lastDm(h, A);
     expect(done.text).toContain('Авария отмечена. Соседи видят карточку в чате дома');
     expect(done.text).toContain('Телефон: +7 (000) 000-00-01');
-    expect(done.text).toContain('«ул. Модельная, 1, кв. 57»');
+    expect(done.text).toContain('«ул. Садовая, 1, кв. 57»');
     expect(button(done, 'Скопировать номер АДС')).toMatchObject({ type: 'clipboard', payload: '+7 (000) 000-00-01' });
     expect(h.delayed().filter((j) => j.queue === QUEUES.adsReminder)).toEqual([
       { queue: QUEUES.adsReminder, data: { incidentId: hotId, userId: A }, startAfter: msk('12:30') },

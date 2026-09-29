@@ -54,14 +54,14 @@ describe.skipIf(!url)('демо-инструменты (A10)', () => {
   };
 
   describe('демо-код роли УК', () => {
-    it('неверный код — 403 demo_code_invalid; верный — роль «УК Модельная» с пометкой «Демо-роль»', async () => {
+    it('неверный код — 403 demo_code_invalid; верный — роль модельной УК с пометкой «Демо-роль»', async () => {
       const wrong = await api.call<Problem>('POST', '/api/v1/me/demo-uk-role', { token: demoToken, body: { code: 'DEMO-UK-WRONG' } });
       expect(wrong.status).toBe(403);
       expect(wrong.body.code).toBe('demo_code_invalid');
       const ok = await api.call<Me>('POST', '/api/v1/me/demo-uk-role', { token: demoToken, body: { code: DEMO_CODE } });
       expect(ok.status).toBe(200);
       expect(ok.body.roles).toContain('uk');
-      expect(ok.body.staff).toMatchObject({ isDemo: true, isChecker: false, uk: { name: 'УК Модельная', isModel: true } });
+      expect(ok.body.staff).toMatchObject({ isDemo: true, isChecker: false, uk: { name: 'УК «Садовый квартал»', isModel: true } });
       const again = await api.call<Me>('POST', '/api/v1/me/demo-uk-role', { token: demoToken, body: { code: DEMO_CODE } });
       expect(again.status).toBe(200);
       const log = await api.handle.db.select().from(auditLog).where(eq(auditLog.action, 'demo_uk_role'));

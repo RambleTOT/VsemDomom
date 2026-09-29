@@ -1,5 +1,5 @@
 /**
- * Демо-инструменты для проверяющих: роль сотрудника «УК Модельная» по демо-коду, пять модельных
+ * Демо-инструменты для проверяющих: роль сотрудника модельной УК по демо-коду, пять модельных
  * соседей в текущую аварию, сдвиг начала аварии на 6 ч назад, сброс демо-данных дома.
  * Работают только при DEMO_MODE и в модельных домах (проверяет маршрут). Модельные данные помечены
  * is_model (и model в событиях) и в метрики не входят; каждое действие пишется в audit_log.
@@ -46,16 +46,22 @@ export function demoCodeMatches(input: string, expected: string | undefined): bo
 /**
  * Роль сотрудника модельной УК с пометкой «Демо-роль». Если пользователь уже сотрудник этой УК,
  * его роль не меняется: настоящая роль не должна стать демо (её снимает /delete).
+ * Возвращает название УК (для ответа в личке) или null, если модельной УК нет.
  */
-export async function grantDemoRole(ctx: JobContext, userId: number): Promise<boolean> {
+export async function grantDemoRole(ctx: JobContext, userId: number): Promise<{ ukName: string } | null> {
   const now = ctx.clock.now();
   return ctx.db.transaction(async (tx) => {
-    const [uk] = await tx.select({ id: managementCompany.id }).from(managementCompany).where(eq(managementCompany.isModel, true)).orderBy(asc(managementCompany.id)).limit(1);
-    if (!uk) return false;
+    const [uk] = await tx
+      .select({ id: managementCompany.id, name: managementCompany.name })
+      .from(managementCompany)
+      .where(eq(managementCompany.isModel, true))
+      .orderBy(asc(managementCompany.id))
+      .limit(1);
+    if (!uk) return null;
     await tx.insert(maxUser).values({ id: userId }).onConflictDoNothing();
     await tx.insert(staff).values({ userId, ukId: uk.id, role: 'curator', isDemo: true }).onConflictDoNothing();
     await audit(tx, { actor: userActor(userId), action: 'demo_uk_role', entity: 'user', entityId: String(userId), at: now });
-    return true;
+    return { ukName: uk.name };
   });
 }
 
