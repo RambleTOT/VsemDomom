@@ -19,7 +19,7 @@ import { useToast } from '../components/Toast.tsx';
 import { useCopy } from '../components/useCopy.ts';
 import { Banner, Card, EmptyState, Muted, Skeleton } from '../components/ui.tsx';
 import { localInputValue, timeIn, whenIn } from '../format.ts';
-import { plural, serviceGen, serviceName, serviceNo, t } from '../i18n.ts';
+import { lowerFirst, plural, serviceName, serviceNo, t } from '../i18n.ts';
 import type { IconName } from '../icons/icons.ts';
 import { useSession } from '../app/session.tsx';
 import { useWide } from '../app/useWide.ts';
@@ -217,7 +217,8 @@ export function ReportScreen() {
   const timeBlocked = customFuture || (customOld && !confirmOld);
   const futureText = t('screen.S04.step2.error.future', { time: timeIn(now.toISOString(), tz) });
   const startAt = preset === 'custom' ? (customFuture || Number.isNaN(customDate.getTime()) ? null : customDate) : new Date(now.getTime() - STARTED_PRESET_HOURS[preset] * MS_PER_HOUR);
-  const whereTitle = service ? t('screen.S04.step3.title', { service_gen: serviceGen(service) }) : t('screen.S04.step3.title.any');
+  // Как в боте: «Где нет горячей воды?», «Где не работает канализация?», «Где протечка?».
+  const whereTitle = service ? t('screen.S04.step3.title', { service_no_lower: lowerFirst(serviceNo(service)) }) : t('screen.S04.step3.title.any');
 
   const whatBody = (
     <>

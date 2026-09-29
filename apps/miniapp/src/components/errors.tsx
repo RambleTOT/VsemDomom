@@ -93,7 +93,7 @@ export function InlineError({ error, onRetry }: { error: unknown; onRetry?: () =
     <div className="inline-error" role="alert">
       <Icon name={view.icon} size={20} />
       <div>
-        <p className="banner-title">{error instanceof ApiError && kind === 'server' && !error.isNetwork ? error.message : t(view.title)}</p>
+        <p className="banner-title">{error instanceof ApiError && kind === 'server' && error.body?.title ? error.message : t(view.title)}</p>
         <p className="banner-text">{text}</p>
         {kind === 'server' && code ? <p className="muted small">{t('error.server.code', { code })}</p> : null}
         {onRetry ? (

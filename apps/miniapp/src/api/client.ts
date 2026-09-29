@@ -40,6 +40,8 @@ export interface RequestOptions {
   query?: Record<string, string | undefined>;
 }
 
+const GATEWAY_STATUSES = new Set([502, 503, 504]);
+
 let token: string | null = null;
 let onUnauthorized: (() => void) | null = null;
 
@@ -88,6 +90,8 @@ export async function request<T>(method: Method, path: string, options: RequestO
   }
   if (!response.ok) {
     const body = (json && typeof json === 'object' ? json : null) as ProblemBody | null;
+    // 502–504 без тела от прокси: API недоступен (перезапуск, обрыв) — для жителя это «Нет соединения», повтор безопасен.
+    if (!body && GATEWAY_STATUSES.has(response.status)) throw new ApiError(0, 'network', 'network', null, null);
     if (response.status === 401 && token) onUnauthorized?.();
     throw new ApiError(response.status, body?.code ?? `http_${response.status}`, body?.title ?? String(response.status), body?.detail ?? null, body);
   }

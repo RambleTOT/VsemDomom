@@ -197,7 +197,7 @@
   "screen.S04.step2.error.future": "Время не может быть позже текущего. Выберите время до {time}",
   "screen.S04.step2.confirm.old": "Авария началась больше суток назад? Проверьте дату",
   "screen.S04.step2.confirm.reason": "Отметьте, что авария началась больше суток назад",
-  "screen.S04.step3.title": "Где нет {service_gen}?",
+  "screen.S04.step3.title": "Где {service_no_lower}?",
   "screen.S04.step3.title.any": "Где авария?",
   "scope.flat": "Только в моей квартире",
   "scope.flat.sub": "В чат дома не попадёт — увидят УК и вы",
