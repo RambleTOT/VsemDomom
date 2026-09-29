@@ -124,6 +124,31 @@ exports[`C05 — личка > menu: в лимитах MAX 1`] = `
 }
 `;
 
+exports[`C05 — личка > menu-no-chat: в лимитах MAX 1`] = `
+{
+  "keyboard": [
+    [
+      {
+        "payload": "v1:rep_service:dom1model1",
+        "text": "Сообщить об аварии",
+        "type": "callback",
+      },
+    ],
+    [
+      {
+        "payload": "h_dom1model1",
+        "text": "Мой дом",
+        "type": "open_app",
+        "webApp": "bot",
+      },
+    ],
+  ],
+  "text": "Вы — житель дома 1, кв. 57
+Если что-то случилось — сообщите здесь
+Модельные данные",
+}
+`;
+
 exports[`C05 — личка > menu-registered: в лимитах MAX 1`] = `
 {
   "keyboard": [

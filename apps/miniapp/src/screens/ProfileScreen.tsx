@@ -94,12 +94,14 @@ export function ProfileScreen() {
 
       {residency ? (
         <div className="list-card">
-          <div className="list-row static">
+          {/* Дом жителя: сотруднику с демо-ролью — единственный путь из профиля к «Сообщить об аварии». */}
+          <button type="button" className="list-row plain-button" onClick={() => void navigate(`/house/${residency.house.id}`)}>
             <span className="list-row-text">
               <span className="muted small">{t('screen.S11.house')}</span>
               <span className="list-row-title">{`${t('screen.S03.title', { house: residency.house.label })} · ${residency.house.address}`}</span>
             </span>
-          </div>
+            <Icon name="chevron-right" size={16} className="muted" />
+          </button>
           <button type="button" className="list-row plain-button" aria-label={`${t('screen.S11.flat_role')}: ${flatRole} — ${t('screen.S02.house.change')}`} onClick={() => void navigate('/onboarding/residence?next=/profile')}>
             <span className="list-row-text">
               <span className="muted small">{t('screen.S11.flat_role')}</span>

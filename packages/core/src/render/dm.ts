@@ -86,6 +86,8 @@ export interface MenuInput {
   justRegistered: boolean;
   /** Квартира сменилась — уровень доверия сброшен. */
   trustReset: boolean;
+  /** У дома нет привязанного чата: «кнопкой в чате дома» не пишем. */
+  noChat?: boolean;
 }
 
 export function renderMenu(input: MenuInput, t: Translator): BotMessage {
@@ -101,7 +103,7 @@ export function renderMenu(input: MenuInput, t: Translator): BotMessage {
     lines(
       title,
       input.trustReset ? t.t('bot.dm.flat.moved') : null,
-      t.t('bot.dm.menu.l2'),
+      t.t(input.noChat ? 'bot.dm.menu.l2.no_chat' : 'bot.dm.menu.l2'),
       input.joinChatLink ? t.t('bot.dm.join') : null,
       input.house.isModel ? t.t('bot.footer') : null,
     ),

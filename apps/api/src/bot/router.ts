@@ -3,7 +3,7 @@
  * (команды и шаги диалога), команды в группе и события чатов. Ответ нажавшему ставится
  * в очередь callback-answer в той же транзакции, что и изменения.
  */
-import { decodeCallback, renderDeleteConfirm, renderHelp, renderText, type CallbackAction } from '@vsemdomom/core';
+import { decodeCallback, renderAnsweredStep, renderDeleteConfirm, renderHelp, renderText, type CallbackAction } from '@vsemdomom/core';
 import { PARAMS } from '../config/params.ts';
 import type { JobContext } from '../jobs/context.ts';
 import { markDialogStarted, type UpdateHandlers } from '../jobs/process-update.ts';
@@ -18,15 +18,16 @@ import type { CallbackEvent, CallbackHandler, CallbackReply, UpdateMeta } from '
 
 export type CallbackHandlers = Partial<Record<CallbackAction, CallbackHandler>>;
 
-/** Удаление данных: подтверждение и выполнение. */
+/** Удаление данных: подтверждение и выполнение. Вопрос правится в ответ — кнопка «Удалить» не остаётся в переписке. */
 const onDelete: CallbackHandler = async (e, ctx) => {
+  const answered = (button: string) => renderAnsweredStep(ctx.i18n.t('bot.dm.delete'), ctx.i18n.t(button));
   if (e.payload.arg !== 'yes') {
     await sendMenu(ctx, e.userId, e.meta.dedupeKey);
-    return ctx.i18n.t('bot.dm.delete.kept');
+    return { notification: ctx.i18n.t('bot.dm.delete.kept'), message: answered('bot.dm.btn.cancel') };
   }
   await deleteUserData(ctx.db, e.userId, ctx.clock.now());
   await ctx.db.transaction(async (tx) => sendDm(tx, ctx, e.userId, renderText('bot.dm.deleted', ctx.i18n), e.meta.dedupeKey));
-  return ctx.i18n.t('bot.answer.ok');
+  return { notification: ctx.i18n.t('bot.answer.ok'), message: answered('bot.dm.btn.delete') };
 };
 
 export const registrationCallbacks: CallbackHandlers = {

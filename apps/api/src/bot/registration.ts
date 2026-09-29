@@ -62,6 +62,7 @@ export async function sendMenu(
           joinChatLink: options.joinChatLink ?? null,
           justRegistered: options.justRegistered ?? false,
           trustReset: options.trustReset ?? false,
+          noChat: (await chatOfHouse(ctx.db, first.house.id)) === null,
         },
         ctx.i18n,
       )

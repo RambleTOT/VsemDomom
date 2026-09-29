@@ -621,6 +621,7 @@
   "bot.dm.btn.join": "Вступить в чат дома",
   "bot.dm.menu": "Готово. Вы — житель дома {house}, кв. {flat}",
   "bot.dm.menu.l2": "Если что-то случилось — сообщите здесь или кнопкой в чате дома",
+  "bot.dm.menu.l2.no_chat": "Если что-то случилось — сообщите здесь",
   "bot.dm.report.what": "Что случилось?",
   "bot.dm.report.what.sub": "Выберите одну кнопку",
   "bot.dm.report.when": "С какого времени {service_no_lower}?",

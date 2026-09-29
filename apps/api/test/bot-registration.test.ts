@@ -135,9 +135,13 @@ describe.skipIf(!url)('регистрация в личке (A4, PostgreSQL + с
 
     await h.deliver(updates.callback(U, callbackPayload(confirm, 'Отмена'), dm(U)));
     expect(answers(h).at(-1)).toBe('Хорошо, данные остаются');
+    // Вопрос правится в ответ: кнопка «Удалить» не остаётся в переписке.
+    expect(h.max.callbacks.at(-1)?.answer.message).toMatchObject({ text: 'Удалить ваши данные? — **Отмена**', keyboard: [] });
     expect(await flats(U)).toHaveLength(1);
 
-    await h.deliver(updates.callback(U, callbackPayload(confirm, 'Удалить'), dm(U)));
+    await h.deliver(updates.dmText(U, '/delete'));
+    await h.deliver(updates.callback(U, callbackPayload(lastDm(h, U), 'Удалить'), dm(U)));
+    expect(h.max.callbacks.at(-1)?.answer.message).toMatchObject({ text: 'Удалить ваши данные? — **Удалить**', keyboard: [] });
     expect(await flats(U)).toHaveLength(0);
     const u = await user(U);
     expect(u).toMatchObject({ consentVersion: null, dialogState: null, dialogActive: true });

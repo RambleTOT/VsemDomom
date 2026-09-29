@@ -76,6 +76,7 @@ describe('C05 — личка', () => {
     ['flat-error', renderFlatError(dmHouse, t)],
     ['menu-registered', renderMenu({ house: dmHouse, flatNo: 57, botUsername: 'bot', joinChatLink: 'https://max.ru/join/x', justRegistered: true, trustReset: false }, t)],
     ['menu', renderMenu({ house: dmHouse, flatNo: 57, botUsername: 'bot', joinChatLink: null, justRegistered: false, trustReset: true }, t)],
+    ['menu-no-chat', renderMenu({ house: dmHouse, flatNo: 57, botUsername: 'bot', joinChatLink: null, justRegistered: false, trustReset: false, noChat: true }, t)],
     ['unregistered', renderUnregisteredMenu(t)],
     ['help', renderHelp(t)],
     ['delete', renderDeleteConfirm(t)],
