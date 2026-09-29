@@ -41,8 +41,9 @@ describe('системные эндпоинты', () => {
   it('/api/v1/version отдаёт commit и флаги функций', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/v1/version' });
     expect(res.statusCode).toBe(200);
-    const body = res.json<{ commit: string; features: Record<string, boolean>; maxMode: string }>();
+    const body = res.json<{ commit: string; features: Record<string, boolean>; maxMode: string; botLink: string }>();
     expect(body.commit).toBe('test123');
+    expect(body.botLink).toBe('https://max.ru/vsemdomom_simulator_bot');
     expect(body.maxMode).toBe('simulator');
     expect(body.features.keywordReply).toBe(false);
   });

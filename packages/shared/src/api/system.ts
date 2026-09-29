@@ -21,6 +21,7 @@ export const VersionResponse = z
     maxMode: z.enum(['simulator', 'polling', 'webhook']),
     demoMode: z.boolean(),
     features: FeatureFlagsSchema,
+    botLink: z.string().meta({ description: 'Ссылка на бота в MAX — для экрана «Откройте приложение в MAX» вне MAX', example: 'https://max.ru/vsemdomom_bot' }),
   })
   .meta({ id: 'VersionResponse' });
 export type VersionResponse = z.infer<typeof VersionResponse>;

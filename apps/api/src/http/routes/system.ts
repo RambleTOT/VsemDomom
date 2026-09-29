@@ -1,3 +1,4 @@
+import { botLink } from '@vsemdomom/core';
 import type { FastifyInstance } from 'fastify';
 import type { AppDeps } from '../types.ts';
 
@@ -32,5 +33,6 @@ export function registerSystemRoutes(app: FastifyInstance, deps: AppDeps): void 
     maxMode: deps.config.max.mode,
     demoMode: deps.config.demo.enabled,
     features: deps.config.features,
+    botLink: botLink(deps.config.max.botUsername),
   }));
 }

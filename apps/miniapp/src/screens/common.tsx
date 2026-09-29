@@ -9,7 +9,7 @@ import { Skeleton } from '../components/ui.tsx';
 import { useSession } from '../app/session.tsx';
 
 /** Ошибки, при которых экран целиком заменяется на S12. */
-const FULL_SCREEN: readonly ErrorKind[] = ['notfound', 'forbidden', 'feature_off', 'expired', 'session', 'merged'];
+const FULL_SCREEN: readonly ErrorKind[] = ['notfound', 'forbidden', 'other_house', 'feature_off', 'expired', 'session', 'merged'];
 
 export function useErrorAction(): (kind: ErrorKind, retry?: () => void, mergedInto?: string | null) => (() => void) | undefined {
   const navigate = useNavigate();
@@ -24,6 +24,7 @@ export function useErrorAction(): (kind: ErrorKind, retry?: () => void, mergedIn
       case 'merged':
         return mergedInto ? () => void navigate(session.staff ? `/uk/incident/${mergedInto}` : `/incident/${mergedInto}`) : () => void navigate(session.home);
       case 'notfound':
+      case 'other_house':
       case 'expired':
       case 'feature_off':
         return () => void navigate(session.home);

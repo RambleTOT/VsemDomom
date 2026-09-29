@@ -93,12 +93,17 @@ components:
           type: boolean
         features:
           $ref: "#/components/schemas/FeatureFlags"
+        botLink:
+          type: string
+          description: Ссылка на бота в MAX — для экрана «Откройте приложение в MAX» вне MAX
+          example: https://max.ru/vsemdomom_bot
       required:
         - commit
         - builtAt
         - maxMode
         - demoMode
         - features
+        - botLink
     FeatureFlags:
       type: object
       properties:

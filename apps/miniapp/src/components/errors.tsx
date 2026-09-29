@@ -6,7 +6,20 @@ import { t } from '../i18n.ts';
 import type { IconName } from '../icons/icons.ts';
 import { Icon } from './Icon.tsx';
 
-export type ErrorKind = 'outside' | 'session' | 'network' | 'server' | 'busy' | 'forbidden' | 'notfound' | 'merged' | 'expired' | 'feature_off' | 'slow' | 'crash';
+export type ErrorKind =
+  | 'outside'
+  | 'session'
+  | 'network'
+  | 'server'
+  | 'busy'
+  | 'forbidden'
+  | 'other_house'
+  | 'notfound'
+  | 'merged'
+  | 'expired'
+  | 'feature_off'
+  | 'slow'
+  | 'crash';
 
 export function errorKind(err: unknown): ErrorKind {
   if (!(err instanceof ApiError)) return 'server';
@@ -14,7 +27,8 @@ export function errorKind(err: unknown): ErrorKind {
   if (err.status === 401) return 'session';
   // Лимит запросов: не «ошибка сервиса», а просьба подождать.
   if (err.status === 429) return 'busy';
-  if (err.status === 403) return 'forbidden';
+  // Житель открыл аварию или дом, где он не живёт, — это не «раздел для сотрудников».
+  if (err.status === 403) return err.code === 'not_resident' ? 'other_house' : 'forbidden';
   if (err.status === 404) return err.code === 'feature_disabled' ? 'feature_off' : 'notfound';
   if (err.status === 410) return 'expired';
   if (err.status === 409 && err.code === 'incident_not_open' && typeof err.body?.mergedInto === 'string') return 'merged';
@@ -22,12 +36,13 @@ export function errorKind(err: unknown): ErrorKind {
 }
 
 const ERROR_VIEW: Record<ErrorKind, { icon: IconName; title: string; text: string; cta: string | null }> = {
-  outside: { icon: 'smartphone', title: 'error.outside.title', text: 'error.outside', cta: null },
+  outside: { icon: 'smartphone', title: 'error.outside.title', text: 'error.outside', cta: 'error.outside.cta' },
   session: { icon: 'log-in', title: 'error.session.title', text: 'error.session', cta: 'common.close' },
   network: { icon: 'wifi-off', title: 'error.network.title', text: 'error.network', cta: 'common.retry' },
   server: { icon: 'server-crash', title: 'error.server.title', text: 'error.server', cta: 'common.retry' },
   busy: { icon: 'clock', title: 'error.busy.title', text: 'error.busy', cta: 'common.retry' },
   forbidden: { icon: 'lock', title: 'error.forbidden.title', text: 'error.forbidden.uk', cta: 'error.forbidden.cta' },
+  other_house: { icon: 'house', title: 'error.other_house.title', text: 'error.other_house', cta: 'common.to_home' },
   notfound: { icon: 'search-x', title: 'error.notfound.title', text: 'error.notfound', cta: 'common.to_home' },
   merged: { icon: 'merge', title: 'error.merged.title', text: 'error.merged', cta: 'incident.headline.action.open_actual' },
   expired: { icon: 'link-2-off', title: 'error.expired.title', text: 'error.expired', cta: 'common.to_home' },
