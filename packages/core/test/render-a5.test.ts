@@ -352,6 +352,7 @@ describe('C04 — итог', () => {
     assertGroupSafe(m);
     expect(m.text).toContain('Отметились 11 квартир. У 1 восстановление позже, в 20:00');
     expect(m.text).toContain('Перерывы в пределах нормы — перерасчёт не положен');
+    expect(m.keyboard[0]?.[0]?.text).toBe('Подробнее об итоге');
     expect(m.text).not.toContain('вода');
     const plain = renderResult({ ...base, house: { ...base.house, isModel: false }, late: null, overNorm: null }, t);
     expect(plain.text.split('\n').at(-1)).toBe('Это расчёт по нормам');

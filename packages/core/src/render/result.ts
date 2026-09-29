@@ -70,6 +70,7 @@ export function renderResult(input: ResultInput, t: Translator): BotMessage {
       input.house.isModel ? t.t('bot.result.footer') : t.t('bot.result.footer.plain'),
     ),
     format: 'markdown',
-    keyboard: [[{ type: 'open_app', text: t.t('bot.result.btn'), webApp: input.botUsername, payload: encodeStartApp('r', input.incidentPublicId) }]],
+    // В пределах нормы кнопка не обещает перерасчёт: ведёт на тот же итог в приложении.
+    keyboard: [[{ type: 'open_app', text: t.t(over ? 'bot.result.btn' : 'bot.result.btn.details'), webApp: input.botUsername, payload: encodeStartApp('r', input.incidentPublicId) }]],
   };
 }
