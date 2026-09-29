@@ -53,6 +53,9 @@ export async function sendMenu(
 ): Promise<void> {
   const list = await residenciesOf(ctx.db, userId);
   const first = list.find((r) => r.house.id === options.houseId) ?? list[0];
+  // Незарегистрированный посреди регистрации: черновик не сбрасываем — «Продолжить регистрацию» вернёт на тот же шаг.
+  const draft = first ? null : await currentState(ctx, userId);
+  const resume = draft?.flow === 'registration' && draft.step !== 'consent';
   const message = first
     ? renderMenu(
         {
@@ -66,11 +69,36 @@ export async function sendMenu(
         },
         ctx.i18n,
       )
-    : renderUnregisteredMenu(ctx.i18n);
+    : renderUnregisteredMenu(ctx.i18n, resume);
   await ctx.db.transaction(async (tx) => {
-    await setDialogState(tx, ctx, userId, null);
+    if (!resume) await setDialogState(tx, ctx, userId, null);
     await sendDm(tx, ctx, userId, message, key);
   });
+}
+
+/** Продолжить начатую регистрацию с того же шага: дом, роль или квартира. false — продолжать нечего. */
+async function resumeRegistration(ctx: JobContext, userId: number, key: string): Promise<boolean> {
+  const state = await currentState(ctx, userId);
+  if (state?.flow !== 'registration') return false;
+  if (state.step === 'house') {
+    const houses = await listResidentialHouses(ctx.db);
+    await ctx.db.transaction(async (tx) => sendDm(tx, ctx, userId, renderChooseHouse(houses.map(dmHouse), ctx.i18n), key));
+    return true;
+  }
+  const h = await residentialHouse(ctx, state.houseId);
+  if (!h) return false;
+  if (state.step === 'role') {
+    await ctx.db.transaction(async (tx) => sendDm(tx, ctx, userId, renderAskRole(ctx.i18n), key));
+    return true;
+  }
+  if (state.step === 'flat' && state.role) {
+    await ctx.db.transaction(async (tx) => {
+      await setDialogState(tx, ctx, userId, { ...state, promptKey: key });
+      await sendDm(tx, ctx, userId, renderAskFlat(dmHouse(h), ctx.i18n), key);
+    });
+    return true;
+  }
+  return false;
 }
 
 /** Следующий шаг регистрации после согласия: дом известен — роль, иначе — выбор дома. */
@@ -112,6 +140,7 @@ export async function startDialog(ctx: JobContext, userId: number, startPayload:
     await sendMenu(ctx, userId, meta.dedupeKey);
     return;
   }
+  if (await resumeRegistration(ctx, userId, meta.dedupeKey)) return;
   await nextAfterConsent(ctx, userId, null, source, meta.dedupeKey);
 }
 

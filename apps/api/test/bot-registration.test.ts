@@ -72,6 +72,24 @@ describe.skipIf(!url)('регистрация в личке (A4, PostgreSQL + с
     expect(row).toMatchObject({ flatNo: 12, role: 'renter', source: 'dm' });
   });
 
+  it('/menu посреди регистрации: черновик сохраняется, «Продолжить регистрацию» — тот же шаг', async () => {
+    const U = 5005;
+    await h.deliver(updates.botStarted(U, 'h_dom1model1'));
+    await h.deliver(updates.callback(U, callbackPayload(lastDm(h, U), 'Согласен'), dm(U)));
+    await h.deliver(updates.callback(U, callbackPayload(lastDm(h, U), 'Снимаю'), dm(U)));
+    expect(lastDm(h, U).text).toContain('номер квартиры');
+    await h.deliver(updates.dmText(U, '/menu'));
+    const menu = lastDm(h, U);
+    expect(menu.text).toBe('Регистрация не закончена — продолжите с того же шага');
+    await h.deliver(updates.callback(U, callbackPayload(menu, 'Продолжить регистрацию'), dm(U)));
+    // Снова квартира (дом и роль не спрашиваем заново).
+    expect(lastDm(h, U).text).toContain('Напишите номер квартиры');
+    await h.deliver(updates.dmText(U, '20'));
+    const [row] = await flats(U);
+    expect(row).toMatchObject({ flatNo: 20, role: 'renter', source: 'qr' });
+    expect(h.max.messagesIn({ userId: U }).some((m) => m.message.text === 'Номер квартиры — **20**')).toBe(true);
+  });
+
   it('повтор события от MAX не даёт второго сообщения', async () => {
     const U = 5003;
     const started = updates.botStarted(U);

@@ -111,9 +111,10 @@ export function renderMenu(input: MenuInput, t: Translator): BotMessage {
   );
 }
 
-export function renderUnregisteredMenu(t: Translator): BotMessage {
-  return msg(t.t('bot.dm.menu.unregistered'), [
-    [{ type: 'callback', text: t.t('bot.dm.btn.register'), payload: encodeCallback('menu', null, 'register') }],
+/** resume — регистрация начата: кнопка продолжает с того же шага. */
+export function renderUnregisteredMenu(t: Translator, resume = false): BotMessage {
+  return msg(t.t(resume ? 'bot.dm.menu.unregistered.resume' : 'bot.dm.menu.unregistered'), [
+    [{ type: 'callback', text: t.t(resume ? 'bot.dm.btn.resume' : 'bot.dm.btn.register'), payload: encodeCallback('menu', null, 'register') }],
   ]);
 }
 
