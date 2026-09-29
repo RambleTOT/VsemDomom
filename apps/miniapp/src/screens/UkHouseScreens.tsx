@@ -273,7 +273,8 @@ function BindBody({ token, info }: { token: string; info: ChatBindingInfo }) {
   const houses = useQuery({ queryKey: ['uk-houses'], queryFn: api.ukHouses });
   const [houseId, setHouseId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [notAdmin, setNotAdmin] = useState(false);
+  // Чат привязан, но бот не администратор: ссылка одноразовая, второй раз «Привязать» не нужно — ведём в дом.
+  const [boundNotAdmin, setBoundNotAdmin] = useState<string | null>(null);
 
   const bind = async () => {
     if (!houseId) return;
@@ -285,8 +286,8 @@ function BindBody({ token, info }: { token: string; info: ChatBindingInfo }) {
         toast(t('screen.U03.bind.done'));
         void navigate(`/uk/houses/${res.house.id}`, { replace: true });
       } else {
-        setNotAdmin(true);
-        toast(t('screen.U03.bind.error.toast'), 'error');
+        setBoundNotAdmin(res.house.id);
+        toast(t('screen.U03.bind.error.toast'), 'info');
       }
     } catch (err) {
       toast(errorText(err, t('error.network.title')), 'error');
@@ -294,6 +295,28 @@ function BindBody({ token, info }: { token: string; info: ChatBindingInfo }) {
       setBusy(false);
     }
   };
+
+  if (boundNotAdmin) {
+    return (
+      <Screen
+        title={t('screen.U03.bind.title')}
+        back="/uk/houses"
+        actions={
+          <Button size="large" stretched onClick={() => void navigate(`/uk/houses/${boundNotAdmin}`, { replace: true })}>
+            {t('screen.U03.bind.open_house')}
+          </Button>
+        }
+      >
+        <Card>
+          <Muted>{t('screen.U03.bind.from')}</Muted>
+          <p className="banner-title">{info.chatTitle ?? t('screen.S03.chat.title')}</p>
+        </Card>
+        <Banner tone="warning" title={t('screen.U03.bind.error.title')}>
+          {t('screen.U03.bind.error')}
+        </Banner>
+      </Screen>
+    );
+  }
 
   return (
     <Screen
@@ -310,11 +333,6 @@ function BindBody({ token, info }: { token: string; info: ChatBindingInfo }) {
         <Muted>{t('screen.U03.bind.from')}</Muted>
         <p className="banner-title">{info.chatTitle ?? t('screen.S03.chat.title')}</p>
       </Card>
-      {notAdmin ? (
-        <Banner tone="warning" title={t('screen.U03.bind.error.title')}>
-          {t('screen.U03.bind.error')}
-        </Banner>
-      ) : null}
       <SectionTitle>{t('screen.U03.bind.pick')}</SectionTitle>
       <Loaded query={houses}>
         {(data) => (
